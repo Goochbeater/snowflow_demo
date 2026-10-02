@@ -429,6 +429,7 @@ const Game = {
   onPassTap() {
     const p = this.player; if (!p || this.state !== 'play') return;
     Input.tapT = this.rtime;
+    if (p.role !== 'chaser') return;
     if (!p.hasBall) {
       const c = this.quaffle.holder;
       if (c && c.side === p.side && c !== p) this.callForPass(c); else Input.callT = this.rtime;

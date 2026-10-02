@@ -15,3 +15,7 @@ node build.mjs
 ```
 
 All gameplay tunables are in the `CONFIG` object at the top of `src/js/00-core.js`.
+
+## Credits
+
+First-person hand models: WebXR Input Profiles generic hand (`@webxr-input-profiles/assets`), MIT licence. Everything else is generated in code.

@@ -19,7 +19,12 @@ const FH = {
   },
   release(ctx) { ctx.p.hand(ctx.R); ctx.Q.pos.copy(ctx.R); },
   fp() { Cam.mode = 'fp'; },
-  script(pos, look, roll = 0) { Cam.mode = 'script'; Cam.sQuat = null; Cam.sPos.copy(pos); Cam.sLook.copy(look); Cam.sRoll = roll; },
+  script(pos, look, roll = 0) {
+    Cam.mode = 'script'; Cam.sQuat = null; Cam.sPos.copy(pos); Cam.sLook.copy(look); Cam.sRoll = roll;
+    // keep cinematic cameras out of the stands and above the turf
+    for (let i = 0; i < 3 && World.collide(Cam.sPos, 1.2, FH._n || (FH._n = new THREE.Vector3())); i++);
+    if (Cam.sPos.y < 1.2) Cam.sPos.y = 1.2;
+  },
 };
 const RM = () => (Settings.reduceMotion ? 0 : 1);
 
@@ -390,7 +395,7 @@ const SEEKER_DEFS = {
       S.pos.lerpVectors(c.S0, c.Sn, easeInOut(seg(t, 0, 2.0))).add(_v2.set(Math.sin(t * 7) * 0.6, Math.sin(t * 9) * 0.4, Math.cos(t * 6) * 0.6));
       if (t > this.imp) S.pos.copy(Render.camera.position);
       S.vel.copy(c.Fh);
-      if (t >= 1.38 && t < 2.1 && R) { _v4.copy(c.G).addScaledVector(c.R0, 11).add(_v2.set(0, 3, 0)).addScaledVector(c.Fh, -3); FH.script(_v4, c.crash); }
+      if (t >= 1.38 && t < 2.1 && R) { _v4.copy(c.crash).addScaledVector(c.R0, 6).add(_v2.set(0, 2.2, 0)).addScaledVector(c.Fh, 2); FH.script(_v4, _v5.copy(c.crash).add(_v2.set(0, 0.4, 0))); }
       else { FH.fp(); if (t >= 2.1) FH.look(p, S.pos, 6, 1 / 60), p.frame(); }
       c.ov.right = t < this.imp ? (t > 2.15 ? { state: t > 2.62 ? 'fist' : 'open', pos: handToward(S.pos, c.hv, 0.55, 1.0) } : null) : { state: 'fist', pos: c.hv.set(0.2, -0.04, -0.6) };
       c.ov.snitchInHand = t >= this.imp;

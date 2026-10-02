@@ -128,7 +128,7 @@ const HUD = {
     e.shoot.classList.toggle('ready', ready);
     const Q = G.quaffle;
     this.setShootLabel(p.role === 'seeker' ? (sReady ? 'CATCH' : 'GRAB') : ready ? 'FINISH' : p.hasBall ? 'SHOOT' : Q.holder && Q.holder.side !== p.side ? 'STEAL' : 'SHOOT');
-    const canCall = !p.hasBall && Q.holder && Q.holder.side === p.side && Q.holder !== p;
+    const canCall = p.role === 'chaser' && !p.hasBall && Q.holder && Q.holder.side === p.side && Q.holder !== p;
     const pl = p.hasBall ? 'PASS' : canCall ? 'CALL' : 'PASS';
     if (this.cache.pass !== pl) { this.cache.pass = pl; e.passLbl.textContent = pl; }
     e.pass.classList.toggle('callable', !!canCall); e.pass.classList.toggle('dim', !p.hasBall && !canCall);
