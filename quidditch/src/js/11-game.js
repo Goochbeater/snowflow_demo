@@ -69,8 +69,9 @@ const Game = {
   keeper(side) { return this.teams[side].find(f => f.role === 'keeper'); },
   after(t, fn) { this.timers.push({ at: this.rtime + t, fn }); },
   clearFlyers() {
-    for (const f of this.flyers) { Render.scene.remove(f.mesh); f.mesh.geometry.dispose(); }
-    this.flyers = []; this.teams = [[], []]; this.player = null;
+    for (const f of this.flyers) { Render.scene.remove(f.mesh); f.mesh.userData.rider.geometry.dispose(); }
+    Robes.clear();
+    this.flyers = []; this.teams = [[], []]; this.player = null; this.lock = null; this.lunge = null; this.focus = 0;
   },
   setup(mode) {
     this.clearFlyers(); FX.clear(); this.timers = [];
@@ -87,6 +88,7 @@ const Game = {
     const roles = [['chaser', 0], ['chaser', 1], ['chaser', 2], ['beater', 0], ['beater', 1], ['keeper', 0], ['seeker', 0]];
     for (const side of [0, 1]) for (const [role, slot] of roles) {
       if (mode === 'lab' && (side === 1 ? role !== 'keeper' : role !== 'chaser')) continue;
+      if (mode === 'slab' && role !== 'seeker') continue;
       const f = new Flyer(side, this.houses[side], role, slot);
       this.flyers.push(f); this.teams[side].push(f);
     }
@@ -95,15 +97,17 @@ const Game = {
     this.vm = mode === 'demo' ? null : Models.viewmodel(this.houses[0]);
     if (this.vm) Render.camera.add(this.vm.group);
     const Q = this.quaffle; Q.holder = null; Q.state = 'free'; Q.trail.reset(); Q.trail.active = false;
-    for (const b of this.bludgers) { b.mesh.visible = mode !== 'lab'; b.state = 'roam'; b.trail.reset(); b.trail.active = false; b.vel.set(0, 0, 0); }
+    for (const b of this.bludgers) { b.mesh.visible = mode !== 'lab' && mode !== 'slab'; b.state = 'roam'; b.trail.reset(); b.trail.active = false; b.vel.set(0, 0, 0); }
+    Q.mesh.visible = mode !== 'slab'; Q.hidden = mode === 'slab';
+    Cam.showVM = false; Cam.vmOverride = null;
     this.bludgers[0].pos.set(-4, 10, 6); this.bludgers[1].pos.set(4, 10, -6);
     this.snitch.hide();
     this.kickoff();
     Cam.mode = mode === 'demo' ? 'orbit' : 'fp'; Cam.shotT = 0;
     if (mode === 'match') { this.state = 'countdown'; this.countT = 3.2; this.countShown = 4; }
-    else { this.state = 'play'; if (mode === 'lab') this.labReset(); }
+    else { this.state = 'play'; if (mode === 'lab') this.labReset(); if (mode === 'slab') this.slabReset(); }
     World.excite.fill(0);
-    this.vmHand.set(0.05, -0.255, -0.45);
+    this.vmLinit = false;
     this.updateViewmodel(1);
     HUD.matchStart && HUD.matchStart();
   },
@@ -128,6 +132,12 @@ const Game = {
     for (const f of this.teams[0]) if (!f.isPlayer) f.setPose(_v1.set(p.pos.x - 6, p.pos.y, p.pos.z + (f.slot === 1 ? -10 : 10)), p.yaw);
   },
 
+  slabReset() {
+    const p = this.player, S = this.snitch;
+    this.quaffle.state = 'scripted'; this.quaffle.pos.set(0, -50, 0);
+    S.release(); S.pos.copy(p.pos).addScaledVector(p.fwd, 24).add(_v1.set(0, 2, 0));
+    this.focus = 1; HUD.setShootLabel('GRAB');
+  },
   update(rdt) {
     this.rtime += rdt;
     for (let i = this.timers.length - 1; i >= 0; i--) if (this.rtime >= this.timers[i].at) { const t = this.timers[i]; this.timers.splice(i, 1); t.fn(); }
@@ -193,6 +203,9 @@ const Game = {
     }
     p.turnMul = 1.05; p.speedMul = 1;
     this.stealCd -= rdt;
+    this.updateLock();
+    this.steerAssist(p);
+    this.updateLunge(rdt * this.curTs);
   },
 
   // ---------- interactions ----------
@@ -217,7 +230,7 @@ const Game = {
       if (f === Q.thrower && this.time - Q.throwT < 0.45) continue;
       let reach = CONFIG.ball.catchR;
       const hostileShot = Q.thrower && Q.thrower.side !== f.side && Q.state === 'flying';
-      if (f.role === 'keeper') reach = hostileShot ? this.diff.keeperReach : 2.2;
+      if (f.role === 'keeper') reach = hostileShot ? this.diff.keeperReach * (Q.perfect ? 0.55 : 1) : 2.2;
       if (f.isPlayer) reach = 2.9;
       _v1.copy(f.pos).addScaledVector(f.up, 0.35);
       if (_v1.distanceTo(Q.pos) > reach) continue;
@@ -226,7 +239,11 @@ const Game = {
       if (!Q.rolled) Q.rolled = new Set();
       if (Q.rolled.has(f.id)) continue;
       Q.rolled.add(f.id);
-      const p = f.role === 'keeper' ? 0.9 : hostileShot ? 0.32 * this.diff.aim : 0.85;
+      let p = f.role === 'keeper' ? 0.9 : hostileShot ? 0.32 * this.diff.aim : 0.85;
+      if (f.role === 'keeper' && hostileShot) {
+        const range = Q.thrower ? Q.thrower.pos.distanceTo(f.pos) : 30;
+        p = this.diff.keeperSave * (Q.perfect ? 0.45 : 1) * (range < 16 ? 0.75 : 1) * (Q.thrower && Q.thrower.isPlayer ? 1 : 1.15);
+      }
       if (Math.random() < p) { this.catchBy(f); return; }
     }
   },
@@ -328,9 +345,24 @@ const Game = {
   },
   targetHoop(p = this.player) {
     if (!p) return null;
-    const sx = this.attackSign(p.side); let best = null, ba = -2;
-    for (const h of World.hoops) { if (h.side !== sx) continue; _v1.subVectors(h.pos, p.pos).normalize(); const a = _v1.dot(p.fwd); if (a > ba) { ba = a; best = h; } }
-    return best;
+    const sx = this.attackSign(p.side), k = this.keeper(1 - p.side), cone = Math.cos(this.assistCone()); let best = null, bs = -1e9, cur = -1e9;
+    for (const h of World.hoops) {
+      if (h.side !== sx) continue;
+      const tv = this._tv || (this._tv = new THREE.Vector3());
+      tv.subVectors(h.pos, p.pos).normalize();
+      const kd = k ? Math.min(k.pos.distanceTo(h.pos), 8) : 6, dot = tv.dot(p.fwd);
+      const sc = dot * 4 + (dot > cone ? 3 + kd * 0.35 : 0);
+      if (h === this.tgtHoop) cur = sc;
+      if (sc > bs) { bs = sc; best = h; }
+    }
+    if (this.tgtHoop && this.tgtHoop.side === sx && bs - cur < 0.35) return this.tgtHoop; // sticky target, no flicker
+    this.tgtHoop = best; return best;
+  },
+  assistCone() { const l = Settings.aimAssist; return (l === 'off' ? 0 : l === 'low' ? 14 : l === 'high' ? 36 : lerp(22, 36, this.diff.assist)) * DEG; },
+  shotLinedUp() {
+    const p = this.player, h = this.targetHoop(p); if (!h || !p.hasBall) return false;
+    _v1.subVectors(h.pos, p.pos); const d = _v1.length();
+    return d < 62 && Math.acos(clamp(_v1.divideScalar(d).dot(p.fwd), -1, 1)) < this.assistCone();
   },
   passTarget() {
     const p = this.player; if (!p) return null;
@@ -345,46 +377,63 @@ const Game = {
   },
   finisherReady() {
     const p = this.player;
-    if (!p || !p.hasBall || this.flair < 1 || this.state !== 'play' || p.role !== 'chaser') return false;
+    if (!p || !p.hasBall || this.flair < CONFIG.finisherCost - 1e-4 || this.state !== 'play' || p.role !== 'chaser') return false;
     const h = this.targetHoop(); if (!h) return false;
     const d = h.pos.distanceTo(p.pos); if (d > 85) return false;
     _v1.subVectors(h.pos, p.pos).normalize(); return _v1.dot(p.fwd) > 0.3;
   },
+  seekerFinisherReady() {
+    const p = this.player, S = this.snitch;
+    if (!p || p.role !== 'seeker' || !S.active || this.focus < CONFIG.finisherCost - 1e-4 || this.state !== 'play') return false;
+    _v1.subVectors(S.pos, p.pos); const d = _v1.length();
+    return d < 30 && _v1.divideScalar(d).dot(p.fwd) > 0.3;
+  },
   onShootDown() { if (this.player && this.player.role === 'seeker') this.grabbing = true; },
   onShootUp(charge, gesture) {
     const p = this.player; if (!p || this.state !== 'play') return;
-    if (p.role === 'seeker') { this.grabbing = false; this.tryGrab(); return; }
+    const allow = Settings.finisherLen !== 'off';
+    if (p.role === 'seeker') {
+      this.grabbing = false;
+      if (allow && this.seekerFinisherReady() && (gesture || charge > CONFIG.ball.charge * 1.25)) { Finishers.trigger(gesture, true); return; }
+      this.tryGrab(); return;
+    }
     if (!p.hasBall) { this.tryPlayerSteal(); return; }
-    if (this.finisherReady() && Settings.finisherLen !== 'off') { Finishers.trigger(gesture); return; }
-    this.playerShoot(charge, this.finisherReady());
+    if (allow && this.finisherReady() && (gesture || charge > CONFIG.ball.charge * 1.25)) { Finishers.trigger(gesture); return; }
+    this.playerShoot(charge);
   },
-  playerShoot(charge, guaranteed = false) {
+  playerShoot(charge) {
     const p = this.player, Q = this.quaffle;
-    const speed = lerp(CONFIG.ball.shotMin, CONFIG.ball.shotMax, clamp(charge / CONFIG.ball.charge, 0, 1));
+    const frac = clamp(charge / CONFIG.ball.charge, 0, 1);
+    const perfect = frac >= 0.68 && frac <= 0.94;
+    const speed = lerp(CONFIG.ball.shotMin, CONFIG.ball.shotMax, frac) * (perfect ? 1.08 : 1);
+    const h = this.targetHoop();
     p.hand(_v1);
     const T = 0.7;
     _v3.copy(p.fwd).multiplyScalar(speed); _v3.y += 0.5 * CONFIG.ball.g * T;
-    const h = this.targetHoop();
     if (h) {
-      _v2.subVectors(h.pos, _v1).normalize();
-      const ang = Math.acos(clamp(_v2.dot(p.fwd), -1, 1));
-      const lvl = Settings.aimAssist;
-      const cone = (lvl === 'off' ? 0 : lvl === 'low' ? 9 : lvl === 'high' ? 20 : lerp(9, 22, this.diff.assist)) * DEG;
-      if (guaranteed || ang < cone) {
-        this.ballistic(_v1, h.pos, speed, _v4);
-        const k = guaranteed ? 1 : smooth01(1 - ang / cone) * 0.94;
-        _v3.lerp(_v4, k);
+      _v2.subVectors(h.pos, _v1); const dist = _v2.length(); _v2.divideScalar(dist);
+      const ang = Math.acos(clamp(_v2.dot(p.fwd), -1, 1)), cone = this.assistCone();
+      if (ang < cone && dist < 62) {
+        // aim at the part of the ring the Keeper is furthest from
+        const aim = _v5.copy(h.pos), k = this.keeper(1 - p.side);
+        if (k) { _v6.subVectors(h.pos, k.pos); _v6.x = 0; const l = _v6.length(); if (l > 0.05 && l < 6) aim.addScaledVector(_v6.divideScalar(l), 0.85); }
+        this.ballistic(_v1, aim, speed, _v4);
+        _v3.copy(_v4);
       }
     }
-    if (guaranteed && h) { this.flair = 0; this.styleEvent('STRAIGHT SHOT', 0, 120); }
-    Q.release(_v3, null); Q.rolled = null;
+    Q.release(_v3, null); Q.rolled = null; Q.perfect = perfect;
     this.stats.shots++; this.throwAnim = 0.3;
     Sound.play('throw'); Platform.vibrate(15); Cam.addShake(0.12);
+    if (perfect) { this.styleEvent('PERFECT RELEASE', 0.08, 120); Sound.play('perfect', { vol: 0.5 }); }
   },
   onPassTap() {
     const p = this.player; if (!p || this.state !== 'play') return;
     Input.tapT = this.rtime;
-    if (!p.hasBall) { Input.callT = this.rtime; return; }
+    if (!p.hasBall) {
+      const c = this.quaffle.holder;
+      if (c && c.side === p.side && c !== p) this.callForPass(c); else Input.callT = this.rtime;
+      return;
+    }
     if (this.finisherReady() && Settings.finisherLen !== 'off') {
       this.passTaps = (this.passTaps || []).filter(t => this.rtime - t < 0.6); this.passTaps.push(this.rtime);
       if (this.passTaps.length >= 3 && Finishers.hawksheadOK()) { this.passTaps = []; clearTimeout(this.passTimer); Finishers.trigger('hawkshead'); return; }
@@ -394,32 +443,111 @@ const Game = {
     }
     const m = this.passTarget(); if (m) this.pass(p, m);
   },
+  // NBA 2K-style call for the ball: the teammate in possession passes to you after a beat
+  callForPass(c) {
+    this.calls = (this.calls || []).filter(t => this.rtime - t < 4); this.calls.push(this.rtime);
+    if (this.calls.length > 3) { if (this.rtime - (this.ignoreMsgT || -9) > 2.5) { HUD.popup('CALL IGNORED', true); this.ignoreMsgT = this.rtime; } return; }
+    if (this.callPending) return;
+    this.callPending = true; Input.callT = this.rtime; c.ai.passingT = this.rtime;
+    HUD.popup('CALLING FOR IT'); Sound.play('ui');
+    this.after((c.role === 'keeper' ? 0.3 : 0.16) + Math.random() * 0.14, () => {
+      this.callPending = false;
+      const p = this.player;
+      if (this.state === 'play' && p && this.quaffle.holder === c && c.stun <= 0 && !c.scripted) { this.pass(c, p); c.ai.cool = 1.5; this.calls = []; }
+    });
+  },
   onSwipe(dir) {
     const p = this.player; if (!p || this.state !== 'play') return;
     if (p.startDodge(dir)) { Sound.play('dodge'); Platform.vibrate(10); }
   },
+  // lock-on: carrier when defending, the loose Quaffle, or the Snitch when you're the Seeker
+  updateLock() {
+    const p = this.player;
+    if (!p || p.scripted || this.state !== 'play') { this.lock = null; return; }
+    const Q = this.quaffle;
+    let cand = null;
+    if (p.role === 'seeker') cand = this.snitch.active ? this.snitch : null;
+    else if (!p.hasBall) cand = Q.holder ? (Q.holder.side !== p.side ? Q.holder : null) : (Q.state === 'scripted' ? null : Q);
+    if (!cand) { this.lock = null; return; }
+    _v1.subVectors(cand.pos, p.pos); const d = _v1.length(), dot = _v1.divideScalar(Math.max(d, 1e-3)).dot(p.fwd);
+    if (this.lock === cand) { if (d > 115 || dot < 0.05) this.lock = null; }
+    else if (d < 85 && dot > 0.55) { this.lock = cand; this.lockT = this.rtime; }
+    else if (this.lock && this.lock !== cand) this.lock = null;
+  },
+  steerAssist(p) {
+    const t = this.lock, lvl = Settings.trackAssist;
+    if (!t || lvl === 'off' || p.dodge || this.lunge) return;
+    const str = lvl === 'low' ? 0.4 : 0.78;
+    const d = t.pos.distanceTo(p.pos);
+    _v2.copy(t.pos).addScaledVector(t.vel, clamp(d / 45, 0, 0.7)).sub(p.pos);
+    const [ty, tp] = yawPitchFromDir(_v2);
+    const dy = wrapAngle(ty - p.yaw), dp = tp - p.pitch;
+    const k = str * (1 - Math.min(1, Math.hypot(Input.steer.x, Input.steer.y)) * 0.55);
+    p.input.x = clamp(p.input.x + clamp(-dy * 2.4, -1, 1) * k, -1, 1);
+    p.input.y = clamp(p.input.y + clamp(dp * 2.6, -1, 1) * k, -1, 1);
+    if (t !== this.quaffle && d < 32) p.speedMul = 1.07;
+  },
   tryPlayerSteal() {
     const p = this.player, Q = this.quaffle;
-    if (this.stealCd > 0) return;
-    this.stealCd = 0.8; this.throwAnim = 0.25;
+    if (this.stealCd > 0 || this.lunge) return;
     const c = Q.holder;
-    p.speed += 6;
+    this.stealCd = 0.9; this.throwAnim = 0.25;
     if (c && c.side !== p.side) {
       _v1.subVectors(c.pos, p.pos); const d = _v1.length();
-      if (d < 5.5 && _v1.normalize().dot(p.fwd) > 0.45) {
-        const chanceP = clamp(0.62 + (p.boosting ? 0.15 : 0) - (c.role === 'keeper' ? 0.25 : 0) - (c.invuln > 0 ? 0.5 : 0), 0.05, 0.95);
-        if (Math.random() < chanceP) { this.steal(p, c); return; }
-        HUD.popup('MISSED', true); Sound.play('whoosh', { vol: 0.5 }); return;
+      if (d < 13 && _v1.divideScalar(d).dot(p.fwd) > 0.3) {
+        this.lunge = { c, t: 0 }; Sound.play('boost', { vol: 0.6 }); Platform.vibrate(15); Cam.addShake(0.25);
+        if (!c.isPlayer && d < 7 && Math.random() < this.diff.aim * 0.15) c.startDodge(Math.random() < 0.5 ? 'left' : 'right');
+        return;
       }
     }
-    Sound.play('whoosh', { vol: 0.4 });
+    p.speed += 5; Sound.play('whoosh', { vol: 0.4 });
+    if (c && c.side !== p.side && this.rtime - (this.stealMsgT || -9) > 3) { HUD.popup('GET CLOSER', true); this.stealMsgT = this.rtime; }
+  },
+  updateLunge(dt) {
+    const L = this.lunge, p = this.player; if (!L) { if (p) p.lungeV = null; return; }
+    const c = L.c, Q = this.quaffle;
+    L.t += dt;
+    if (Q.holder !== c || L.t > 0.75 || this.state !== 'play') { this.lunge = null; p.lungeV = null; if (Q.holder === c && this.state === 'play') HUD.popup('MISSED', true); return; }
+    _v1.subVectors(c.pos, p.pos).addScaledVector(c.vel, 0.1); const d = _v1.length();
+    p.input.x = 0; p.input.y = 0; p.lookDir(_v1, 18, dt);
+    p.lungeV = (p.lungeV || new THREE.Vector3()).copy(_v1).divideScalar(Math.max(d, 1e-3)).multiplyScalar(Math.max(48, c.vel.length() + 20));
+    p.speed = 46;
+    if (d < 3.2) {
+      this.lunge = null; p.lungeV = null; p.speed = 30;
+      const dodged = c.dodge && c.dodge.t > 0.05;
+      const ok = !dodged && Math.random() < clamp(0.86 + (p.boosting ? 0.08 : 0) - (c.role === 'keeper' ? 0.2 : 0), 0.1, 0.97);
+      if (ok) this.steal(p, c); else { HUD.popup(dodged ? 'DODGED' : 'SHRUGGED OFF', true); Sound.play('thud'); Cam.addShake(0.4); p.speed = 18; }
+    }
   },
   tryGrab() {
     const p = this.player, S = this.snitch;
     if (!S.active) return;
     _v1.subVectors(S.pos, p.pos); const d = _v1.length();
-    if (d < 2.6 && _v1.normalize().dot(p.fwd) > 0.55) { this.catchSnitch(p); return; }
-    HUD.popup(d < 6 ? 'SO CLOSE' : 'TOO FAR', true); Sound.play('whoosh', { vol: 0.4 });
+    if (d < 3.0 && _v1.divideScalar(d).dot(p.fwd) > 0.5) { this.catchSnitch(p); return; }
+    Sound.play('whoosh', { vol: 0.4 });
+    if (this.rtime - (this.grabMsgT || -9) > 4) { this.grabMsgT = this.rtime; HUD.popup(d < 8 ? 'ALMOST · FLY THROUGH ITS RINGS' : 'CLOSE IN FIRST', true); }
+  },
+  // golden rings trail the Snitch (Quidditch Champions style): each one fills focus and boost
+  updateSnitchRings(rdt) {
+    const p = this.player, S = this.snitch;
+    this.focus = Math.max(0, (this.focus || 0) - rdt * 0.012);
+    if (!p || p.role !== 'seeker' || !S.active) return;
+    if (p.pos.distanceTo(S.pos) < 12) this.focus = Math.min(1, this.focus + rdt * 0.04);
+    for (const r of S.rings) {
+      if (!r.visible || r.userData.passed) continue;
+      const n = _v1.set(0, 0, 1).applyQuaternion(r.quaternion);
+      const a = _v2.subVectors(p.prev, r.position).dot(n), b = _v3.subVectors(p.pos, r.position).dot(n);
+      if (a * b > 0) continue;
+      _v4.subVectors(p.pos, r.position).addScaledVector(n, -b);
+      if (_v4.length() > 2.3 * r.scale.x) continue;
+      r.userData.passed = true;
+      const was = this.focus;
+      this.focus = Math.min(1, this.focus + 0.15); p.boost = Math.min(1, p.boost + 0.3); p.speed += 7;
+      this.ringCombo = this.rtime - (this.ringT || -9) < 3 ? (this.ringCombo || 0) + 1 : 1; this.ringT = this.rtime;
+      FX.ring(r.position, linCol(3, 2.2, 0.8), 6, 0.45); Sound.play('ring', { vol: 0.8 }); Platform.vibrate(12);
+      HUD.popup('RING ×' + this.ringCombo);
+      if (was < CONFIG.finisherCost && this.focus >= CONFIG.finisherCost) { Sound.play('ready'); HUD.hint('CATCH READY · HOLD GRAB + SWIPE', 3); Platform.vibrate([20, 40, 20]); }
+    }
   },
 
   // ---------- events ----------
@@ -460,17 +588,23 @@ const Game = {
     if (this.swapT <= 0 || !this.player) return;
     const s = this.teams[this.player.side].find(f => f.role === 'seeker'); if (!s) return;
     const old = this.player; old.isPlayer = false; old.mesh.visible = true;
-    s.isPlayer = true; s.mesh.visible = false; s.boost = 1; this.player = s; this.swapT = 0; HUD.swap(false);
-    HUD.ticker('You are the Seeker now. Hold GRAB as you close in.'); HUD.setShootLabel('GRAB');
+    s.isPlayer = true; s.mesh.visible = false; s.boost = 1; this.player = s; this.swapT = 0; this.focus = 0.15; HUD.swap(false);
+    HUD.ticker('You are the Seeker. Fly through the golden rings to build focus.'); HUD.setShootLabel('GRAB');
     Sound.play('rise', { vol: 0.6 }); Platform.vibrate(20);
   },
-  catchSnitch(f) {
+  catchSnitch(f, info = {}) {
     if (this.state !== 'play' && this.state !== 'finisher') return;
     const val = Settings.snitch === 'classic' ? 150 : 30;
-    this.score[f.side] += val; this.snitch.hide();
+    this.snitch.hide();
     const T = CONFIG.teams[this.houses[f.side]];
-    if (f.isPlayer) { this.styleEvent('SNITCH CAUGHT', 0, 1500); this.stats.snitch = true; Platform.vibrate([60, 40, 60, 40, 160]); this.hitStop = 0.12; FX.star(f.pos, linCol(4, 3, 1), 3, 0.8); }
-    HUD.banner('SNITCH CAUGHT', `${T.name.toUpperCase()} +${val}`);
+    if (this.mode === 'slab') {
+      if (!info.finisher) { HUD.banner('SNITCH CAUGHT', 'AGAIN?'); Sound.play('snitch'); this.styleEvent(null, 0, 600); }
+      this.after(1.6, () => { if (this.mode === 'slab' && this.state === 'play') this.slabReset(); });
+      return;
+    }
+    this.score[f.side] += val;
+    if (f.isPlayer) { this.stats.snitch = true; if (!info.finisher) { this.styleEvent('SNITCH CAUGHT', 0, 1500); Platform.vibrate([60, 40, 60, 40, 160]); this.hitStop = 0.12; FX.star(f.pos, linCol(4, 3, 1), 3, 0.8); } }
+    if (!info.finisher) HUD.banner('SNITCH CAUGHT', `${T.name.toUpperCase()} +${val}`);
     Sound.play('end'); Sound.crowdRoar(1, 5); World.excite[this.houses[f.side]] = 1;
     this.endMatch();
   },
@@ -500,13 +634,13 @@ const Game = {
   // ---------- style ----------
   styleEvent(label, flair, points) {
     if (this.mode === 'demo') return;
-    const wasReady = this.flair >= 1;
+    const wasReady = this.flair >= CONFIG.finisherCost;
     this.flair = Math.min(1, this.flair + flair);
     this.style.val = Math.min(6.2, this.style.val + points / 170);
     this.style.lastT = this.rtime;
     this.style.score += Math.round(points * (1 + Math.floor(this.style.val) * 0.25));
     if (label) HUD.popup(label);
-    if (!wasReady && this.flair >= 1 && this.mode === 'match') { Sound.play('ready'); Platform.vibrate([20, 40, 20]); HUD.hint('FINISHER READY · HOLD SHOOT + SWIPE', 3); }
+    if (!wasReady && this.flair >= CONFIG.finisherCost && this.mode === 'match') { Sound.play('ready'); Platform.vibrate([20, 40, 20]); HUD.hint('FINISHER READY · HOLD SHOOT + SWIPE', 3); }
   },
   styleUpdate(rdt) {
     if (this.rtime - this.style.lastT > 3) this.style.val = Math.max(0, this.style.val - rdt * 0.14);
@@ -514,12 +648,14 @@ const Game = {
     if (r !== this.style.rank) { if (r > this.style.rank) { Sound.play('rank', { vol: 0.7 }); } this.style.rank = r; HUD.rank(r); }
     if (this.stats) this.stats.bestRank = Math.max(this.stats.bestRank, r);
     if (this.mode === 'lab') this.flair = 1;
+    if (this.mode === 'slab') this.focus = 1;
   },
 
   // ---------- feel ----------
   updatePlayerFeel(rdt, dt) {
     const p = this.player, fx = Render.post.fx;
     if (this.stats) this.stats.topSpeed = Math.max(this.stats.topSpeed, p.vel.length());
+    if (this.state === 'play') this.updateSnitchRings(rdt);
     this.hitFx = Math.max(0, this.hitFx - rdt * 1.8); fx.hit = this.hitFx;
     if (this.state !== 'play') return;
     const spd = p.vel.length();
@@ -563,26 +699,55 @@ const Game = {
   updateViewmodel(rdt) {
     const vm = this.vm; if (!vm) return;
     const p = this.player;
-    vm.group.visible = Cam.mode === 'fp' && !!p;
+    vm.group.visible = (Cam.mode === 'fp' || Cam.showVM) && !!p;
     if (!vm.group.visible) return;
+    const ov = Cam.vmOverride;
     this.vmSway.x = damp(this.vmSway.x, -p.input.x * 0.035, 6, rdt);
     this.vmSway.y = damp(this.vmSway.y, -p.input.y * 0.03 + (p.stun > 0 ? Math.sin(this.rtime * 20) * 0.02 : 0), 6, rdt);
     const bob = Math.sin(this.rtime * 7.3) * 0.006 * (p.speed / 22);
     const drop = clamp(-(Math.tan(Render.camera.fov * DEG / 2) - 0.5) * 0.62, -0.26, 0.06);
     vm.group.position.set(this.vmSway.x, this.vmSway.y + bob + drop, p.boosting ? 0.06 : 0);
-    const tgt = _v1.set(0.05, -0.255, -0.45);
-    if (p.hasBall) tgt.set(0.37, -0.23, -0.72);
-    if (p.role === 'seeker') tgt.set(0.05, -0.255, -0.45);
-    if (Input.shootHeld && p.hasBall) tgt.lerp(_v2.set(0.44, -0.08, -0.26), easeOut(clamp((this.rtime - Input.shootT) / CONFIG.ball.charge, 0, 1)));
-    if (Input.shootHeld && p.role === 'seeker') tgt.set(0.1, -0.1, -1.0);
-    if (this.throwAnim > 0) { this.throwAnim -= rdt; tgt.set(0.06, -0.14, -0.95); }
-    if (this.catchAnim > 0) { this.catchAnim -= rdt; tgt.set(0.24, -0.14, -0.8); }
+    const onBroom = !(ov && ov.offBroom);
+    vm.shaft.visible = onBroom;
+    vm.gripL = vm.gripL || vm.shaftAt(-0.8); vm.gripR = vm.gripR || vm.shaftAt(-0.57);
+    let st = 'grip';
+    const tgt = _v1.copy(vm.gripR);
+    if (p.hasBall) { st = 'hold'; tgt.set(0.33, -0.2, -0.7); }
+    if (Input.shootHeld && p.hasBall) tgt.lerp(_v2.set(0.34, -0.1, -0.52), easeOut(clamp((this.rtime - Input.shootT) / CONFIG.ball.charge, 0, 1)));
+    if (Input.shootHeld && p.role === 'seeker') { st = 'open'; tgt.set(0.1, -0.1, -1.0); }
+    if (this.throwAnim > 0) { this.throwAnim -= rdt; st = 'open'; tgt.set(0.06, -0.13, -0.95); }
+    if (this.catchAnim > 0) { this.catchAnim -= rdt; st = 'open'; tgt.set(0.24, -0.13, -0.8); }
+    if (ov && ov.right) { st = ov.right.state; tgt.copy(ov.right.pos); }
     this.vmHand.lerp(tgt, 1 - Math.exp(-(this.throwAnim > 0 ? 30 : 14) * rdt));
-    vm.rGlove.position.copy(this.vmHand);
-    _v2.subVectors(this.vmHand, vm.shoulder); const len = _v2.length();
-    vm.rArm.position.copy(vm.shoulder); vm.rArm.quaternion.setFromUnitVectors(_v3.set(0, 0, 1), _v2.normalize()); vm.rArm.scale.set(1, 1, len / 0.78);
+    const K = _v5, N = _v6;
+    if (st === 'grip') { K.copy(vm.S); N.set(0.55, 0.83, 0); }
+    else if (st === 'hold') { K.set(-1, 0, 0.2); N.set(0.1, -0.95, 0.3); }
+    else { K.set(1, 0, 0.1); N.set(0, 0.35, 1); }
+    this.vmL = this.vmL || new THREE.Vector3(); this.vmWR = this.vmWR || new THREE.Vector3(); this.vmWL = this.vmWL || new THREE.Vector3();
+    const lst = onBroom ? 'grip' : ov.left ? ov.left.state : 'open';
+    this.vmL.lerp(onBroom ? vm.gripL : ov.left ? ov.left.pos : _v2.set(-0.32, -0.16, -0.75), 1 - Math.exp(-14 * rdt));
+    if (!this.vmLinit) { this.vmLinit = true; this.vmL.copy(vm.gripL); this.vmHand.copy(vm.gripR); }
+    const kr = 1 - Math.exp(-18 * rdt);
+    if (vm.hr) {
+      Hands.pose(vm.hr, st, 1 - Math.exp(-16 * rdt));
+      Hands.place(vm.hr, this.vmHand, K, N, kr);
+      Hands.pose(vm.hl, lst, 1 - Math.exp(-16 * rdt));
+      if (lst === 'grip') { K.copy(vm.S); N.set(-0.55, 0.83, 0); } else { K.set(-1, 0, 0.1); N.set(0, 0.35, 1); }
+      Hands.place(vm.hl, this.vmL, K, N, kr);
+      this.vmWR.copy(vm.hr.wrist).applyQuaternion(vm.hr.root.quaternion).add(vm.hr.root.position);
+      this.vmWL.copy(vm.hl.wrist).applyQuaternion(vm.hl.root.quaternion).add(vm.hl.root.position);
+    } else {
+      vm.rGlove.position.copy(this.vmHand); vm.lGlove.position.copy(this.vmL);
+      this.vmWR.copy(this.vmHand); this.vmWL.copy(this.vmL);
+    }
+    for (const [arm, sh, w] of [[vm.rArm, vm.shoulder, this.vmWR], [vm.lArm, vm.lShoulder, this.vmWL]]) {
+      _v2.subVectors(w, sh); const len = _v2.length();
+      arm.position.copy(sh); arm.quaternion.setFromUnitVectors(_v3.set(0, 0, 1), _v2.divideScalar(len)); arm.scale.set(1, 1, len / 0.9);
+    }
     vm.ball.visible = p.hasBall;
-    if (p.hasBall) { vm.ball.position.copy(this.vmHand).add(_v2.set(0.01, 0.085, -0.06)); vm.ball.rotation.y += rdt * 0.5; }
+    if (p.hasBall) { vm.ball.position.copy(this.vmHand).add(_v2.set(0.0, 0.085, -0.02)); vm.ball.rotation.y += rdt * 0.5; }
+    vm.snitch.visible = !!(ov && ov.snitchInHand);
+    if (vm.snitch.visible) { vm.snitch.position.copy(this.vmHand).add(_v2.set(0.0, 0.055, -0.02)); const f = Math.sin(this.rtime * 50) * 0.8; vm.snitch.userData.wl.rotation.z = f; vm.snitch.userData.wr.rotation.z = -f; }
   },
   audioUpdate(rdt) {
     if (!Sound.ready) return;

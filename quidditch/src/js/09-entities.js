@@ -13,6 +13,7 @@ class Flyer {
     this.ai = { state: 'idle', t: Math.random(), target: new THREE.Vector3(), cool: 0, call: 0, swing: 0, swingTarget: null, bludger: null };
     this.mesh = Models.flyer(house, role, this.id * 7 + slot);
     Render.scene.add(this.mesh);
+    this.robe = Robes.create(this);
     this.home = new THREE.Vector3();
   }
   setPose(pos, yaw, pitch = 0) { this.pos.copy(pos); this.prev.copy(pos); this.yaw = yaw; this.pitch = pitch; this.roll = 0; this.extraRoll = 0; this.extraPitch = 0; this.frame(); this.vel.copy(this.fwd).multiplyScalar(this.speed); }
@@ -51,7 +52,7 @@ class Flyer {
       if (!this.boosting && this.isPlayer) Sound.play('boost', { vol: 0.7 });
       this.boosting = true;
     } else { this.boosting = false; this.boost = Math.min(1, this.boost + F.boostRegen * dt); }
-    target = target * this.speedMul - Math.sin(this.pitch) * F.dive;
+    target = target * this.speedMul * (this.hasBall ? F.carryMul : 1) - Math.sin(this.pitch) * F.dive;
     this.speed = damp(this.speed, target, target > this.speed ? F.accel : F.decel, dt);
     this.roll = damp(this.roll, clamp(yawRate * F.bank, -F.maxBank, F.maxBank), 5, dt);
     let lat = 0, vert = 0;
@@ -64,7 +65,7 @@ class Flyer {
     }
     this.frame();
     _v1.copy(this.fwd).multiplyScalar(this.speed);
-    this.vel.lerp(_v1, 1 - Math.exp(-F.grip * dt));
+    if (this.lungeV) this.vel.copy(this.lungeV); else this.vel.lerp(_v1, 1 - Math.exp(-F.grip * dt));
     this.pos.addScaledVector(this.vel, dt);
     if (lat) { _v2.set(this.right.x, 0, this.right.z).normalize(); this.pos.addScaledVector(_v2, lat * dt); }
     if (vert) this.pos.y += vert * dt;
@@ -110,7 +111,7 @@ class Quaffle {
   release(vel, target) {
     const f = this.holder; if (f) { f.hasBall = false; f.hand(this.pos); }
     this.thrower = f; this.holder = null; this.state = 'flying'; this.vel.copy(vel); this.throwT = Game.time; this.passTarget = target || null;
-    this.trail.reset(); this.trail.active = true; this.trail.u.uColor.value.setRGB(1.4, 0.45, 0.25); this.trail.width = 0.28;
+    this.trail.reset(); this.trail.active = true; this.trail.u.uColor.value.setRGB(1.4, 0.45, 0.25); this.trail.width = 0.28; this.perfect = false;
   }
   drop(vel) {
     const f = this.holder; if (f) { f.hasBall = false; f.hand(this.pos); }
@@ -135,7 +136,7 @@ class Quaffle {
     if (this.trail.active) this.trail.push(this.pos);
     this.mesh.position.copy(this.pos);
     this.mesh.rotation.set(this.rot.x, this.rot.y + Game.time * 0.4, 0);
-    this.mesh.visible = !(Cam.mode === 'fp' && ((this.holder && this.holder.isPlayer) || (this.state === 'scripted' && Game.player && Game.player.hasBall)));
+    this.mesh.visible = !this.hidden && !(Cam.mode === 'fp' && ((this.holder && this.holder.isPlayer) || (this.state === 'scripted' && Game.player && Game.player.hasBall)));
   }
 }
 
@@ -184,13 +185,37 @@ class Snitch {
   constructor() {
     this.group = Models.snitch(); this.group.visible = false; Render.scene.add(this.group);
     this.pos = new THREE.Vector3(0, 30, 0); this.vel = new THREE.Vector3(); this.goal = new THREE.Vector3();
-    this.active = false; this.t = 0; this.jink = 0; this.retarget = 0;
+    this.active = false; this.t = 0; this.jink = 0; this.retarget = 0; this.scripted = false; this.ringT = 0;
     this.trail = FX.trail(0.18, new THREE.Color(3, 2.2, 0.8), 30);
+    const rg = new THREE.TorusGeometry(1.8, 0.07, 8, 40);
+    this.rings = [];
+    for (let i = 0; i < 9; i++) {
+      const m = new THREE.Mesh(rg, new THREE.MeshBasicMaterial({ color: new THREE.Color(2.6, 1.8, 0.55), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
+      m.visible = false; m.userData = { life: 0, passed: false }; m.frustumCulled = false; Render.scene.add(m); this.rings.push(m);
+    }
+  }
+  spawnRing() {
+    const r = this.rings.find(m => !m.visible) || this.rings.reduce((a, b) => (a.userData.life > b.userData.life ? a : b));
+    r.visible = true; r.userData.life = 0; r.userData.passed = false;
+    r.position.copy(this.pos).addScaledVector(this.vel, -0.05);
+    r.lookAt(_v1.copy(r.position).add(this.vel)); r.scale.setScalar(1);
+  }
+  updateRings(dt) {
+    for (const r of this.rings) {
+      if (!r.visible) continue;
+      const u = (r.userData.life += dt) / 4.5;
+      if (u >= 1) { r.visible = false; continue; }
+      r.material.opacity = (r.userData.passed ? 0.25 : 0.85) * (1 - u) * Math.min(1, u * 8);
+      r.scale.setScalar(1 + u * 0.35);
+    }
   }
   release() { this.active = true; this.pos.set(rnd(-20, 20), 30, rnd(-10, 10)); this.group.visible = true; this.trail.reset(); this.trail.active = true; this.retarget = 0; }
-  hide() { this.active = false; this.group.visible = false; this.trail.active = false; this.trail.reset(); }
+  hide() { this.active = false; this.group.visible = false; this.trail.active = false; this.trail.reset(); this.scripted = false; for (const r of this.rings) r.visible = false; }
   update(dt) {
+    this.updateRings(dt);
     if (!this.active) return;
+    if (this.scripted) { this.animate(dt); return; }
+    if ((this.ringT -= dt) < 0) { this.ringT = 0.55; this.spawnRing(); }
     this.t += dt; this.retarget -= dt;
     const S = CONFIG.snitch;
     if (this.retarget < 0) { this.retarget = rnd(0.6, 1.6); this.goal.set(rnd(-95, 95), rnd(6, 55), rnd(-55, 55)); const r = (this.goal.x / 100) ** 2 + (this.goal.z / 60) ** 2; if (r > 1) this.goal.multiplyScalar(0.8); }
@@ -209,6 +234,10 @@ class Snitch {
     this.vel.lerp(_v1, 1 - Math.exp(-(this.jink > 0 ? 9 : 3) * dt));
     this.pos.addScaledVector(this.vel, dt);
     this.pos.y = clamp(this.pos.y, 2, CONFIG.pitch.ceiling - 4);
+    this.animate(dt);
+  }
+  animate(dt) {
+    if (this.scripted) this.t += dt;
     this.group.position.copy(this.pos);
     this.group.lookAt(_v2.copy(this.pos).add(this.vel));
     const fl = Math.sin(this.t * 60) * 0.9;

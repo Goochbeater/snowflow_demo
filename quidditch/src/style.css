@@ -131,7 +131,7 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px; }
 .btn.down { transform: scale(.92); border-color: var(--gold-hi); box-shadow: 0 0 18px rgba(232,184,74,.55); }
 .btn svg { width: 46%; height: 46%; }
 .btn .cap { position: absolute; bottom: 14%; font-size: calc(10px * var(--ui)); letter-spacing: .14em; opacity: .9; }
-.btn .meter { position: absolute; inset: -6px; border-radius: 50%; pointer-events: none; }
+.btn .meter { position: absolute; left: -6px; top: -6px; width: calc(100% + 12px); height: calc(100% + 12px); border-radius: 50%; pointer-events: none; }
 #bShoot { width: calc(88px * var(--ui)); height: calc(88px * var(--ui)); right: calc(30px + var(--sr)); bottom: calc(30px + var(--sb)); }
 #bShoot.ready { border-color: var(--gold-hi); background: radial-gradient(circle at 50% 35%, rgba(255,214,110,.92), rgba(160,96,10,.9)); color: #2a1600; animation: ready 0.9s ease-in-out infinite alternate; }
 @keyframes ready { from { box-shadow: 0 0 10px rgba(255,200,80,.5); } to { box-shadow: 0 0 34px rgba(255,210,90,.95); } }
@@ -187,7 +187,8 @@ body.wide #zSwipe { top: 34%; }
 .teams { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; }
 .teamCard { border-radius: 12px; border: 2px solid transparent; padding: 6px 4px 8px; background: rgba(255,255,255,.04); display: grid; justify-items: center; gap: 4px; cursor: pointer; }
 .teamCard img { width: 46px; height: 56px; }
-.teamCard span { font-family: var(--f-head); font-size: 11px; letter-spacing: .08em; font-weight: 700; }
+.teamCard { min-width: 0; }
+.teamCard span { font-family: var(--f-head); font-size: clamp(8.5px, 0.75vw + 3px, 11px); letter-spacing: .02em; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .teamCard.on { border-color: var(--gold); background: rgba(232,184,74,.16); }
 .teamCard.vs { border-color: var(--mist); background: rgba(169,188,211,.12); }
 .teamCard.dis { opacity: .3; }
@@ -243,3 +244,16 @@ input[type=range] { width: 100%; accent-color: var(--gold); touch-action: pan-x;
   .tap, #bShoot.ready, #bSwap, .ind.call svg { animation: none; }
 }
 .ind .g { width: 100%; height: 100%; }
+
+#lockOn { position: absolute; left: 0; top: 0; width: 64px; height: 64px; margin: -32px 0 0 -32px; display: none; will-change: transform; }
+#lockOn i { position: absolute; width: 16px; height: 16px; border: 0 solid #ff6a4a; filter: drop-shadow(0 0 3px rgba(0,0,0,.8)); }
+#lockOn i:nth-child(1) { left: 0; top: 0; border-left-width: 3px; border-top-width: 3px; }
+#lockOn i:nth-child(2) { right: 0; top: 0; border-right-width: 3px; border-top-width: 3px; }
+#lockOn i:nth-child(3) { left: 0; bottom: 0; border-left-width: 3px; border-bottom-width: 3px; }
+#lockOn i:nth-child(4) { right: 0; bottom: 0; border-right-width: 3px; border-bottom-width: 3px; }
+#lockOn span { position: absolute; top: 68px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: 700; letter-spacing: .1em; white-space: nowrap; color: #ffb39a; text-shadow: 0 1px 3px #000; }
+#lockOn.near i { border-color: #7dff9a; }
+#lockOn.near span { color: #b8ffc8; }
+#reticle.seek .ring { stroke: #ffd65a; }
+#bPass.callable { border-color: #7dff9a; color: #c8ffd4; animation: ready .7s ease-in-out infinite alternate; }
+#bPass.dim { opacity: .55; }

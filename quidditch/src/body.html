@@ -22,6 +22,7 @@
     </svg>
   </div>
   <div id="hint"></div>
+  <div id="lockOn"><i></i><i></i><i></i><i></i><span id="lockLbl"></span></div>
   <div id="rank"><div class="letter" id="rankLetter">D</div><div class="sub">STYLE</div><div class="pts" id="stylePts">0</div></div>
   <div id="popups"></div>
   <div id="banner"></div>
@@ -36,7 +37,7 @@
   <div id="stickBase"><div id="stickKnob"></div></div>
   <button class="btn" id="bLook" aria-label="Look back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
   <button class="btn" id="bBoost" aria-label="Boost"><canvas class="meter" width="96" height="96" id="boostMeter"></canvas><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></button>
-  <button class="btn" id="bPass" aria-label="Pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 18c4-9 10-11 16-11"/><path d="M15 3l5 4-4 5"/></svg><span class="cap">PASS</span></button>
+  <button class="btn" id="bPass" aria-label="Pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 18c4-9 10-11 16-11"/><path d="M15 3l5 4-4 5"/></svg><span class="cap" id="passLbl">PASS</span></button>
   <button class="btn" id="bShoot" aria-label="Shoot"><canvas class="meter" width="120" height="120" id="chargeMeter"></canvas><span id="shootLbl">SHOOT</span></button>
   <button class="btn" id="bSwap">SEEKER SWAP</button>
   <button class="btn" id="bPause" aria-label="Pause">II</button>
@@ -46,7 +47,7 @@
   <div class="hintTag" style="left:6%;bottom:30%"><b>STEER</b>Drag anywhere on the left. Double-tap and hold to air-brake.</div>
   <div class="hintTag" style="right:30%;top:22%"><b>DODGE</b>Swipe on the right: ← → barrel roll, ↑ loop up, ↓ dive.</div>
   <div class="hintTag" style="right:4%;bottom:45%"><b>BOOST</b>Hold. Refills faster in another flyer's slipstream.</div>
-  <div class="hintTag" style="right:30%;bottom:6%"><b>SHOOT · PASS</b>Hold SHOOT to charge, release to throw. When it glows gold, hold and swipe for a finisher.</div>
+  <div class="hintTag" style="right:30%;bottom:6%"><b>SHOOT · PASS</b>Hold SHOOT and release in the green zone for a perfect shot. At half energy SHOOT glows gold: hold and swipe for a finisher. Without the ball, PASS calls for it.</div>
   <button class="act go" id="hintsGo">FLY</button>
 </div>
 
@@ -72,6 +73,7 @@
     <div class="menuGrid">
       <button class="mbtn primary" data-go="setup"><b>QUICK MATCH</b><small>Seven-a-side against the AI. First to catch the Snitch ends it.</small></button>
       <button class="mbtn" data-go="lab"><b>FINISHER LAB</b><small>Infinite flair, one Keeper. Practise every finisher.</small></button>
+      <button class="mbtn" data-go="slab"><b>SEEKER LAB</b><small>You, a rival Seeker and the Snitch. Practise the catch finishers.</small></button>
       <button class="mbtn" data-go="howto"><b>HOW TO PLAY</b><small>Controls, rules and the finisher gestures.</small></button>
       <button class="mbtn" data-go="records"><b>RECORDS</b><small>Best style score, wins and unlocks.</small></button>
       <button class="mbtn" data-go="settings"><b>SETTINGS</b><small>Graphics, controls, comfort and audio.</small></button>
@@ -133,14 +135,15 @@
     <div class="howGrid">
       <div><b>STEER</b>Drag on the left half. Your broom flies forward on its own. Double-tap and hold to air-brake into tight turns.</div>
       <div><b>BOOST</b>Hold the bolt. Tuck into another flyer's slipstream to refill it fast.</div>
-      <div><b>PASS &amp; SHOOT</b>PASS throws to the teammate nearest your aim. Hold SHOOT to charge and release to throw at a hoop. Each goal is worth 10.</div>
+      <div><b>PASS &amp; SHOOT</b>PASS throws to the teammate nearest your aim; without the ball it calls for a pass. Hold SHOOT and release in the green part of the ring for a perfect shot the Keeper struggles to stop. The hoop marker turns green when you're lined up.</div>
       <div><b>DODGE</b>Swipe on the right side. A last-instant dodge past a Bludger is a Perfect Dodge.</div>
-      <div><b>DEFEND</b>When they have the Quaffle, SHOOT becomes STEAL. Ram the carrier from behind or the side.</div>
+      <div><b>DEFEND</b>Your broom locks onto the carrier and steers you after them. SHOOT becomes STEAL: within about 12 m it launches a homing tackle. Carriers fly slower than everyone else.</div>
       <div><b>FLAIR</b>Perfect dodges, perfect catches, near misses, skimming the grass and slipstreams fill the ring around your crosshair.</div>
-      <div><b>THE SNITCH</b>Released at half time. Tap SEEKER SWAP to chase it yourself; hold GRAB as you close in, release to snatch it.</div>
-      <div><b>FINISHERS</b>With a full ring and the Quaffle in range, SHOOT glows gold. Hold it and swipe a direction, or draw a circle.</div>
+      <div><b>THE SNITCH</b>Released at half time. Tap SEEKER SWAP to chase it. Fly through its golden rings for speed and focus; at half focus GRAB becomes CATCH: hold and swipe for a catch finisher.</div>
+      <div><b>FINISHERS</b>At half energy SHOOT glows gold. Hold it and swipe a direction or draw a circle; keep holding past full charge to let the game pick. Each finisher spends half your energy.</div>
     </div>
     <div class="finList" id="finList"></div>
+    <div class="small">Hand models: WebXR Input Profiles generic hand, MIT licence.</div>
     <div class="actions"><button class="act go" data-go="menu">GOT IT</button></div>
   </div>
 </section>

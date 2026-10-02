@@ -1,7 +1,7 @@
 // ===================== HUD =====================
 const IND_SVG = {
   mate: c => `<svg viewBox="-17 -17 34 34"><path d="M0 -11 L9 7 L0 3 L-9 7 Z" fill="${c}" stroke="#000" stroke-opacity=".55" stroke-width="1.5"/></svg>`,
-  target: () => `<svg viewBox="-17 -17 34 34"><circle r="12" fill="none" stroke="#ffe39a" stroke-width="2.4" stroke-dasharray="6 4"/><circle r="3" fill="#ffe39a"/></svg>`,
+  target: (c = '#ffe39a') => `<svg viewBox="-17 -17 34 34"><circle r="12" fill="none" stroke="${c}" stroke-width="2.6" stroke-dasharray="6 4"/><circle r="3" fill="${c}"/></svg>`,
   hoop: () => `<svg viewBox="-17 -17 34 34"><circle r="9" fill="none" stroke="#e8b84a" stroke-width="3"/><path d="M0 9 V16" stroke="#e8b84a" stroke-width="3"/></svg>`,
   quaffle: () => `<svg viewBox="-17 -17 34 34"><circle r="8" fill="#b3261e" stroke="#fff" stroke-width="2"/></svg>`,
   bludger: () => `<svg viewBox="-17 -17 34 34"><circle r="8" fill="#1a1a1e" stroke="#ff4a2a" stroke-width="2.5"/></svg>`,
@@ -16,6 +16,7 @@ const HUD = {
     this.root = $('hud'); this.controls = $('controls');
     this.el = { ptsA: $('ptsA'), ptsB: $('ptsB'), nameA: $('nameA'), nameB: $('nameB'), chipA: $('chipA'), chipB: $('chipB'), clock: $('clock'), ring: $('flairRing'), reticle: $('reticle'), rank: $('rankLetter'), stylePts: $('stylePts'), banner: $('banner'), stamp: $('stamp'), popups: $('popups'), ticker: $('ticker'), hint: $('hint'), warn: $('warnArc'), comfort: $('comfort'), shoot: $('bShoot'), shootLbl: $('shootLbl'), swap: $('bSwap'), radar: $('radar'), overlay: $('overlayMsg') };
     this.radarCtx = this.el.radar.getContext('2d');
+    this.el.pass = $('bPass'); this.el.passLbl = $('passLbl'); this.el.lock = $('lockOn'); this.el.lockLbl = $('lockLbl');
     this.boostCtx = $('boostMeter').getContext('2d');
     this.chargeCtx = $('chargeMeter').getContext('2d');
     const box = $('inds'); this.inds = [];
@@ -34,7 +35,7 @@ const HUD = {
     this.cache = {}; this.rank(0); this.setShootLabel('SHOOT'); this.swap(false);
     this.$('radar').style.display = Settings.radar ? '' : 'none';
     this.el.clock.parentElement.style.display = '';
-    this.$('clock').style.display = Game.mode === 'lab' ? 'none' : '';
+    this.$('clock').style.display = Game.mode === 'lab' || Game.mode === 'slab' ? 'none' : '';
     this.show(true);
   },
   bigCount(t, hold = 0.8) {
@@ -70,11 +71,12 @@ const HUD = {
   swap(on) { this.el.swap.classList.toggle('on', on); },
   setShootLabel(t) { if (this.cache.shoot !== t) { this.cache.shoot = t; this.el.shootLbl.textContent = t; } },
   comfort(v) { this.el.comfort.style.opacity = v.toFixed(2); },
-  arc(ctx, v, color, w) {
+  arc(ctx, v, color, w, zone) {
     const c = ctx.canvas, r = c.width / 2 - w;
     ctx.clearRect(0, 0, c.width, c.width);
     ctx.lineWidth = w; ctx.lineCap = 'round';
     ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.beginPath(); ctx.arc(c.width / 2, c.width / 2, r, 0, TAU); ctx.stroke();
+    if (zone) { ctx.strokeStyle = 'rgba(125,255,154,.35)'; ctx.beginPath(); ctx.arc(c.width / 2, c.width / 2, r, -Math.PI / 2 + TAU * zone[0], -Math.PI / 2 + TAU * zone[1]); ctx.stroke(); }
     if (v > 0.005) { ctx.strokeStyle = color; ctx.beginPath(); ctx.arc(c.width / 2, c.width / 2, r, -Math.PI / 2, -Math.PI / 2 + TAU * v); ctx.stroke(); }
   },
   project(p, out, margin = 30) {
@@ -102,6 +104,7 @@ const HUD = {
     const rot = arrow ? `rotate(${pr.ang}rad)` : '';
     s.el.style.transform = `translate3d(${pr.x.toFixed(1)}px,${(pr.y - (arrow ? 0 : 18)).toFixed(1)}px,0)`;
     s.g.style.transform = rot;
+    if (arrow && label === 'CALL') label = '';
     if (s.lblText !== label) { s.lblText = label; s.lbl.textContent = label || ''; }
     s.el.classList.toggle('call', label === 'CALL');
   },
@@ -115,28 +118,35 @@ const HUD = {
       this.set('clock', (G.overtime ? '+' : '') + m + ':' + String(s).padStart(2, '0'), e.clock);
       e.clock.classList.toggle('ot', G.overtime);
     }
-    const fl = clamp(G.flair, 0, 1);
-    if (this.cache.fl !== Math.round(fl * 100)) { this.cache.fl = Math.round(fl * 100); e.ring.setAttribute('stroke-dashoffset', (188.5 * (1 - fl)).toFixed(1)); e.reticle.classList.toggle('full', fl >= 1); }
+    const p0 = G.player, seekerMode = p0 && p0.role === 'seeker';
+    const fl = clamp(seekerMode ? (G.focus || 0) : G.flair, 0, 1);
+    if (this.cache.fl !== Math.round(fl * 100)) { this.cache.fl = Math.round(fl * 100); e.ring.setAttribute('stroke-dashoffset', (188.5 * (1 - fl)).toFixed(1)); e.reticle.classList.toggle('full', fl >= CONFIG.finisherCost); }
+    e.reticle.classList.toggle('seek', !!seekerMode);
     this.set('style', G.style.score.toLocaleString(), e.stylePts);
     if (!p) return;
-    const ready = G.finisherReady();
+    const sReady = G.seekerFinisherReady(), ready = G.finisherReady() || sReady;
     e.shoot.classList.toggle('ready', ready);
     const Q = G.quaffle;
-    this.setShootLabel(p.role === 'seeker' ? 'GRAB' : ready ? 'FINISH' : p.hasBall ? 'SHOOT' : Q.holder && Q.holder.side !== p.side ? 'STEAL' : 'SHOOT');
+    this.setShootLabel(p.role === 'seeker' ? (sReady ? 'CATCH' : 'GRAB') : ready ? 'FINISH' : p.hasBall ? 'SHOOT' : Q.holder && Q.holder.side !== p.side ? 'STEAL' : 'SHOOT');
+    const canCall = !p.hasBall && Q.holder && Q.holder.side === p.side && Q.holder !== p;
+    const pl = p.hasBall ? 'PASS' : canCall ? 'CALL' : 'PASS';
+    if (this.cache.pass !== pl) { this.cache.pass = pl; e.passLbl.textContent = pl; }
+    e.pass.classList.toggle('callable', !!canCall); e.pass.classList.toggle('dim', !p.hasBall && !canCall);
+    this.updateLock(G, p);
     if (Math.abs(p.boost - this.lastBoost) > 0.01) { this.lastBoost = p.boost; this.arc(this.boostCtx, p.boost, p.boost > 0.25 ? '#8fd3ff' : '#ff7a5c', 6); }
     const ch = Input.shootHeld && p.hasBall ? clamp((G.rtime - Input.shootT) / CONFIG.ball.charge, 0, 1) : 0;
-    if (Math.abs(ch - this.lastCharge) > 0.01) { this.lastCharge = ch; this.arc(this.chargeCtx, ch, ch >= 1 ? '#ffe39a' : '#e8b84a', 7); }
+    if (Math.abs(ch - this.lastCharge) > 0.01) { this.lastCharge = ch; this.arc(this.chargeCtx, ch, ch >= 0.68 && ch <= 0.94 ? '#7dff9a' : ch >= 1 ? '#ffe39a' : '#e8b84a', 7, Input.shootHeld && p.hasBall ? [0.68, 0.94] : null); }
     // indicators
     let i = 0;
     const pt = G.passTarget();
     if (G.state === 'play' || G.state === 'end') {
       for (const m of G.teams[p.side]) {
         if (m === p || m.role !== 'chaser') continue;
-        const T = CONFIG.teams[m.house], lbl = m.ai.call ? 'CALL' : m === pt && p.hasBall ? 'PASS' : '';
+        const T = CONFIG.teams[m.house], lbl = Q.holder === m ? (G.rtime - (m.ai.passingT || -9) < 1 ? 'PASSING' : 'HAS IT') : m.ai.call ? 'CALL' : m === pt && p.hasBall ? 'PASS' : '';
         this.ind(i++, 'mate' + m.house, IND_SVG.mate(T.ui), _v4.copy(m.pos).addScaledVector(UP, 1.6), lbl, T.ui);
       }
-      if (p.hasBall && p.role === 'chaser') { const h = G.targetHoop(); if (h) this.ind(i++, 'target', IND_SVG.target(), h.pos, '', '#ffe39a'); }
-      else if (Q.holder !== p) this.ind(i++, 'q', IND_SVG.quaffle(), Q.pos, Q.holder ? '' : 'QUAFFLE', '#e0533a');
+      if (p.hasBall && p.role === 'chaser') { const h = G.targetHoop(); if (h) { const ok = G.shotLinedUp(); this.ind(i++, ok ? 'targetOk' : 'target', IND_SVG.target(ok ? '#7dff9a' : '#ffe39a'), h.pos, '', ok ? '#7dff9a' : '#ffe39a'); } }
+      else if (Q.holder !== p && !Q.hidden && G.lock !== Q) this.ind(i++, 'q', IND_SVG.quaffle(), Q.pos, Q.holder ? '' : 'QUAFFLE', '#e0533a');
       for (const b of G.bludgers) { if (b.state === 'struck' && b.byside !== p.side && b.pos.distanceTo(p.pos) < 60) this.ind(i++, 'b', IND_SVG.bludger(), b.pos, '', '#ff4a2a'); }
       if (G.snitch.active) this.ind(i++, 'sn', IND_SVG.snitch(), G.snitch.pos, p.role === 'seeker' ? Math.round(G.snitch.pos.distanceTo(p.pos)) + 'm' : '', '#ffd65a');
     }
@@ -157,6 +167,19 @@ const HUD = {
     e.warn.style.opacity = (wa * 1.2).toFixed(2);
     if (p.outOfBounds && !this.inCine && this.frame % 30 === 0) this.hint('TURN BACK', 1);
     if (Settings.radar && this.frame % 3 === 0) this.drawRadar();
+  },
+  updateLock(G, p) {
+    const t = G.lock, el = this.el.lock;
+    if (!t || this.inCine) { if (this.lockOn) { el.style.display = 'none'; this.lockOn = false; } return; }
+    const pr = this.project(t.pos, this._lp || (this._lp = {}), 40);
+    if (!pr.on) { if (this.lockOn) { el.style.display = 'none'; this.lockOn = false; } return; }
+    if (!this.lockOn) { el.style.display = 'block'; this.lockOn = true; }
+    const age = clamp((G.rtime - G.lockT) / 0.25, 0, 1), sc = lerp(1.8, 1, easeOut(age));
+    el.style.transform = `translate3d(${pr.x.toFixed(1)}px,${pr.y.toFixed(1)}px,0) scale(${sc.toFixed(3)})`;
+    const d = Math.round(t.pos.distanceTo(p.pos));
+    const lbl = (t === G.snitch ? 'SNITCH ' : t === G.quaffle ? 'QUAFFLE ' : 'CARRIER ') + d + 'm';
+    if (this.cache.lock !== lbl) { this.cache.lock = lbl; this.el.lockLbl.textContent = lbl; }
+    el.classList.toggle('near', t !== G.quaffle && d < 13);
   },
   drawRadar() {
     const c = this.radarCtx, W = c.canvas.width, H = c.canvas.height, G = Game;

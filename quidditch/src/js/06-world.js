@@ -68,8 +68,10 @@ function terrainH(x, z) {
   }
   const lx = (x - 40) / 300, lz = (z + 440) / 172, ld = Math.sqrt(lx * lx + lz * lz);
   if (ld < 1.45) h = lerp(-7, h, smoothstep(0.84, 1.32, ld));
-  const cd = Math.hypot(x - 30, z + 770);
-  if (cd < 260) h = Math.max(h, lerp(46, h, smoothstep(105, 235, cd)));
+  const cd = Math.hypot((x - 40) * 0.8, z + 780);
+  if (cd < 300) h = Math.max(h, lerp(46, h, smoothstep(140, 280, cd)));
+  const od = Math.hypot(x - 260, z + 690);
+  if (od < 120) h = Math.max(h, lerp(58, h, smoothstep(18, 110, od)));
   return h;
 }
 
@@ -399,30 +401,136 @@ const World = {
     Render.scene.add(this.crowd);
   },
 
+  // ---------- Hogwarts and the grounds ----------
   buildCastle() {
-    const C = new THREE.Vector3(30, 46, -770), parts = [], win = [];
-    const stone = (x, y, z) => { const v = 0.75 + 0.3 * vnoise2(x * 0.1, y * 0.13 + z * 0.1); return linCol(0.2 * v, 0.19 * v, 0.18 * v); };
-    const slate = linCol(0.08, 0.09, 0.13);
-    const box = (x, y, z, w, h, d) => parts.push(Geo.prep(new THREE.BoxGeometry(w, h, d), stone, M4(C.x + x, C.y + y + h / 2, C.z + z)));
-    const tower = (x, z, r, h, roof = 1.6) => {
-      parts.push(Geo.prep(new THREE.CylinderGeometry(r, r * 1.08, h, 14), stone, M4(C.x + x, C.y + h / 2, C.z + z)));
-      parts.push(Geo.prep(new THREE.CylinderGeometry(r * 1.18, r * 1.18, 2, 14), stone, M4(C.x + x, C.y + h + 1, C.z + z)));
-      parts.push(Geo.prep(new THREE.ConeGeometry(r * 1.3, r * roof * 2.4, 14), slate, M4(C.x + x, C.y + h + 2 + r * roof * 1.2, C.z + z)));
-      for (let k = 0; k < Math.floor(h / 9); k++) for (const a of [-0.35, 0.35]) win.push(Geo.prep(new THREE.BoxGeometry(0.9, 2.2, 0.3), linCol(1, 1, 1), M4(C.x + x + Math.sin(a) * r, C.y + 6 + k * 9, C.z + z + Math.cos(a) * r, 0, a, 0)));
+    const C = new THREE.Vector3(40, 46, -780), parts = [], win = [], roofs = [];
+    const stone = (x, y, z) => { const v = 0.72 + 0.32 * vnoise2(x * 0.08, y * 0.11 + z * 0.08); const base = clamp((y - C.y) / 40, 0, 1); return linCol(0.26 * v, 0.245 * v, 0.22 * v).multiplyScalar(0.62 + 0.38 * base) .multiplyScalar(0.85 + 0.3 * vnoise2(x * 0.5 + z * 0.5, 0.7)); };
+    const slate = (x, y, z) => linCol(0.06, 0.07, 0.1).multiplyScalar(0.8 + 0.4 * vnoise2(x * 0.2, y * 0.3));
+    const W1 = linCol(1, 1, 1);
+    const P = (g, c, m) => parts.push(Geo.prep(g, c, m));
+    const box = (x, y, z, w, h, d, c = stone) => P(new THREE.BoxGeometry(w, h, d), c, M4(C.x + x, C.y + y + h / 2, C.z + z));
+    const merlons = (x, y, z, len, axis, d = 2.2) => { const n = Math.floor(len / d); for (let i = 0; i < n; i++) { const o = -len / 2 + (i + 0.5) * d; if (i % 2) continue; box(x + (axis === 'x' ? o : 0), y, z + (axis === 'z' ? o : 0), axis === 'x' ? d * 0.9 : 1.2, 1.8, axis === 'z' ? d * 0.9 : 1.2); } };
+    const gable = (x, y, z, len, span, axis, c = slate) => { const s2 = span / Math.SQRT2; roofs.push(Geo.prep(new THREE.BoxGeometry(axis === 'x' ? len : s2, s2, axis === 'x' ? s2 : len), c, M4(C.x + x, C.y + y, C.z + z, axis === 'x' ? Math.PI / 4 : 0, 0, axis === 'z' ? Math.PI / 4 : 0, 1, 1.5, 1))); };
+    const windows = (x, z, w, y0, y1, n, faceZ, ww = 1.1, wh = 2.6) => { for (let k = 0; k < n; k++) { const xx = x - w / 2 + (k + 0.5) * w / n; for (let yy = y0; yy < y1; yy += wh * 2.6) win.push(Geo.prep(new THREE.BoxGeometry(ww, wh, 0.4), W1, M4(C.x + xx, C.y + yy, C.z + z + faceZ))); } };
+    const tower = (x, z, r, h, roofH, opts = {}) => {
+      const seg = opts.square ? 4 : 16, rot = opts.square ? Math.PI / 4 : 0;
+      P(new THREE.CylinderGeometry(r, r * 1.06, h, seg), stone, M4(C.x + x, C.y + h / 2, C.z + z, 0, rot, 0));
+      P(new THREE.CylinderGeometry(r * 1.16, r * 1.16, 1.6, seg), stone, M4(C.x + x, C.y + h + 0.8, C.z + z, 0, rot, 0));
+      if (!opts.square) for (let k = 0; k < 10; k++) { const a = k / 10 * TAU; box(x + Math.cos(a) * r * 1.1, h + 1.6, z + Math.sin(a) * r * 1.1, 1.1, 1.5, 1.1); }
+      roofs.push(Geo.prep(new THREE.ConeGeometry(r * (opts.square ? 1.45 : 1.25), roofH, seg), slate, M4(C.x + x, C.y + h + 1.6 + roofH / 2, C.z + z, 0, rot, 0)));
+      roofs.push(Geo.prep(new THREE.CylinderGeometry(0.12, 0.12, 4, 4), linCol(0.5, 0.4, 0.2), M4(C.x + x, C.y + h + 1.6 + roofH + 2, C.z + z)));
+      const n = Math.max(1, Math.floor(h / 10));
+      for (let k = 0; k < n; k++) for (const a of [-0.5, 0, 0.5]) { if (rnd() < 0.35) continue; win.push(Geo.prep(new THREE.BoxGeometry(0.9, 2.4, 0.4), W1, M4(C.x + x + Math.sin(a) * r, C.y + 7 + k * 9.5, C.z + z + Math.cos(a) * r, 0, a, 0))); }
     };
-    box(-30, 0, 0, 70, 30, 26); box(30, 0, 6, 46, 24, 20); box(-5, 0, -30, 30, 36, 20); box(0, 0, 30, 110, 10, 6);
-    parts.push(Geo.prep(new THREE.ConeGeometry(26, 16, 4), slate, M4(C.x - 30, C.y + 38, C.z, 0, Math.PI / 4, 0, 1, 1, 0.4)));
-    tower(18, -10, 9, 84, 1.9); tower(-62, 8, 6, 54); tower(-40, -20, 5, 62); tower(54, 14, 6, 46); tower(64, -18, 5, 40);
-    tower(0, 24, 4.5, 36); tower(-14, -40, 7, 70); tower(40, -34, 4, 58); tower(-80, -6, 4, 40); tower(80, 0, 4.5, 34);
-    for (let k = 0; k < 9; k++) win.push(Geo.prep(new THREE.BoxGeometry(1.6, 3.4, 0.3), linCol(1, 1, 1), M4(C.x - 60 + k * 7, C.y + 14, C.z + 13.2)));
-    for (let k = 0; k < 6; k++) win.push(Geo.prep(new THREE.BoxGeometry(1.4, 3, 0.3), linCol(1, 1, 1), M4(C.x + 12 + k * 6, C.y + 12, C.z + 16.2)));
+    // Great Hall: long hall, steep gable, tall arched windows facing the lake
+    box(-25, 0, 12, 72, 26, 22); gable(-25, 26, 12, 74, 24, 'x');
+    for (let k = 0; k < 9; k++) { box(-58 + k * 8.2, 0, 23.5, 1.6, 22, 2.2); win.push(Geo.prep(new THREE.BoxGeometry(2.6, 13, 0.4), W1, M4(C.x - 54 + k * 8.2, C.y + 12, C.z + 23.2))); }
+    merlons(-25, 26, 23, 72, 'x');
+    // entrance block + towers
+    box(28, 0, 14, 34, 34, 28); merlons(28, 34, 28, 34, 'x'); merlons(45, 34, 14, 28, 'z'); gable(28, 34, 14, 30, 22, 'z');
+    windows(28, 14, 30, 8, 30, 6, 14.2);
+    tower(10, 28, 5.5, 44, 16); tower(46, 28, 5, 40, 15);
+    // inner keep, courtyards, curtain walls
+    box(-10, 0, -22, 48, 30, 26); merlons(-10, 30, -9, 48, 'x'); gable(-10, 30, -22, 50, 22, 'x');
+    box(60, 0, -12, 40, 22, 30); merlons(60, 22, 3, 40, 'x'); gable(60, 22, -12, 42, 26, 'x');
+    box(-75, 0, 18, 30, 16, 6); merlons(-75, 16, 18, 30, 'x');
+    box(90, 0, 30, 6, 14, 44); merlons(90, 14, 30, 44, 'z');
+    box(0, 0, 38, 150, 9, 5); merlons(0, 9, 38, 150, 'x');
+    windows(-10, -22, 44, 8, 26, 7, 13.2); windows(60, -12, 36, 6, 18, 6, 15.2);
+    // Astronomy Tower: the tallest, slender, with a balcony ring
+    P(new THREE.CylinderGeometry(8, 8.6, 32, 16), stone, M4(C.x - 72, C.y + 16, C.z - 12));
+    P(new THREE.CylinderGeometry(5.4, 6, 74, 16), stone, M4(C.x - 72, C.y + 32 + 37, C.z - 12));
+    P(new THREE.CylinderGeometry(8, 8, 1.4, 20), stone, M4(C.x - 72, C.y + 106.7, C.z - 12));
+    for (let k = 0; k < 14; k++) { const a = k / 14 * TAU; box(-72 + Math.cos(a) * 7.6, 107.4, -12 + Math.sin(a) * 7.6, 0.6, 1.8, 0.6); }
+    P(new THREE.CylinderGeometry(4, 4.4, 12, 14), stone, M4(C.x - 72, C.y + 113, C.z - 12));
+    roofs.push(Geo.prep(new THREE.ConeGeometry(5.6, 26, 16), slate, M4(C.x - 72, C.y + 132, C.z - 12)));
+    for (let k = 0; k < 8; k++) win.push(Geo.prep(new THREE.BoxGeometry(0.8, 2.6, 0.4), W1, M4(C.x - 72 + Math.sin(0.3 * k - 1) * 5.6, C.y + 40 + k * 8, C.z - 12 + Math.cos(0.3 * k - 1) * 5.6, 0, 0.3 * k - 1, 0)));
+    // clock tower with a glowing face
+    tower(66, 32, 6.5, 58, 14, { square: true });
+    win.push(Geo.prep(new THREE.CylinderGeometry(3.4, 3.4, 0.5, 24), W1, M4(C.x + 66, C.y + 50, C.z + 37, Math.PI / 2, 0, 0)));
+    // house towers + turrets
+    tower(8, -36, 7.5, 88, 30); tower(-42, -42, 6.8, 78, 26); tower(34, -40, 5.5, 66, 22); tower(-20, 34, 4.2, 50, 16);
+    tower(-95, 12, 4.5, 40, 15); tower(100, 6, 5, 46, 17); tower(78, -34, 4, 54, 18); tower(-58, 22, 3.6, 38, 13);
+    tower(-10, -50, 3.5, 60, 15); tower(56, 6, 3.2, 48, 13);
+    // viaduct to the east: arched piers dropping to the valley floor
+    const deckY = 14;
+    for (let k = 0; k < 11; k++) {
+      const x = 104 + k * 13, z = 22 + k * 3.2, wx = C.x + x, wz = C.z + z;
+      const ground = terrainH(wx, wz) - 2, top = C.y + deckY, hgt = top - ground;
+      P(new THREE.BoxGeometry(3.6, hgt, 6), stone, M4(wx, ground + hgt / 2, wz, 0, -0.24, 0));
+      if (k < 10) P(new THREE.TorusGeometry(4.6, 0.9, 6, 12, Math.PI), stone, M4(wx + 6.5, top - 4.2, wz + 1.6, 0, -0.24, 0, 1, 0.95, 1.6));
+    }
+    P(new THREE.BoxGeometry(136, 1.6, 6.5), stone, M4(C.x + 169, C.y + deckY + 0.8, C.z + 38, 0, -0.24, 0));
+    for (let k = 0; k < 34; k++) if (k % 2 === 0) box(104 + k * 3.95, deckY + 1.6, 22 + k * 0.97 + 3, 1.6, 1.2, 0.6);
+    // boathouse on the shore below the cliff, steps up the rock
+    const bx = -10; let bz = -560; while (terrainH(bx, bz) < 0.6 && bz > -700) bz -= 2;
+    parts.push(Geo.prep(new THREE.BoxGeometry(14, 6, 10), linCol(0.18, 0.12, 0.07), M4(bx, terrainH(bx, bz) + 3, bz)));
+    roofs.push(Geo.prep(new THREE.BoxGeometry(15 / Math.SQRT2, 15 / Math.SQRT2, 11), slate, M4(bx, terrainH(bx, bz) + 6.2, bz, 0, 0, Math.PI / 4, 1, 1.4, 1)));
+    win.push(Geo.prep(new THREE.BoxGeometry(5, 3.6, 0.3), W1, M4(bx, terrainH(bx, bz) + 2.4, bz + 5.1)));
+    for (let k = 0; k < 14; k++) { const t = k / 13, x = lerp(bx + 6, C.x - 30, t), z = lerp(bz - 6, C.z + 40, t); parts.push(Geo.prep(new THREE.BoxGeometry(3, 1, 4), stone, M4(x, terrainH(x, z) + 0.4, z))); }
+    // the Owlery on its own hill
+    const ox = 260, oz = -690, oy = terrainH(ox, oz);
+    parts.push(Geo.prep(new THREE.CylinderGeometry(6, 7.5, 26, 14), stone, M4(ox, oy + 13, oz)));
+    for (let k = 0; k < 6; k++) win.push(Geo.prep(new THREE.BoxGeometry(1.2, 2, 0.4), W1, M4(ox + Math.sin(k) * 6.2, oy + 16 + (k % 2) * 4, oz + Math.cos(k) * 6.2, 0, k, 0)));
+    roofs.push(Geo.prep(new THREE.ConeGeometry(8.4, 12, 14), slate, M4(ox, oy + 32, oz)));
+    this.owlery = new THREE.Vector3(ox, oy + 36, oz);
     const mat = stdMat({ vertexColors: true, roughness: 0.9 }, { key: 'castle' });
     const m = new THREE.Mesh(Geo.merge(parts), mat); m.matrixAutoUpdate = false; Render.scene.add(m);
+    const rm = new THREE.Mesh(Geo.merge(roofs), stdMat({ vertexColors: true, roughness: 0.55, metalness: 0.1 }, { key: 'slate' })); rm.matrixAutoUpdate = false; Render.scene.add(rm);
     this.winMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.05, 0.04, 0.03) });
     patchMaterial(this.winMat, { key: 'win' });
-    const wm = new THREE.Mesh(Geo.merge(win), this.winMat); wm.matrixAutoUpdate = false; Render.scene.add(wm);
+    this.winMesh = new THREE.Mesh(Geo.merge(win), this.winMat); this.winMesh.matrixAutoUpdate = false; Render.scene.add(this.winMesh);
+    this.castle = C;
+    this.buildGrounds();
   },
-
+  buildGrounds() {
+    const parts = [], glow = [], W1 = linCol(1, 1, 1);
+    // Hagrid's hut: round stone hut, thatched cone roof, chimney, pumpkin patch
+    const hx = -215, hz = -300, hy = terrainH(hx, hz);
+    const hutStone = (x, y, z) => linCol(0.3, 0.27, 0.23).multiplyScalar(0.75 + 0.4 * vnoise2(x * 0.9, y * 1.2 + z));
+    parts.push(Geo.prep(new THREE.CylinderGeometry(4.2, 4.5, 4.6, 14), hutStone, M4(hx, hy + 2.3, hz)));
+    parts.push(Geo.prep(new THREE.ConeGeometry(5.6, 5.2, 14), (x, y) => linCol(0.32, 0.24, 0.1).multiplyScalar(0.7 + 0.5 * vnoise2(x * 2, y * 3)), M4(hx, hy + 7.2, hz)));
+    parts.push(Geo.prep(new THREE.BoxGeometry(1.1, 4, 1.1), hutStone, M4(hx + 2.2, hy + 8, hz - 1)));
+    parts.push(Geo.prep(new THREE.BoxGeometry(1.6, 3, 0.4), linCol(0.16, 0.09, 0.04), M4(hx, hy + 1.5, hz + 4.4)));
+    glow.push(Geo.prep(new THREE.BoxGeometry(1, 1, 0.3), W1, M4(hx + 2.4, hy + 2.6, hz + 3.6, 0, 0.5, 0)));
+    for (let k = 0; k < 9; k++) { const x = hx + 6 + (k % 3) * 2.2, z = hz + 3 + Math.floor(k / 3) * 2.2, r = 0.5 + rnd(0, 0.5); parts.push(Geo.prep(new THREE.SphereGeometry(r, 10, 8), linCol(0.85, 0.32, 0.03), M4(x, terrainH(x, z) + r * 0.8, z, 0, 0, 0, 1, 0.8, 1))); }
+    this.chimney = new THREE.Vector3(hx + 2.2, hy + 10.2, hz - 1); this.smokeT = 0;
+    // Hogsmeade on the far hills
+    for (let k = 0; k < 42; k++) {
+      const a = rnd(-0.5, 0.5), r = rnd(0, 110), x = 560 + Math.cos(a) * r + rnd(-30, 30), z = -1020 + Math.sin(a) * r * 0.6, y = terrainH(x, z);
+      const w = rnd(5, 8), h = rnd(4, 7), d = rnd(6, 9), rot = rnd(0, TAU);
+      parts.push(Geo.prep(new THREE.BoxGeometry(w, h, d), linCol(0.32, 0.29, 0.25).multiplyScalar(rnd(0.7, 1.1)), M4(x, y + h / 2, z, 0, rot, 0)));
+      parts.push(Geo.prep(new THREE.BoxGeometry(w / Math.SQRT2 * 1.05, w / Math.SQRT2 * 1.05, d + 0.6), linCol(0.1, 0.08, 0.08), M4(x, y + h, z, 0, rot, Math.PI / 4, 1, 1.3, 1)));
+      glow.push(Geo.prep(new THREE.BoxGeometry(1, 1.2, 0.3), W1, M4(x + Math.sin(rot) * d * 0.51, y + 2, z + Math.cos(rot) * d * 0.51, 0, rot, 0)));
+    }
+    const m = new THREE.Mesh(Geo.merge(parts), stdMat({ vertexColors: true, roughness: 0.9 }, { key: 'castle' })); m.matrixAutoUpdate = false; m.castShadow = false; Render.scene.add(m);
+    this.glowMesh = new THREE.Mesh(Geo.merge(glow), this.winMat); this.glowMesh.matrixAutoUpdate = false; Render.scene.add(this.glowMesh);
+    // owls: circling the towers, the Owlery and high over the pitch
+    const og = [];
+    og.push(Geo.prep(new THREE.SphereGeometry(0.28, 8, 6), linCol(0.35, 0.28, 0.2), M4(0, 0, 0, 0, 0, 0, 1, 0.9, 1.5), { attr: { aWing: () => 0 } }));
+    for (const sx of [-1, 1]) { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, -0.2, 0, 0, 0.25, sx * 0.85, 0.02, 0.05], 3)); og.push(Geo.prep(g, linCol(0.42, 0.34, 0.24), null, { attr: { aWing: (x) => Math.abs(x) } })); }
+    const owlMat = stdMat({ vertexColors: true, roughness: 0.9, side: THREE.DoubleSide }, { key: 'owl', vHead: 'attribute float aWing;', vDisp: 'vec3 ip = instanceMatrix[3].xyz; transformed.y += sin(uTime * 9.0 + ip.x * 0.7 + ip.z * 0.3) * 0.55 * aWing;' });
+    this.owls = new THREE.InstancedMesh(Geo.merge(og, ['aWing']), owlMat, 26); this.owls.frustumCulled = false;
+    this.owlData = [];
+    const C = this.castle;
+    for (let i = 0; i < 26; i++) {
+      const kind = i < 10 ? 0 : i < 18 ? 1 : 2;
+      const c = kind === 0 ? new THREE.Vector3(C.x + rnd(-70, 70), C.y + rnd(70, 120), C.z + rnd(-40, 30)) : kind === 1 ? this.owlery.clone().add(_v1.set(0, rnd(2, 18), 0)) : new THREE.Vector3(rnd(-60, 60), rnd(80, 100), rnd(-40, 40));
+      this.owlData.push({ c, r: kind === 2 ? rnd(30, 70) : rnd(10, 40), sp: rnd(0.15, 0.35) * (Math.random() < 0.5 ? -1 : 1), ph: rnd(0, TAU), bob: rnd(0, TAU), s: kind === 2 ? 2.2 : 3 });
+    }
+    Render.scene.add(this.owls);
+    this.updateOwls(0);
+  },
+  updateOwls(t) {
+    const m = _m1, q = _q1, sc = _v3;
+    this.owlData.forEach((o, i) => {
+      const a = o.ph + t * o.sp;
+      _v1.set(o.c.x + Math.cos(a) * o.r, o.c.y + Math.sin(t * 0.6 + o.bob) * 3, o.c.z + Math.sin(a) * o.r);
+      q.setFromAxisAngle(UP, -a + (o.sp > 0 ? Math.PI : 0)); sc.setScalar(o.s);
+      m.compose(_v1, q, sc); this.owls.setMatrixAt(i, m);
+    });
+    this.owls.instanceMatrix.needsUpdate = true;
+  },
   buildTrees() {
     const coni = [], deci = [];
     const trunk = linCol(0.12, 0.07, 0.04);
@@ -440,7 +548,7 @@ const World = {
     const placeOK = (x, z) => {
       const r = Math.hypot(x, z); if (r < 190) return false;
       const lx = (x - 40) / 300, lz = (z + 440) / 172; if (Math.sqrt(lx * lx + lz * lz) < 1.12) return false;
-      if (Math.hypot(x - 30, z + 770) < 120) return false;
+      if (Math.hypot((x - 40) * 0.8, z + 780) < 170 || Math.hypot(x - 260, z + 690) < 40 || Math.hypot(x + 215, z + 300) < 30) return false;
       if (terrainH(x, z) > 190) return false;
       return fbm2(x * 0.006 + 11, z * 0.006 - 4, 3) > 0.47 || Math.random() < 0.08;
     };
@@ -461,6 +569,22 @@ const World = {
       Render.scene.add(im); return im;
     };
     this.trees = [mk(Geo.merge(coni), 2000), mk(Geo.merge(deci), 700)];
+    { // the Forbidden Forest: tall, dark, packed conifers between the lake and the mountains
+      const im = new THREE.InstancedMesh(this.trees[0].geometry, stdMat({ vertexColors: true, roughness: 0.95 }, { key: 'tree', vDisp: sway }), 1800);
+      const m = new THREE.Matrix4(), q = new THREE.Quaternion(), sv = new THREE.Vector3(), p = new THREE.Vector3(), c = new THREE.Color();
+      let i = 0, guard = 0;
+      while (i < 1800 && guard++ < 40000) {
+        const x = rnd(-760, -230), z = rnd(-980, -150);
+        const lx = (x - 40) / 300, lz = (z + 440) / 172; if (Math.sqrt(lx * lx + lz * lz) < 1.08) continue;
+        if (Math.hypot(x + 215, z + 300) < 26 || Math.hypot(x, z) < 200) continue;
+        const edge = smoothstep(-230, -330, x);
+        if (Math.random() > 0.35 + edge * 0.65) continue;
+        const sc = rnd(1.3, 2.3);
+        p.set(x, terrainH(x, z) - 0.5, z); q.setFromAxisAngle(UP, rnd(0, TAU)); sv.set(sc, sc * rnd(1.0, 1.4), sc);
+        m.compose(p, q, sv); im.setMatrixAt(i, m); c.setRGB(rnd(0.45, 0.65), rnd(0.55, 0.75), rnd(0.5, 0.7)); im.setColorAt(i, c); i++;
+      }
+      im.count = i; im.userData.total = i; im.frustumCulled = false; Render.scene.add(im); this.trees.push(im);
+    }
   },
 
   buildClouds() {
@@ -644,7 +768,7 @@ const World = {
     if (this.motes) { this.motes.visible = lerp(w.motes, n.motes, m) > 0.5; this.motesU.uNight.value = night; }
     this.rain.visible = w.rain > 0 && m < 0.5; this.rainU.uAmt.value = w.rain;
     this.lanterns.visible = night > 0.3;
-    this.winMat.color.setRGB(lerp(0.05, 4.2, night), lerp(0.04, 2.3, night), lerp(0.03, 0.8, night));
+    this.winMat.color.setRGB(lerp(0.06, 4.2, night), lerp(0.05, 2.3, night), lerp(0.04, 0.8, night));
     this.goldMat.emissiveIntensity = 0.3 + night * 1.2;
     const amb = Render.hemi.color.clone().multiplyScalar(Render.hemi.intensity * 0.35);
     this.crowdU.uAmb.value.copy(amb);
@@ -731,6 +855,8 @@ const World = {
     if (this.rain.visible) this.rainU.uCam.value.copy(cam);
     if (this.motes && this.motes.visible) this.motesU.uCam.value.copy(cam);
     if ((this.cloudSortT -= rdt) < 0) { this.cloudSortT = 0.4; this.sortClouds(); }
+    if (this.owls) this.updateOwls(SHARED.uTime.value);
+    if (this.chimney && (this.smokeT -= dt) < 0) { this.smokeT = 0.35; FX.alpha.spawn({ x: this.chimney.x + rnd(-0.3, 0.3), y: this.chimney.y, z: this.chimney.z, vx: rnd(0.3, 1), vy: rnd(1.2, 2), vz: rnd(-0.3, 0.3), life: rnd(5, 7), s0: 1.2, s1: 6, r: 0.55, g: 0.55, b: 0.58, a0: 0.4, a1: 0, drag: 0.3, type: 4, vrot: rnd(-0.3, 0.3) }); }
     let cf = 0;
     for (const c of this.lowClouds) { const d = c.distanceTo(cam); if (d < 22) cf = Math.max(cf, 1 - d / 22); }
     Render.post.fx.cloudFog = damp(Render.post.fx.cloudFog, cf * 0.9, 4, rdt);

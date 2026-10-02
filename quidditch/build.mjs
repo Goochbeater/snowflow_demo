@@ -11,11 +11,17 @@ const THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module
 const css = readFileSync(join(src, 'style.css'), 'utf8');
 const body = readFileSync(join(src, 'body.html'), 'utf8');
 const jsDir = join(src, 'js');
-const js = readdirSync(jsDir).filter(f => f.endsWith('.js')).sort()
-  .map(f => `// ---- ${f} ----\n` + readFileSync(join(jsDir, f), 'utf8')).join('\n');
+// binary assets (hand models etc.) are embedded as data URIs so the page stays a single file
+const assetDir = join(src, 'assets');
+const assets = {};
+for (const f of readdirSync(assetDir).filter(f => f.endsWith('.glb'))) assets[f.replace('.glb', '')] = 'data:model/gltf-binary;base64,' + readFileSync(join(assetDir, f)).toString('base64');
+const assetJs = `// ---- 00b-assets (generated) ----\nconst ASSET_DATA = ${JSON.stringify(assets)};\n`;
+const files = readdirSync(jsDir).filter(f => f.endsWith('.js')).sort();
+const js = files.map(f => `// ---- ${f} ----\n` + readFileSync(join(jsDir, f), 'utf8') + (f.startsWith('00-') ? '\n' + assetJs : '')).join('\n');
 
 const fonts = '<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@600;700;800&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap">';
-const importmap = `<script type="importmap">{"imports":{"three":"${THREE_URL}"}}</script>`;
+const ADDONS_URL = 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/';
+const importmap = `<script type="importmap">{"imports":{"three":"${THREE_URL}","three/addons/":"${ADDONS_URL}"}}</script>`;
 
 const fragment = `<title>Quidditch Skybound</title>
 ${fonts}

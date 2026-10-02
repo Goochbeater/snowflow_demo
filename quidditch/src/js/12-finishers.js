@@ -102,7 +102,7 @@ const FIN_DEFS = {
       c.fake = fakeLeft ? left : right; return fakeLeft ? right : left;
     },
     setup(c) {
-      c.ghost = new THREE.Mesh(c.p.mesh.geometry, Models.ghostMat); c.ghost.visible = false; Render.scene.add(c.ghost);
+      c.ghost = c.p.mesh.clone(); c.ghost.traverse(o => { if (o.isMesh) o.material = Models.ghostMat; }); c.ghost.visible = false; Render.scene.add(c.ghost);
       c.Kfake = c.fake.pos.clone().addScaledVector(c.n, -3.2);
       c.camSide = c.p.right.clone();
     },
@@ -285,6 +285,150 @@ const FIN_DEFS = {
   },
 };
 
+// ---------- Seeker finishers: cinematic Snitch catches ----------
+const handToward = (world, out, minR = 0.5, maxR = 1.0) => {
+  out.copy(world).applyMatrix4(Render.camera.matrixWorldInverse);
+  const l = out.length(); if (l > maxR) out.multiplyScalar(maxR / l); if (l < minR) out.multiplyScalar(minR / Math.max(l, 1e-3));
+  return out;
+};
+const SEEKER_DEFS = {
+  timeturner: {
+    name: 'Time-Turner Grab', gesture: '◯ / HOLD', seeker: true, desc: 'Time all but stops. The world drains to gold while your hand closes around the Snitch.', dur: 2.8, imp: 1.75,
+    tracks: {
+      ts: [[0, 0.6], [0.3, 0.04], [1.6, 0.04], [1.75, 0.02], [2.1, 0.3], [2.8, 1]],
+      keepHue: [[0, 0], [0.3, 1], [1.7, 1], [1.95, 0]],
+      fov: [[0, 0], [0.5, -0.15], [1.6, -0.2], [1.8, 0.05], [2.8, 0]],
+      ca: [[0, 0], [0.3, 0.006], [1.7, 0.006], [1.9, 0]],
+      flash: [[1.74, 0], [1.76, 0.55], [2.1, 0]],
+      letterbox: [[0, 0], [0.3, 0.09], [2.4, 0.09], [2.8, 0]],
+      sat: [[0, 1], [1.75, 1], [1.8, 1.3], [2.8, 1]],
+    },
+    update(c, t) {
+      const p = c.p, S = c.S;
+      p.pos.copy(c.P0).addScaledVector(c.F0, 4 * Math.min(t, 0.4) + 1.2 * Math.max(0, t - 0.4));
+      FH.look(p, S.pos, 3, 1 / 60); p.frame(); FH.fp();
+      const cam = Render.camera;
+      _v2.set(0.16, -0.06, -0.95).applyMatrix4(cam.matrixWorld);
+      S.pos.lerpVectors(c.S0, _v2, easeInOut(seg(t, 0.2, 1.62)));
+      S.vel.subVectors(_v2, S.pos).multiplyScalar(0.5);
+      if (t < this.imp) { c.ov.right = { state: t > 1.6 ? 'fist' : 'open', pos: handToward(S.pos, c.hv, 0.55, 1.0) }; }
+      else { c.ov.right = { state: 'fist', pos: c.hv.set(0.18, -0.05 + Math.min(0.08, (t - this.imp) * 0.2), -0.6) }; c.ov.snitchInHand = true; }
+      if (t > 0.3 && t < 1.6 && t - (c.tickT || 0) > 0.3) { c.tickT = t; Sound.play('tick'); }
+    },
+  },
+  leap: {
+    name: 'Leap of Faith', gesture: '↑', seeker: true, desc: 'Jump off your broom, snatch the Snitch at the top of the arc, and land as the broom swoops under you.', dur: 3.3, imp: 1.5,
+    tracks: {
+      ts: [[0, 0.7], [1.1, 0.2], [1.6, 0.12], [1.9, 0.45], [3.3, 1]],
+      fov: [[0, 0], [1.0, 0.15], [1.5, 0.05], [2.5, 0.12], [3.3, 0]],
+      flash: [[1.49, 0], [1.51, 0.5], [1.8, 0]],
+      letterbox: [[0, 0], [0.3, 0.09], [2.9, 0.09], [3.3, 0]],
+      blur: [[0, 0], [0.2, 0.04], [1.2, 0.02], [1.5, 0], [2.3, 0.04], [2.6, 0]],
+    },
+    setup(c) {
+      c.Fh = c.F0.clone().setY(0).normalize();
+      c.A = c.P0.clone().addScaledVector(c.Fh, 14).add(_v1.set(0, 5.5, 0));
+      c.L = c.P0.clone().addScaledVector(c.Fh, 27);
+      c.eye = new THREE.Vector3(); c.lk = new THREE.Vector3();
+      c.p.mesh.visible = true; c.p.mesh.userData.rider.visible = false; c.p.robe.hide = true;
+      Cam.showVM = true;
+    },
+    update(c, t) {
+      const p = c.p, S = c.S;
+      const bu = clamp(t / 2.5, 0, 1);
+      p.pos.copy(c.P0).lerp(c.L, bu).add(_v2.set(0, -1.8 * Math.sin(Math.PI * bu), 0));
+      if (t > 2.5) p.pos.addScaledVector(c.Fh, (t - 2.5) * 10);
+      p.lookDir(_v3.copy(c.Fh).add(_v2.set(0, bu < 0.8 ? -0.05 : 0.05, 0))); p.frame();
+      const E0 = _v4.copy(c.P0).add(_v2.set(0, 0.72, 0));
+      if (t < 1.5) bezier(c.eye, E0, _v5.copy(E0).lerp(c.A, 0.5).add(_v2.set(0, 4, 0)), _v6.copy(c.A).add(_v2.set(0, 0.2, 0)), easeOut(t / 1.5));
+      else if (t < 2.5) bezier(c.eye, _v6.copy(c.A).add(_v2.set(0, 0.2, 0)), _v5.copy(c.A).lerp(c.L, 0.5).add(_v2.set(0, 1.5, 0)), _v3.copy(c.L).add(_v2.set(0, 0.72, 0)), easeIn((t - 1.5)));
+      else c.eye.copy(p.pos).add(_v2.set(0, 0.72, 0));
+      S.pos.lerpVectors(c.S0, _v2.copy(c.A).addScaledVector(c.Fh, 0.9).add(_v3.set(0.1, 0.25, 0)), easeInOut(seg(t, 0, 1.45)));
+      if (t > this.imp) S.pos.copy(c.eye);
+      S.vel.copy(c.Fh);
+      c.lk.copy(t < 1.5 ? S.pos : t < 2.4 ? _v2.copy(p.pos).addScaledVector(c.Fh, 2) : _v2.copy(c.eye).addScaledVector(c.Fh, 10));
+      FH.script(c.eye, c.lk, Math.sin(Math.min(t, 2.5) * 1.2) * 0.12);
+      const air = t < 2.5;
+      c.ov.offBroom = air;
+      c.ov.left = air ? { state: 'open', pos: c.lv.set(-0.36, -0.08, -0.62) } : null;
+      c.ov.right = t < this.imp ? { state: t > 1.4 ? 'fist' : 'open', pos: handToward(S.pos, c.hv, 0.55, 1.0) } : { state: 'fist', pos: c.hv.set(0.22, -0.02, -0.62) };
+      c.ov.snitchInHand = t >= this.imp;
+      if (t > 2.45 && !c.landed) { c.landed = true; Sound.play('thud', { vol: 0.8 }); Cam.addShake(0.5); p.mesh.visible = false; p.mesh.userData.rider.visible = true; }
+      if (t > 0.05 && !c.jumped) { c.jumped = true; Sound.play('rise', { vol: 0.8 }); }
+    },
+  },
+  wronski: {
+    name: 'Wronski Feint', gesture: '↓', seeker: true, desc: 'Dive at the turf with the rival Seeker on your tail, pull up at the last instant and let them plough the pitch.', dur: 3.5, imp: 2.7,
+    tracks: {
+      ts: [[0, 1], [1.3, 0.6], [1.42, 0.15], [2.0, 0.15], [2.15, 0.5], [2.6, 0.25], [2.75, 0.4], [3.5, 1]],
+      fov: [[0, 0], [1.2, 0.25], [1.4, 0.05], [2.1, 0], [2.7, 0.1], [3.5, 0]],
+      blur: [[0, 0], [0.4, 0.05], [1.3, 0.07], [1.4, 0]],
+      flash: [[1.44, 0], [1.46, 0.3], [1.6, 0], [2.69, 0], [2.71, 0.5], [3.0, 0]],
+      letterbox: [[0, 0], [0.3, 0.09], [3.1, 0.09], [3.5, 0]],
+      ca: [[0, 0], [1.0, 0.006], [1.45, 0.012], [2.0, 0]],
+    },
+    setup(c) {
+      c.Fh = c.F0.clone().setY(0).normalize();
+      c.G = c.P0.clone().addScaledVector(c.Fh, 34); c.G.y = 2.2;
+      c.Pu = c.G.clone().addScaledVector(c.Fh, 14); c.Pu.y = 5;
+      c.Sn = c.G.clone().addScaledVector(c.Fh, 30); c.Sn.y = 3.2;
+      c.crash = c.G.clone().addScaledVector(c.Fh, 3); c.crash.y = 0.6;
+      c.path = (u, out) => u < 0.72 ? bezier(out, c.P0, _v5.copy(c.P0).lerp(c.G, 0.5).add(_v2.set(0, 4, 0)), c.G, easeIn(u / 0.72) * 0.6 + (u / 0.72) * 0.4) : bezier(out, c.G, _v5.copy(c.G).lerp(c.Pu, 0.5).add(_v2.set(0, -1.2, 0)), c.Pu, (u - 0.72) / 0.28);
+      c.prevP = new THREE.Vector3(); c.eye = new THREE.Vector3();
+    },
+    update(c, t) {
+      const p = c.p, S = c.S, R = c.rival;
+      c.prevP.copy(p.pos);
+      if (t < 1.8) c.path(t / 1.8, p.pos); else p.pos.copy(c.Pu).addScaledVector(c.Fh, (t - 1.8) * 16);
+      _v3.subVectors(p.pos, c.prevP); if (_v3.lengthSq() > 1e-6) p.lookDir(_v3); p.frame();
+      if (R) {
+        if (t < 1.45) { c.path(Math.max(0, t - 0.32) / 1.8, R.pos); R.pos.addScaledVector(c.Fh, -2); _v3.subVectors(p.pos, R.pos); R.lookDir(_v3); }
+        else { if (!c.crashed) { c.crashed = true; R.pos.copy(c.crash); FX.smoke(c.crash, linCol(0.2, 0.16, 0.1), 3.5, 14, { a: 0.55, speed: 5, rise: 1.5, life: 1.6 }); for (let i = 0; i < 40; i++) Game.FXgrass({ pos: c.crash, fwd: c.Fh, vel: _v6.set(0, 0, 0) }); FX.sparks(c.crash, linCol(1.2, 0.9, 0.5), 20, 9); Sound.play('boom', { vol: 0.8 }); Sound.play('hit'); Sound.crowdRoar(0.9, 3); Cam.addShake(0.9); Platform.vibrate([50, 30, 80]); }
+          R.pos.lerp(_v3.copy(c.crash).addScaledVector(c.Fh, 5).setY(0.5), 0.05); R.pitch = -0.4; R.roll = 1.3; }
+        R.frame();
+      }
+      S.pos.lerpVectors(c.S0, c.Sn, easeInOut(seg(t, 0, 2.0))).add(_v2.set(Math.sin(t * 7) * 0.6, Math.sin(t * 9) * 0.4, Math.cos(t * 6) * 0.6));
+      if (t > this.imp) S.pos.copy(Render.camera.position);
+      S.vel.copy(c.Fh);
+      if (t >= 1.38 && t < 2.1 && R) { _v4.copy(c.G).addScaledVector(c.R0, 11).add(_v2.set(0, 3, 0)).addScaledVector(c.Fh, -3); FH.script(_v4, c.crash); }
+      else { FH.fp(); if (t >= 2.1) FH.look(p, S.pos, 6, 1 / 60), p.frame(); }
+      c.ov.right = t < this.imp ? (t > 2.15 ? { state: t > 2.62 ? 'fist' : 'open', pos: handToward(S.pos, c.hv, 0.55, 1.0) } : null) : { state: 'fist', pos: c.hv.set(0.2, -0.04, -0.6) };
+      c.ov.snitchInHand = t >= this.imp;
+    },
+  },
+  plumpton: {
+    name: 'Plumpton Pass', gesture: '← →', seeker: true, desc: 'Swerve hard past the Snitch and scoop it straight up your sleeve.', dur: 3.0, imp: 1.55,
+    tracks: {
+      ts: [[0, 0.6], [1.2, 0.3], [1.55, 0.08], [1.75, 0.3], [3.0, 1]],
+      fov: [[0, 0], [1.9, 0], [2.0, -0.08], [3.0, 0]],
+      flash: [[1.54, 0], [1.56, 0.4], [1.8, 0], [1.94, 0], [1.96, 0.3], [2.1, 0]],
+      letterbox: [[0, 0], [0.3, 0.1], [2.6, 0.1], [3.0, 0]],
+      sat: [[0, 1], [1.5, 1.05], [1.6, 1.3], [3.0, 1]],
+    },
+    setup(c) {
+      c.sg = c.gesture === 'left' ? -1 : 1;
+      c.Mid = c.P0.clone().lerp(c.S0, 0.5).addScaledVector(c.R0, c.sg * 7);
+      c.End = c.S0.clone().addScaledVector(c.F0, 6).addScaledVector(c.R0, -c.sg * 2);
+      c.prevP = new THREE.Vector3();
+      c.p.mesh.visible = true;
+    },
+    update(c, t) {
+      const p = c.p, S = c.S;
+      c.prevP.copy(p.pos);
+      const u = clamp(t / 1.9, 0, 1);
+      bezier(p.pos, c.P0, c.Mid, c.End, u);
+      if (t > 1.9) p.pos.addScaledVector(c.F0, (t - 1.9) * 12);
+      _v3.subVectors(p.pos, c.prevP); if (_v3.lengthSq() > 1e-6) p.lookDir(_v3);
+      p.extraRoll = -c.sg * Math.sin(Math.PI * u) * 1.1 * RM(); p.frame();
+      S.pos.copy(c.S0).add(_v2.set(Math.sin(t * 6) * 0.4, Math.sin(t * 8) * 0.3, 0));
+      if (t > this.imp) { p.hand(S.pos); S.group.visible = false; }
+      S.vel.copy(c.F0);
+      if (t < 1.95) { _v4.copy(c.Mid).addScaledVector(c.R0, -c.sg * 13).add(_v2.set(0, 2.5, 0)).addScaledVector(c.F0, -2); _v5.copy(p.pos).lerp(S.pos, 0.3); FH.script(_v4, _v5); }
+      else { p.mesh.visible = false; FH.fp(); c.ov.right = { state: 'fist', pos: c.hv.set(0.2, -0.04 + Math.min(0.1, (t - 1.95) * 0.3), -0.58) }; c.ov.snitchInHand = true; }
+    },
+  },
+};
+
 const Finishers = {
   active: null, t: 0, ctx: null, speed: 1, order: ['comet', 'corkscrew', 'feint', 'sloth', 'hawkshead', 'longbomb', 'thunder', 'starfall'],
   unlocked(id) { const d = FIN_DEFS[id]; return !d.unlock || SaveData.unlocked[d.unlock] || Game.mode === 'lab'; },
@@ -303,7 +447,56 @@ const Finishers = {
     if (p.pos.y > h.pos.y + 5) return 'comet';
     return pick(['corkscrew', 'feint', 'comet', 'sloth']);
   },
-  trigger(gesture) {
+  pickSeeker(g) { return { up: 'leap', down: 'wronski', left: 'plumpton', right: 'plumpton' }[g] || 'timeturner'; },
+  triggerSeeker(gesture) {
+    const p = Game.player, S = Game.snitch;
+    const id = this.pickSeeker(gesture), def = SEEKER_DEFS[id];
+    const c = this.ctx = { id, def, p, S, gesture, seeker: true, scriptedExtra: [], tmp: [], hv: new THREE.Vector3(), lv: new THREE.Vector3(), ov: {} };
+    c.P0 = p.pos.clone(); c.F0 = p.fwd.clone(); c.R0 = p.right.clone(); c.S0 = S.pos.clone();
+    c.rival = Game.teams[1 - p.side].find(f => f.role === 'seeker') || null;
+    if (c.rival) { c.rival.scripted = true; c.scriptedExtra.push(c.rival); }
+    S.scripted = true;
+    const speedF = clamp(p.vel.length() / 38, 0, 1), score = speedF * 0.3 + Game.focus * 0.4 + Game.style.val / 6 * 0.3 + (id === 'leap' || id === 'wronski' ? 0.15 : 0);
+    c.rating = score > 0.72 ? 'LEGENDARY' : score > 0.45 ? 'SPECTACULAR' : 'STYLISH';
+    p.scripted = true; p.dodge = null; p.extraPitch = 0;
+    Game.state = 'finisher'; Game.focus = Math.max(0, Game.focus - CONFIG.finisherCost); Game.stats.finishers++;
+    this.active = def; this.t = 0; this.speed = Settings.finisherLen === 'short' ? 1.5 : 1;
+    this.baseSat = Render.post.fx.sat; this.baseBloom = Render.post.fx.bloom;
+    Render.post.fx.keepColor.setRGB(1, 0.75, 0.25);
+    Cam.vmOverride = c.ov;
+    if (def.setup) def.setup(c);
+    HUD.cinematic(true);
+    Sound.play('rise', { vol: 0.6 }); Platform.vibrate(20);
+    if (Sound.music) Game.after(Math.max(0, (def.imp - 0.3) / this.speed), () => Sound.music && Sound.music.duck(1.6));
+  },
+  impactSeeker() {
+    const c = this.ctx, def = c.def; c.impacted = true;
+    const S = c.S; S.group.visible = false; S.trail.active = false;
+    FX.star(S.pos, linCol(4, 3, 1.2), 2.4, 0.6); FX.sparks(S.pos, linCol(3, 2.3, 0.8), 40, 7, { grav: 1 });
+    Sound.play('snitch'); Sound.play('bell', { f: 660 }); Sound.crowdRoar(1, 5); Cam.addShake(0.6); Platform.vibrate([60, 40, 60, 40, 160]);
+    const pts = FIN_RATING[c.rating] + 800;
+    Game.styleEvent(null, 0, pts);
+    HUD.banner('SNITCH CAUGHT', def.name.toUpperCase() + ' · ' + pts + ' STYLE');
+    HUD.stamp(c.rating, c.rating === 'LEGENDARY' ? 'legend' : c.rating === 'SPECTACULAR' ? 'spect' : '');
+    const rk = ['STYLISH', 'SPECTACULAR', 'LEGENDARY'];
+    if (!Game.stats.best || rk.indexOf(c.rating) >= rk.indexOf(Game.stats.best.rating)) Game.stats.best = { name: def.name, rating: c.rating };
+    SaveData.finishers++; persist();
+  },
+  endSeeker() {
+    const c = this.ctx, p = c.p, fx = Render.post.fx;
+    for (const f of c.scriptedExtra) { f.scripted = false; f.extraRoll = 0; f.roll = 0; f.frame(); if (c.id === 'wronski' && f === c.rival) f.stun = 3; }
+    p.scripted = false; p.extraRoll = 0; p.extraPitch = 0; p.pitch = clamp(p.pitch, -0.5, 0.5); p.speed = CONFIG.flight.cruise; p.frame(); p.vel.copy(p.fwd).multiplyScalar(p.speed);
+    p.mesh.visible = false; p.mesh.userData.rider.visible = true; p.robe.hide = false;
+    fx.blur = 0; fx.ca = 0; fx.flash = 0; fx.letterbox = 0; fx.keepHue = 0; fx.sat = this.baseSat; fx.bloom = this.baseBloom;
+    Game.ts = 1; Cam.mode = 'fp'; Cam.sFov = 1; Cam.showVM = false; Cam.vmOverride = null;
+    HUD.cinematic(false);
+    c.S.scripted = false;
+    this.active = null; this.ctx = null;
+    if (Game.state === 'finisher') Game.state = 'play';
+    Game.catchSnitch(p, { finisher: true });
+  },
+  trigger(gesture, seeker = false) {
+    if (seeker) return this.triggerSeeker(gesture);
     const p = Game.player, Q = Game.quaffle;
     const id = this.pick(gesture), def = FIN_DEFS[id];
     const c = this.ctx = { id, def, p, Q, scriptedExtra: [], tmp: [], R: new THREE.Vector3(), E: new THREE.Vector3() };
@@ -324,7 +517,7 @@ const Finishers = {
     if (c.K) { c.K.scripted = true; c.K.hasBall = false; }
     p.scripted = true; p.dodge = null; p.extraPitch = 0;
     Q.state = 'scripted'; Q.trail.reset(); Q.trail.active = false;
-    Game.state = 'finisher'; Game.flair = 0; Game.stats.finishers++;
+    Game.state = 'finisher'; Game.flair = Math.max(0, Game.flair - CONFIG.finisherCost); Game.stats.finishers++;
     this.active = def; this.t = 0; this.speed = Settings.finisherLen === 'short' ? 1.6 : 1;
     this.baseSat = Render.post.fx.sat; this.baseBloom = Render.post.fx.bloom;
     Render.post.fx.keepColor.set(T.c1).lerp(new THREE.Color(T.c2), 0.15);
@@ -353,10 +546,11 @@ const Finishers = {
     fx.letterbox = sampleTrack(tr.letterbox, t); fx.keepHue = sampleTrack(tr.keepHue, t);
     fx.sat = this.baseSat * (tr.sat ? sampleTrack(tr.sat, t) : 1); fx.bloom = this.baseBloom + sampleTrack(tr.bloom, t);
     Cam.sFov = 1 + sampleTrack(tr.fov, t) * (rm ? 1 : 0.3);
-    if (!c.released && t >= def.rel) this.doRelease();
+    c.p.roll = damp(c.p.roll, 0, 5, rdt);
+    if (!def.seeker && !c.released && t >= def.rel) this.doRelease();
     def.update(c, t);
-    if (!c.impacted && t >= def.imp) this.impact();
-    if (t >= def.dur) this.end();
+    if (!c.impacted && t >= def.imp) def.seeker ? this.impactSeeker() : this.impact();
+    if (t >= def.dur) def.seeker ? this.endSeeker() : this.end();
   },
   impact() {
     const c = this.ctx, def = c.def; c.impacted = true;
@@ -383,7 +577,11 @@ const Finishers = {
       HUD.stamp('DENIED', 'denied'); Game.onSave(c.K, c.p);
     }
   },
-  skip() { if (!this.active || this.t < 0.5) return; if (!this.ctx.released) this.doRelease(); if (!this.ctx.impacted) this.impact(); this.end(); },
+  skip() {
+    if (!this.active || this.t < 0.5) return;
+    if (this.active.seeker) { if (!this.ctx.impacted) this.impactSeeker(); this.endSeeker(); return; }
+    if (!this.ctx.released) this.doRelease(); if (!this.ctx.impacted) this.impact(); this.end();
+  },
   end() {
     const c = this.ctx, def = this.active, p = c.p, fx = Render.post.fx;
     if (def.cleanup) def.cleanup(c);

@@ -91,7 +91,7 @@ const AI = {
         if (m && (m.pos.x - f.pos.x) * sx > -3) { Game.pass(f, m); f.ai.cool = 1.2; return; }
       }
       _v2.subVectors(hoop.pos, f.pos).normalize();
-      if (dist < 27 && f.ai.cool <= 0 && _v2.dot(f.fwd) > 0.75) { Game.aiShoot(f, hoop); f.ai.cool = 1.5; f.ai.hoop = null; return; }
+      if (dist < 32 && f.ai.cool <= 0 && _v2.dot(f.fwd) > 0.72) { Game.aiShoot(f, hoop); f.ai.cool = 1.5; f.ai.hoop = null; return; }
       const weave = Math.sin(Game.time * 0.9 + f.id) * 8;
       T.set(hoop.pos.x - sx * 20, hoop.pos.y + Math.sin(Game.time * 0.7 + f.id) * 3, hoop.pos.z + weave);
     } else if (Q.holder && Q.holder.side === f.side) {

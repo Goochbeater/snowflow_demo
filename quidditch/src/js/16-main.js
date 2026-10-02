@@ -9,8 +9,9 @@ function frame(now) {
   Perf.sample(rdt);
   if (UI.contextLost) return;
   Game.update(rdt);
-  Cam.update(rdt);
   const paused = Game.state === 'paused';
+  Robes.update(paused ? 0 : rdt * Game.curTs);
+  Cam.update(rdt);
   World.update(paused ? 0 : rdt * Game.curTs, paused ? 0 : rdt);
   FX.update(paused ? 0 : rdt * Game.curTs);
   const cam = Render.camera;
@@ -38,8 +39,10 @@ function frame(now) {
     await buildTextures(); SHARED.uNoise.value = Tex.noise;
     progress(0.25, 'Mowing the pitch…'); await nextFrame();
     await World.build(progress);
+    progress(0.7, 'Stitching the gloves…'); await nextFrame();
+    await Hands.load();
     progress(0.72, 'Waxing the brooms…'); await nextFrame();
-    Models.init(); FX.init(); Game.init(); HUD.init(); Input.init(); UI.init();
+    Models.init(); Robes.init(); FX.init(); Game.init(); HUD.init(); Input.init(); UI.init();
     World.setWeather(Settings.weather === 'overcast' ? 'golden' : Settings.weather);
     Game.setup('demo');
     progress(0.86, 'Polishing the hoops…'); await nextFrame();
@@ -54,7 +57,7 @@ function frame(now) {
     for (const m of warm) m.visible = false;
     Render.scene.remove(ghost); World.lanterns.visible = lv; World.rain.visible = rv; Game.snitch.group.visible = false;
     progress(1, 'Ready.'); await nextFrame();
-    window.__game = { AI, Game, Finishers, Input, UI, Render, Settings, World, Cam, HUD, Perf, Sound, SaveData };
+    window.__game = { Robes, Hands, AI, Game, Finishers, Input, UI, Render, Settings, World, Cam, HUD, Perf, Sound, SaveData };
     window.__ready = true;
     requestAnimationFrame(frame);
     UI.title();

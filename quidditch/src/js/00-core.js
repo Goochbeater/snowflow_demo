@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 // ===================== CONFIG =====================
 const TAU = Math.PI * 2;
@@ -13,16 +14,17 @@ const CONFIG = {
     cruise: 22, boost: 38, brake: 11, accel: 1.6, decel: 2.4, grip: 3.4,
     yawRate: 1.8, pitchRate: 1.55, brakeTurn: 1.7, maxPitch: 1.25,
     bank: 0.45, maxBank: 0.65, dive: 9,
-    boostDrain: 0.32, boostRegen: 0.075, slipRegen: 0.45,
+    boostDrain: 0.32, boostRegen: 0.075, slipRegen: 0.45, carryMul: 0.9,
   },
+  finisherCost: 0.5,
   ball: { g: 5.5, drag: 0.07, pass: 32, shotMin: 32, shotMax: 50, catchR: 2.5, charge: 0.75 },
   bludger: { roam: 11, struck: 33, hitR: 1.35, playerGap: 6 },
   snitch: { speed: 24, jink: 35 },
   fov: { h: 96, vMax: 75 },
   difficulty: {
-    rookie: { react: 0.55, aim: 0.55, keeperSpeed: 6, keeperReach: 1.45, turn: 0.82, steal: 0.3, beaterCd: 11, assist: 1.0, seekerCatch: 0.08, speed: 0.92, finisherSave: 0.0 },
-    pro:    { react: 0.35, aim: 0.75, keeperSpeed: 8, keeperReach: 1.75, turn: 0.95, steal: 0.5, beaterCd: 7.5, assist: 0.75, seekerCatch: 0.14, speed: 1.0, finisherSave: 0.06 },
-    legend: { react: 0.2, aim: 0.9, keeperSpeed: 10, keeperReach: 2.05, turn: 1.1, steal: 0.7, beaterCd: 5, assist: 0.5, seekerCatch: 0.2, speed: 1.06, finisherSave: 0.2 },
+    rookie: { react: 0.55, aim: 0.55, keeperSpeed: 6, keeperReach: 1.45, turn: 0.82, steal: 0.3, beaterCd: 11, assist: 1.0, seekerCatch: 0.08, speed: 0.92, finisherSave: 0.0, keeperSave: 0.3 },
+    pro:    { react: 0.35, aim: 0.75, keeperSpeed: 8, keeperReach: 1.75, turn: 0.95, steal: 0.5, beaterCd: 7.5, assist: 0.75, seekerCatch: 0.14, speed: 1.0, finisherSave: 0.06, keeperSave: 0.48 },
+    legend: { react: 0.2, aim: 0.9, keeperSpeed: 10, keeperReach: 2.05, turn: 1.1, steal: 0.7, beaterCd: 5, assist: 0.5, seekerCatch: 0.2, speed: 1.06, finisherSave: 0.2, keeperSave: 0.66 },
   },
   tiers: {
     low:   { name: 'low',   prMax: 1.25, budget: 0.9e6, msaa: 0, shadow: 0,    crowd: 0.35, trees: 0.45, bloom: 4 },
@@ -133,7 +135,7 @@ function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch
 
 const DEFAULT_SETTINGS = {
   quality: 'auto', fps: 60, sens: 1, invert: false, gyro: false, gyroSens: 1, haptics: true,
-  finisherLen: 'full', reduceMotion: false, comfort: false, horizonLock: false, aimAssist: 'auto',
+  finisherLen: 'full', trackAssist: 'high', reduceMotion: false, comfort: false, horizonLock: false, aimAssist: 'auto',
   music: 0.6, sfx: 0.9, crowd: 0.75, uiScale: 1, uiOpacity: 0.85, radar: true, voice: false,
   team: 0, opp: 1, difficulty: 'pro', length: 1, weather: 'golden', snitch: 'arcade',
 };

@@ -191,6 +191,8 @@ const Sound = {
       case 'rank': { [784, 1175, 1568].forEach((f, i) => { const o = this.osc('triangle', f, t + i * 0.06, 0.4); this.env(o.g.gain, t + i * 0.06, 0.005, 0.12 * v, 0.35); }); break; }
       case 'ready': { [880, 1320].forEach((f, i) => { const o = this.osc('sine', f, t + i * 0.08, 0.3); this.env(o.g.gain, t + i * 0.08, 0.005, 0.14 * v, 0.28); }); break; }
       case 'snitch': this.chord([74, 78, 81, 86], t, 2.0, 0.035 * v, 5000, 'triangle'); this.play('flutter', { vol: 1.5 }); break;
+      case 'tick': { const o = this.osc('square', 1800, t, 0.03); this.env(o.g.gain, t, 0.001, 0.08 * v, 0.025); const n = this.nz(t, 0.03, 'highpass', 4000, 1); this.env(n.g.gain, t, 0.001, 0.12 * v, 0.02); break; }
+      case 'ring': { [1318, 1760, 2637].forEach((f, i) => { const o = this.osc('sine', f, t + i * 0.03, 0.6); this.env(o.g.gain, t + i * 0.03, 0.004, 0.12 * v, 0.55); }); break; }
       case 'end': this.chord([50, 57, 62, 66, 69], t, 2.6, 0.05 * v, 3200); this.play('whistle', { dur: 1.1 }); break;
     }
   },

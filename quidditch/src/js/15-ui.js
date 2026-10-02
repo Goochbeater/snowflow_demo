@@ -6,6 +6,7 @@ const SETTINGS_SCHEMA = [
   { key: 'invert', label: 'Invert pitch', type: 'seg', opts: [[false, 'Off'], [true, 'On']] },
   { key: 'gyro', label: 'Gyro aim', type: 'seg', opts: [[false, 'Off'], [true, 'On']], apply: v => Input.setGyro(v) },
   { key: 'aimAssist', label: 'Aim assist', type: 'seg', opts: [['auto', 'Auto'], ['off', 'Off'], ['low', 'Low'], ['high', 'High']] },
+  { key: 'trackAssist', label: 'Lock-on steering', type: 'seg', opts: [['high', 'Strong'], ['low', 'Light'], ['off', 'Off']] },
   { key: 'finisherLen', label: 'Finishers', type: 'seg', opts: [['full', 'Full'], ['short', 'Short'], ['off', 'Off']] },
   { key: 'haptics', label: 'Haptics', type: 'seg', opts: [[true, 'On'], [false, 'Off']] },
   { key: 'reduceMotion', label: 'Reduce motion', type: 'seg', opts: [[false, 'Off'], [true, 'On']] },
@@ -37,7 +38,7 @@ const UI = {
     $('startMatch').addEventListener('click', () => { Sound.play('ui'); this.startMatch(); });
     $('settingsDone').addEventListener('click', () => { Sound.play('ui'); saveSettings(); this.go(this.from || 'menu'); });
     $('pResume').addEventListener('click', () => this.resume(true));
-    $('pRestart').addEventListener('click', () => { this.hideAll(); this.startMode(Game.mode === 'lab' ? 'lab' : 'match'); });
+    $('pRestart').addEventListener('click', () => { this.hideAll(); this.startMode(Game.mode === 'lab' || Game.mode === 'slab' ? Game.mode : 'match'); });
     $('pSettings').addEventListener('click', () => { this.from = 'pause'; this.go('settings'); });
     $('pQuit').addEventListener('click', () => this.quit());
     $('resMenu').addEventListener('click', () => this.quit());
@@ -115,9 +116,10 @@ const UI = {
     else if (where === 'howto') { this.finList(this.$('finList')); this.show('scrHowto'); }
     else if (where === 'records') { this.records(); this.show('scrRecords'); }
     else if (where === 'lab') { this.hideAll(); this.startMode('lab'); }
+    else if (where === 'slab') { this.hideAll(); this.startMode('slab'); }
   },
   finList(root) {
-    root.innerHTML = Finishers.order.map(id => {
+    root.innerHTML = Object.keys(SEEKER_DEFS).map(id => { const d = SEEKER_DEFS[id]; return `<div class="fin"><b>${d.name} · SEEKER</b><span class="gest">${d.gesture}</span>${d.desc}</div>`; }).join('') + Finishers.order.map(id => {
       const d = FIN_DEFS[id], locked = d.unlock && !SaveData.unlocked[d.unlock];
       return `<div class="fin ${locked ? 'locked' : ''}"><b>${d.name}${locked ? ' · LOCKED' : ''}</b><span class="gest">${d.gesture}</span>${d.desc}${locked ? `<br><small>${d.unlock === 'thunder' ? 'Win a match to unlock.' : 'Reach SS style rank or win on Legend.'}</small>` : ''}</div>`;
     }).join('');
@@ -140,11 +142,12 @@ const UI = {
   startMode(mode) {
     Sound.init(); if (Sound.music) Sound.music.start();
     Input.reset();
-    World.setWeather(mode === 'lab' ? 'golden' : Settings.weather);
+    World.setWeather(mode === 'lab' || mode === 'slab' ? 'golden' : Settings.weather);
     Game.setup(mode);
     Platform.requestWake();
     if (mode === 'match' && !SaveData.seenHints) { Game.state = 'paused'; this.$('hints').classList.add('on'); }
     if (mode === 'lab') HUD.ticker('Finisher Lab: hold SHOOT and swipe, draw a circle, or triple-tap PASS.');
+    if (mode === 'slab') HUD.ticker('Seeker Lab: chase the Snitch, then hold CATCH and swipe ↑ ↓ ← → or draw a circle.');
   },
   pause() {
     if (Game.mode === 'demo' || Game.state === 'end' || this.cur === 'scrPause') return;
