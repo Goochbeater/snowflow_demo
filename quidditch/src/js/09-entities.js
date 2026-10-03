@@ -103,6 +103,8 @@ class Quaffle {
     this.holder = null; this.state = 'free'; this.thrower = null; this.throwT = -9; this.passTarget = null; this.lastSide = -1; this.lastPasser = null; this.lastPassT = -9;
     this.trail = FX.trail(0.28, new THREE.Color(1.6, 0.5, 0.3), 26);
     this.rot = new THREE.Vector3();
+    this.glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: Models.glowTex, color: new THREE.Color(2.4, 0.55, 0.3), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.8 }));
+    Render.scene.add(this.glow);
   }
   attach(f) {
     if (this.holder) this.holder.hasBall = false;
@@ -120,7 +122,22 @@ class Quaffle {
   update(dt) {
     this.prev.copy(this.pos);
     if (this.state === 'held' && this.holder) { this.holder.hand(this.pos); }
+    else if (this.state === 'dead') {
+      // after a goal: drifts down behind the hoop, nobody can catch it
+      this.vel.y -= 3 * dt; this.vel.multiplyScalar(Math.exp(-1.5 * dt)); this.pos.addScaledVector(this.vel, dt);
+      if (this.pos.y < 0.35) { this.pos.y = 0.35; this.vel.y = Math.abs(this.vel.y) * 0.4; }
+    } else if (this.state === 'returning' && this.retTo) {
+      // floats back into the defending Keeper's hands
+      const k = this.retTo; k.hand(_v1); _v1.sub(this.pos); const d = _v1.length(), sp = 30;
+      if (d <= sp * dt + 0.35) { this.retTo = null; this.attach(k); Game.onReturned(k); }
+      else { this.vel.copy(_v1).multiplyScalar(sp / d); this.pos.addScaledVector(this.vel, dt); }
+    }
     else if (this.state === 'flying' || this.state === 'free') {
+      // passes are charmed to find their receiver
+      if (this.state === 'flying' && this.passTarget && Game.time - this.throwT < 2.4 && !this.passTarget.scripted) {
+        this.passTarget.hand(_v2); _v2.sub(this.pos); const d = _v2.length(), sp = Math.max(this.vel.length(), 30);
+        if (d > 0.4) { _v2.multiplyScalar(sp / d); this.vel.lerp(_v2, 1 - Math.exp(-3.2 * dt)); }
+      }
       const g = this.state === 'flying' ? CONFIG.ball.g : 3.2;
       this.vel.y -= g * dt;
       this.vel.multiplyScalar(Math.exp(-(this.state === 'flying' ? CONFIG.ball.drag : 0.7) * dt));
@@ -136,6 +153,9 @@ class Quaffle {
     if (this.trail.active) this.trail.push(this.pos);
     this.mesh.position.copy(this.pos);
     this.mesh.rotation.set(this.rot.x, this.rot.y + Game.time * 0.4, 0);
+    const camD = this.pos.distanceTo(Render.camera.position), gs = clamp(camD * 0.028, 0.5, 3.2);
+    this.glow.position.copy(this.pos); this.glow.scale.set(gs, gs, 1);
+    this.glow.visible = !this.hidden && camD > 6 && !(this.holder && this.holder.isPlayer);
     this.mesh.visible = !this.hidden && !(Cam.mode === 'fp' && ((this.holder && this.holder.isPlayer) || (this.state === 'scripted' && Game.player && Game.player.hasBall)));
   }
 }

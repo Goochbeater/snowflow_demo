@@ -4,7 +4,7 @@ const Input = {
   gyroYaw: 0, gyroPitch: 0, stick: null, lastStickUp: -9, path: [], swipe: null,
   init() {
     const $ = id => document.getElementById(id);
-    const el = this.el = { zStick: $('zStick'), zSwipe: $('zSwipe'), base: $('stickBase'), knob: $('stickKnob'), ghost: $('stickGhost'), shoot: $('bShoot'), pass: $('bPass'), boost: $('bBoost'), look: $('bLook'), swap: $('bSwap'), pause: $('bPause') };
+    const el = this.el = { zStick: $('zStick'), zSwipe: $('zSwipe'), base: $('stickBase'), knob: $('stickKnob'), ghost: $('stickGhost'), shoot: $('bShoot'), pass: $('bPass'), boost: $('bBoost'), look: $('bLook'), focus: $('bFocus'), swap: $('bSwap'), pause: $('bPause') };
     const now = () => performance.now() / 1000;
     const skipCheck = () => { if (Game.state === 'finisher') { Finishers.skip(); return true; } return false; };
 
@@ -54,6 +54,7 @@ const Input = {
     hold(el.pass, () => Game.onPassTap());
     hold(el.boost, () => { this.boost = true; }, () => { this.boost = false; });
     hold(el.look, () => { this.look = true; }, () => { this.look = false; });
+    hold(el.focus, () => Game.toggleFocus());
     hold(el.swap, () => Game.seekerSwap());
     hold(el.pause, () => UI.pause());
 

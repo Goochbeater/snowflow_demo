@@ -152,6 +152,9 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px; }
 #bPass { width: calc(64px * var(--ui)); height: calc(64px * var(--ui)); right: calc(132px * var(--ui) + var(--sr)); bottom: calc(26px + var(--sb)); }
 #bBoost { width: calc(64px * var(--ui)); height: calc(64px * var(--ui)); right: calc(40px + var(--sr)); bottom: calc(132px * var(--ui) + var(--sb)); }
 #bLook { width: calc(48px * var(--ui)); height: calc(48px * var(--ui)); right: calc(118px * var(--ui) + var(--sr)); bottom: calc(110px * var(--ui) + var(--sb)); }
+#bFocus { width: calc(56px * var(--ui)); height: calc(56px * var(--ui)); right: calc(180px * var(--ui) + var(--sr)); bottom: calc(100px * var(--ui) + var(--sb)); }
+#bFocus svg { width: 40%; height: 40%; margin-bottom: 10%; }
+#bFocus.on { border-color: #ffd25a; color: #ffe39a; box-shadow: 0 0 14px rgba(255,210,90,.55); background: radial-gradient(circle at 50% 35%, rgba(90,70,20,.85), rgba(20,14,4,.88)); }
 #bSwap { width: auto; height: auto; border-radius: 14px; padding: 10px 16px; right: calc(30px + var(--sr)); top: calc(70px + var(--st)); display: none; border-color: var(--gold-hi); color: var(--gold-hi); font-size: 13px; animation: ready .8s ease-in-out infinite alternate; }
 #bSwap.on { display: grid; }
 #bPause { width: 40px; height: 40px; right: calc(16px + var(--sr)); top: calc(10px + var(--st)); border-radius: 12px; font-size: 14px; }
@@ -272,6 +275,14 @@ input[type=range] { width: 100%; accent-color: var(--gold); touch-action: pan-x;
 #bPass.callable { border-color: #7dff9a; color: #c8ffd4; animation: ready .7s ease-in-out infinite alternate; }
 #bPass.dim { opacity: .55; }
 
+#focusArrow { position: absolute; left: 0; top: 0; width: 48px; height: 48px; margin: -24px 0 0 -24px; display: none; will-change: transform; }
+#focusArrowG { width: 100%; height: 100%; animation: farrow .7s ease-in-out infinite alternate; }
+#focusArrowG svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 6px rgba(255,200,80,.85)); }
+#focusArrow span { position: absolute; top: 50px; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: 700; letter-spacing: .1em; white-space: nowrap; color: #ffe39a; text-shadow: 0 1px 3px #000; }
+@keyframes farrow { from { opacity: .75; } to { opacity: 1; } }
+#lockOn.focus i { border-color: #ffd25a; }
+#lockOn.focus span { color: #ffe39a; }
+
 </style>
 </head>
 <body>
@@ -300,6 +311,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); touch-action: pan-x;
   </div>
   <div id="hint"></div>
   <div id="lockOn"><i></i><i></i><i></i><i></i><span id="lockLbl"></span></div>
+  <div id="focusArrow"><div id="focusArrowG"><svg viewBox="-24 -24 48 48"><path d="M20 0 L-8 -15 L-2 0 L-8 15 Z" fill="#ffd25a" stroke="#2a1600" stroke-width="2"/></svg></div><span id="focusArrowLbl"></span></div>
   <div id="rank"><div class="letter" id="rankLetter">D</div><div class="sub">STYLE</div><div class="pts" id="stylePts">0</div></div>
   <div id="popups"></div>
   <div id="banner"></div>
@@ -312,6 +324,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); touch-action: pan-x;
   <div class="zone" id="zStick"></div>
   <div id="stickGhost">STEER</div>
   <div id="stickBase"><div id="stickKnob"></div></div>
+  <button class="btn" id="bFocus" aria-label="Ball focus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg><span class="cap">FOCUS</span></button>
   <button class="btn" id="bLook" aria-label="Look back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
   <button class="btn" id="bBoost" aria-label="Boost"><canvas class="meter" width="96" height="96" id="boostMeter"></canvas><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></button>
   <button class="btn" id="bPass" aria-label="Pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 18c4-9 10-11 16-11"/><path d="M15 3l5 4-4 5"/></svg><span class="cap" id="passLbl">PASS</span></button>
@@ -414,6 +427,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); touch-action: pan-x;
       <div><b>BOOST</b>Hold the bolt. Tuck into another flyer's slipstream to refill it fast.</div>
       <div><b>PASS &amp; SHOOT</b>PASS throws to the teammate nearest your aim; without the ball it calls for a pass. Hold SHOOT and release in the green part of the ring for a perfect shot the Keeper struggles to stop. The hoop marker turns green when you're lined up.</div>
       <div><b>DODGE</b>Swipe on the right side. A last-instant dodge past a Bludger is a Perfect Dodge.</div>
+      <div><b>BALL FOCUS</b>Tap FOCUS and your broom keeps turning toward the play: the Quaffle, the carrier, an open spot for a pass, or the hoop once you have it. Push the stick to override. A gold arrow points the way when it's off screen.</div>
       <div><b>DEFEND</b>Your broom locks onto the carrier and steers you after them. SHOOT becomes STEAL: within about 12 m it launches a homing tackle. Carriers fly slower than everyone else.</div>
       <div><b>FLAIR</b>Perfect dodges, perfect catches, near misses, skimming the grass and slipstreams fill the ring around your crosshair.</div>
       <div><b>THE SNITCH</b>Released at half time. Tap SEEKER SWAP to chase it. Fly through its golden rings for speed and focus; at half focus GRAB becomes CATCH: hold and swipe for a catch finisher.</div>
@@ -464,9 +478,9 @@ const CONFIG = {
   snitch: { speed: 24, jink: 35 },
   fov: { h: 96, vMax: 75 },
   difficulty: {
-    rookie: { react: 0.55, aim: 0.55, keeperSpeed: 6, keeperReach: 1.45, turn: 0.82, steal: 0.3, beaterCd: 11, assist: 1.0, seekerCatch: 0.08, speed: 0.92, finisherSave: 0.0, keeperSave: 0.3 },
-    pro:    { react: 0.35, aim: 0.75, keeperSpeed: 8, keeperReach: 1.75, turn: 0.95, steal: 0.5, beaterCd: 7.5, assist: 0.75, seekerCatch: 0.14, speed: 1.0, finisherSave: 0.06, keeperSave: 0.48 },
-    legend: { react: 0.2, aim: 0.9, keeperSpeed: 10, keeperReach: 2.05, turn: 1.1, steal: 0.7, beaterCd: 5, assist: 0.5, seekerCatch: 0.2, speed: 1.06, finisherSave: 0.2, keeperSave: 0.66 },
+    rookie: { react: 0.55, aim: 0.55, keeperSpeed: 7, keeperReach: 1.45, turn: 0.82, steal: 0.3, beaterCd: 11, assist: 1.0, seekerCatch: 0.08, speed: 0.92, finisherSave: 0.0, keeperSave: 0.3 },
+    pro:    { react: 0.35, aim: 0.75, keeperSpeed: 9.5, keeperReach: 1.75, turn: 0.95, steal: 0.5, beaterCd: 7.5, assist: 0.75, seekerCatch: 0.14, speed: 1.0, finisherSave: 0.06, keeperSave: 0.48 },
+    legend: { react: 0.2, aim: 0.9, keeperSpeed: 11.5, keeperReach: 2.05, turn: 1.1, steal: 0.7, beaterCd: 5, assist: 0.5, seekerCatch: 0.2, speed: 1.06, finisherSave: 0.2, keeperSave: 0.66 },
   },
   tiers: {
     low:   { name: 'low',   prMax: 1.25, budget: 0.9e6, msaa: 0, shadow: 0,    crowd: 0.35, trees: 0.45, bloom: 4 },
@@ -577,7 +591,7 @@ function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch
 
 const DEFAULT_SETTINGS = {
   quality: 'auto', fps: 60, sens: 1, invert: false, gyro: false, gyroSens: 1, haptics: true,
-  finisherLen: 'full', trackAssist: 'high', reduceMotion: false, comfort: false, horizonLock: false, aimAssist: 'auto',
+  finisherLen: 'full', trackAssist: 'high', ballFocus: 'toggle', reduceMotion: false, comfort: false, horizonLock: false, aimAssist: 'auto',
   music: 0.6, sfx: 0.9, crowd: 0.75, uiScale: 1, uiOpacity: 0.85, radar: true, voice: false,
   team: 0, opp: 1, difficulty: 'pro', length: 1, weather: 'golden', snitch: 'arcade',
 };
@@ -3220,6 +3234,8 @@ class Quaffle {
     this.holder = null; this.state = 'free'; this.thrower = null; this.throwT = -9; this.passTarget = null; this.lastSide = -1; this.lastPasser = null; this.lastPassT = -9;
     this.trail = FX.trail(0.28, new THREE.Color(1.6, 0.5, 0.3), 26);
     this.rot = new THREE.Vector3();
+    this.glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: Models.glowTex, color: new THREE.Color(2.4, 0.55, 0.3), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.8 }));
+    Render.scene.add(this.glow);
   }
   attach(f) {
     if (this.holder) this.holder.hasBall = false;
@@ -3237,7 +3253,22 @@ class Quaffle {
   update(dt) {
     this.prev.copy(this.pos);
     if (this.state === 'held' && this.holder) { this.holder.hand(this.pos); }
+    else if (this.state === 'dead') {
+      // after a goal: drifts down behind the hoop, nobody can catch it
+      this.vel.y -= 3 * dt; this.vel.multiplyScalar(Math.exp(-1.5 * dt)); this.pos.addScaledVector(this.vel, dt);
+      if (this.pos.y < 0.35) { this.pos.y = 0.35; this.vel.y = Math.abs(this.vel.y) * 0.4; }
+    } else if (this.state === 'returning' && this.retTo) {
+      // floats back into the defending Keeper's hands
+      const k = this.retTo; k.hand(_v1); _v1.sub(this.pos); const d = _v1.length(), sp = 30;
+      if (d <= sp * dt + 0.35) { this.retTo = null; this.attach(k); Game.onReturned(k); }
+      else { this.vel.copy(_v1).multiplyScalar(sp / d); this.pos.addScaledVector(this.vel, dt); }
+    }
     else if (this.state === 'flying' || this.state === 'free') {
+      // passes are charmed to find their receiver
+      if (this.state === 'flying' && this.passTarget && Game.time - this.throwT < 2.4 && !this.passTarget.scripted) {
+        this.passTarget.hand(_v2); _v2.sub(this.pos); const d = _v2.length(), sp = Math.max(this.vel.length(), 30);
+        if (d > 0.4) { _v2.multiplyScalar(sp / d); this.vel.lerp(_v2, 1 - Math.exp(-3.2 * dt)); }
+      }
       const g = this.state === 'flying' ? CONFIG.ball.g : 3.2;
       this.vel.y -= g * dt;
       this.vel.multiplyScalar(Math.exp(-(this.state === 'flying' ? CONFIG.ball.drag : 0.7) * dt));
@@ -3253,6 +3284,9 @@ class Quaffle {
     if (this.trail.active) this.trail.push(this.pos);
     this.mesh.position.copy(this.pos);
     this.mesh.rotation.set(this.rot.x, this.rot.y + Game.time * 0.4, 0);
+    const camD = this.pos.distanceTo(Render.camera.position), gs = clamp(camD * 0.028, 0.5, 3.2);
+    this.glow.position.copy(this.pos); this.glow.scale.set(gs, gs, 1);
+    this.glow.visible = !this.hidden && camD > 6 && !(this.holder && this.holder.isPlayer);
     this.mesh.visible = !this.hidden && !(Cam.mode === 'fp' && ((this.holder && this.holder.isPlayer) || (this.state === 'scripted' && Game.player && Game.player.hasBall)));
   }
 }
@@ -3412,7 +3446,10 @@ const AI = {
       }
       if (f.role === 'seeker') this.seekerCatch(f, dt);
       const bd = f.role === 'seeker' && Game.snitch.active ? 8 : 34;
+      const Q = Game.quaffle, receiving = Q.state === 'flying' && Q.passTarget === f;
+      f.speedMul = receiving ? 0.5 : 1;
       this.steer(f, f.ai.target, dt, bd);
+      if (receiving) f.input.boost = false;
       if (f.role === 'chaser' && f.ai.tackle) this.tryTackle(f);
     }
   },
@@ -3424,7 +3461,7 @@ const AI = {
     for (const h of World.hoops) {
       if (h.side !== sx) continue;
       const kd = keeper ? keeper.pos.distanceTo(h.pos) : 10;
-      const s = kd * 1.4 - Math.abs(h.pos.z - f.pos.z) * 0.15 + rnd(0, 2);
+      const s = kd * 0.45 - Math.abs(h.pos.z - f.pos.z) * 0.2 + rnd(0, 5);
       if (s > bs) { bs = s; best = h; }
     }
     return best;
@@ -3446,6 +3483,12 @@ const AI = {
   chaser(f) {
     const Q = Game.quaffle, sx = Game.attackSign(f.side), D = Game.diff, T = f.ai.target;
     f.ai.tackle = false; f.ai.call = 0;
+    const R = Game.restart;
+    if (R && !f.hasBall) {
+      if (R.side === f.side) T.set(R.keeper.pos.x + sx * (26 + f.slot * 11), 13 + f.slot * 2, (f.slot - 1) * 15);
+      else T.set(-sx * (8 + f.slot * 6), 14, (f.slot - 1) * 14);
+      this.clampTarget(T); return;
+    }
     if (f.hasBall) {
       const hoop = f.ai.hoop && Math.random() > 0.08 ? f.ai.hoop : (f.ai.hoop = this.pickHoop(f.side, f));
       const dist = f.pos.distanceTo(hoop.pos);
@@ -3459,7 +3502,7 @@ const AI = {
         if (m && (m.pos.x - f.pos.x) * sx > -3) { Game.pass(f, m); f.ai.cool = 1.2; return; }
       }
       _v2.subVectors(hoop.pos, f.pos).normalize();
-      if (dist < 32 && f.ai.cool <= 0 && _v2.dot(f.fwd) > 0.72) { Game.aiShoot(f, hoop); f.ai.cool = 1.5; f.ai.hoop = null; return; }
+      if (dist < 29 && f.ai.cool <= 0 && _v2.dot(f.fwd) > 0.74) { Game.aiShoot(f, hoop); f.ai.cool = 1.5; f.ai.hoop = null; return; }
       const weave = Math.sin(Game.time * 0.9 + f.id) * 8;
       T.set(hoop.pos.x - sx * 20, hoop.pos.y + Math.sin(Game.time * 0.7 + f.id) * 3, hoop.pos.z + weave);
     } else if (Q.holder && Q.holder.side === f.side) {
@@ -3487,6 +3530,7 @@ const AI = {
   },
   tryTackle(f) {
     const c = Game.quaffle.holder; if (!c || c.side === f.side || f.ai.cool > 0) return;
+    if (Game.restart && Game.restart.keeper === c) return;
     if (f.pos.distanceTo(c.pos) > 3.4) return;
     f.ai.cool = 1.4;
     if (c.invuln > 0) { if (c.isPlayer) Game.styleEvent('SLIPPED THE TACKLE', 0.12, 120); return; }
@@ -3534,6 +3578,7 @@ const AI = {
     if (f.hasBall) {
       f.ai.hold = (f.ai.hold || 0) + dt;
       T.set(hx - sx * 4, 14, 0);
+      if (Game.restart && Game.restart.keeper === f) f.ai.hold = 0;
       if (f.ai.hold > 1.3) { const m = Game.teams[f.side].filter(o => o.role === 'chaser' && o.stun <= 0).sort((a, b) => a.pos.distanceToSquared(f.pos) - b.pos.distanceToSquared(f.pos))[0]; if (m) Game.pass(f, m); f.ai.hold = 0; }
     } else {
       f.ai.hold = 0;
@@ -3546,7 +3591,7 @@ const AI = {
       } else if (carrier) {
         const c = Q.holder; let best = null, bd = 1e9;
         for (const h of World.hoops) { if (h.side !== sx) continue; _v2.subVectors(h.pos, c.pos).normalize(); const a = 1 - _v2.dot(c.fwd); if (a < bd) { bd = a; best = h; } }
-        if (best) T.set(hx - sx * 3.2, best.pos.y, best.pos.z * 0.8 + c.pos.z * 0.08);
+        if (best) T.set(hx - sx * 3.2, lerp(14, best.pos.y, 0.5), best.pos.z * 0.45 + c.pos.z * 0.06);
       } else if (!Q.holder && Math.abs(Q.pos.x - hx) < 18 && Q.pos.distanceTo(f.pos) < 14) {
         T.copy(Q.pos);
       }
@@ -3554,14 +3599,16 @@ const AI = {
     }
     // reaction-lagged kinematic hover
     f.ai.smooth = f.ai.smooth || T.clone();
-    f.ai.smooth.lerp(T, 1 - Math.exp(-dt / Math.max(D.react, 0.05) * 1.6));
+    const shotIn = Q.state === 'flying' && Q.vel.x * sx > 0 && Q.thrower && Q.thrower.side !== f.side;
+    f.ai.smooth.lerp(T, 1 - Math.exp(-dt / Math.max(D.react, 0.05) * (shotIn ? 2.6 : 1.6)));
     _v1.subVectors(f.ai.smooth, f.pos);
-    const d = _v1.length(), step = D.keeperSpeed * dt;
+    const d = _v1.length(), step = D.keeperSpeed * (shotIn ? 1.9 : 1) * dt;
     const prev = _v3.copy(f.pos);
     if (d > step) _v1.multiplyScalar(step / d);
     f.pos.add(_v1);
     f.vel.subVectors(f.pos, prev).divideScalar(Math.max(dt, 1e-4));
-    _v2.subVectors(Q.pos, f.pos); f.lookDir(_v2, 6, dt);
+    if (f.hasBall) _v2.set(-sx, 0, 0); else _v2.subVectors(Q.pos, f.pos);
+    f.lookDir(_v2, 6, dt);
     f.roll = damp(f.roll, clamp(-f.vel.z * sx * 0.12, -0.9, 0.9), 6, dt);
     f.extraRoll = 0; f.frame();
   },
@@ -3680,7 +3727,9 @@ const Game = {
     if (this.vm) Render.camera.add(this.vm.group);
     const Q = this.quaffle; Q.holder = null; Q.state = 'free'; Q.trail.reset(); Q.trail.active = false;
     for (const b of this.bludgers) { b.mesh.visible = mode !== 'lab' && mode !== 'slab'; b.state = 'roam'; b.trail.reset(); b.trail.active = false; b.vel.set(0, 0, 0); }
-    Q.mesh.visible = mode !== 'slab'; Q.hidden = mode === 'slab';
+    Q.mesh.visible = mode !== 'slab'; Q.hidden = mode === 'slab'; Q.retTo = null;
+    this.restart = null;
+    this.focusOn = Settings.ballFocus !== 'off';
     Cam.showVM = false; Cam.vmOverride = null;
     this.bludgers[0].pos.set(-4, 10, 6); this.bludgers[1].pos.set(4, 10, -6);
     this.snitch.hide();
@@ -3741,7 +3790,7 @@ const Game = {
       return;
     }
     if (this.state === 'finisher') Finishers.update(rdt);
-    if (this.state === 'play') this.updateClock(dt);
+    if (this.state === 'play') { this.updateClock(dt); this.updateRestart(dt); }
     this.updatePlayerInput(rdt);
     AI.update(dt);
     const steps = dt > 1 / 50 ? 2 : 1, sdt = dt / steps;
@@ -3785,15 +3834,16 @@ const Game = {
     }
     p.turnMul = 1.05; p.speedMul = 1;
     this.stealCd -= rdt;
+    if (Settings.ballFocus === 'always') this.focusOn = true; else if (Settings.ballFocus === 'off') this.focusOn = false;
     this.updateLock();
-    this.steerAssist(p);
+    if (!this.focusSteer(p)) this.steerAssist(p);
     this.updateLunge(rdt * this.curTs);
   },
 
   // ---------- interactions ----------
   interactions(dt) {
     const Q = this.quaffle;
-    if (Q.state === 'flying' || Q.state === 'free') { this.checkGoal(); if (!Q.holder && Q.state !== 'scripted') this.checkCatch(); }
+    if (Q.state === 'flying' || Q.state === 'free') { this.checkGoal(); if (!Q.holder && (Q.state === 'flying' || Q.state === 'free')) this.checkCatch(); }
     for (const b of this.bludgers) if (b.mesh.visible) this.checkBludger(b);
   },
   checkGoal() {
@@ -3812,7 +3862,7 @@ const Game = {
       if (f === Q.thrower && this.time - Q.throwT < 0.45) continue;
       let reach = CONFIG.ball.catchR;
       const hostileShot = Q.thrower && Q.thrower.side !== f.side && Q.state === 'flying';
-      if (f.role === 'keeper') reach = hostileShot ? this.diff.keeperReach * (Q.perfect ? 0.55 : 1) : 2.2;
+      if (f.role === 'keeper') reach = hostileShot ? this.diff.keeperReach * (Q.perfect ? 0.55 : 1) + (Q.thrower && !Q.thrower.isPlayer ? 0.6 : 0) : 2.2;
       if (f.isPlayer) reach = 2.9;
       _v1.copy(f.pos).addScaledVector(f.up, 0.35);
       if (_v1.distanceTo(Q.pos) > reach) continue;
@@ -3824,7 +3874,7 @@ const Game = {
       let p = f.role === 'keeper' ? 0.9 : hostileShot ? 0.32 * this.diff.aim : 0.85;
       if (f.role === 'keeper' && hostileShot) {
         const range = Q.thrower ? Q.thrower.pos.distanceTo(f.pos) : 30;
-        p = this.diff.keeperSave * (Q.perfect ? 0.45 : 1) * (range < 16 ? 0.75 : 1) * (Q.thrower && Q.thrower.isPlayer ? 1 : 1.15);
+        p = Math.min(0.85, this.diff.keeperSave * (Q.perfect ? 0.45 : 1) * (range < 16 ? 0.75 : 1) * (Q.thrower && Q.thrower.isPlayer ? 1 : 1.6));
       }
       if (Math.random() < p) { this.catchBy(f); return; }
     }
@@ -3848,6 +3898,8 @@ const Game = {
   },
   onSave(k, shooter) {
     FX.sparks(k.pos, linCol(2, 1.6, 1), 14, 6);
+    if (this.mode === 'lab') this.after(1.2, () => { if (this.mode === 'lab' && this.state === 'play') this.labReset(); });
+    else this.restartHold(k, 1.4);
     if (shooter.isPlayer) { HUD.banner('SAVED', 'THE KEEPER READ IT'); Sound.crowdGroan(); }
     else if (this.player && k.side === this.player.side) { HUD.ticker(`Huge save by the ${CONFIG.teams[this.houses[k.side]].name} Keeper!`); Sound.crowdRoar(0.5, 2); World.excite[this.houses[k.side]] = 0.7; }
   },
@@ -3910,16 +3962,18 @@ const Game = {
   },
   pass(from, to) {
     const Q = this.quaffle; if (Q.holder !== from) return;
+    if (this.restart && from === this.restart.keeper) this.restart = null;
     from.hand(_v1);
-    const t = clamp(_v1.distanceTo(to.pos) / CONFIG.ball.pass, 0.1, 2);
-    _v2.copy(to.pos).addScaledVector(to.vel, t * 0.9).addScaledVector(UP, 0.3);
-    this.ballistic(_v1, _v2, CONFIG.ball.pass, _v3);
+    const dist = _v1.distanceTo(to.pos), sp = clamp(dist * 0.85, CONFIG.ball.pass, 46);
+    const t = clamp(dist / sp, 0.1, 2);
+    _v2.copy(to.pos).addScaledVector(to.vel, t * (to.isPlayer ? 0.9 : 0.6)).addScaledVector(UP, 0.3);
+    this.ballistic(_v1, _v2, sp, _v3);
     Q.release(_v3, to); Q.rolled = null;
     if (from.isPlayer) { Sound.play('throw'); this.throwAnim = 0.3; this.lastPlayerPassT = this.time; Platform.vibrate(12); }
     else if (Render.camera.position.distanceTo(from.pos) < 30) Sound.play('throw', { vol: 0.4 });
   },
   aiShoot(f, hoop) {
-    const err = (1 - this.diff.aim) * 3.4;
+    const err = (1 - this.diff.aim) * 5.2;
     _v4.copy(hoop.pos).add(_v5.set(0, rnd(-err, err), rnd(-err, err)));
     f.hand(_v1); this.ballistic(_v1, _v4, 38, _v3);
     this.quaffle.release(_v3, null); this.quaffle.rolled = null;
@@ -4033,7 +4087,8 @@ const Game = {
     if (this.callPending) return;
     this.callPending = true; Input.callT = this.rtime; c.ai.passingT = this.rtime;
     HUD.popup('CALLING FOR IT'); Sound.play('ui');
-    this.after((c.role === 'keeper' ? 0.3 : 0.16) + Math.random() * 0.14, () => {
+    const R = this.restart, kd = R && R.keeper === c ? Math.max(0.35, R.t - 1.4) : 0;
+    this.after(kd + (c.role === 'keeper' ? 0.3 : 0.16) + Math.random() * 0.14, () => {
       this.callPending = false;
       const p = this.player;
       if (this.state === 'play' && p && this.quaffle.holder === c && c.stun <= 0 && !c.scripted) { this.pass(c, p); c.ai.cool = 1.5; this.calls = []; }
@@ -4050,7 +4105,7 @@ const Game = {
     const Q = this.quaffle;
     let cand = null;
     if (p.role === 'seeker') cand = this.snitch.active ? this.snitch : null;
-    else if (!p.hasBall) cand = Q.holder ? (Q.holder.side !== p.side ? Q.holder : null) : (Q.state === 'scripted' ? null : Q);
+    else if (!p.hasBall) cand = Q.holder ? (Q.holder.side !== p.side && !(this.restart && this.restart.keeper === Q.holder) ? Q.holder : null) : (Q.state === 'flying' || Q.state === 'free' ? Q : null);
     if (!cand) { this.lock = null; return; }
     _v1.subVectors(cand.pos, p.pos); const d = _v1.length(), dot = _v1.divideScalar(Math.max(d, 1e-3)).dot(p.fwd);
     if (this.lock === cand) { if (d > 115 || dot < 0.05) this.lock = null; }
@@ -4070,10 +4125,91 @@ const Game = {
     p.input.y = clamp(p.input.y + clamp(dp * 2.6, -1, 1) * k, -1, 1);
     if (t !== this.quaffle && d < 32) p.speedMul = 1.07;
   },
+  // ---------- restarts: Keeper throw-in after goals and saves ----------
+  beginRestart(k, delay = 1.0) {
+    const Q = this.quaffle; if (!k) return;
+    const id = this.restartId = (this.restartId || 0) + 1;
+    this.restart = { keeper: k, side: k.side, phase: 'return', t: 99, id };
+    this.after(delay, () => {
+      const R = this.restart; if (!R || R.id !== id || this.state === 'end') return;
+      if (Q.holder === k) { this.onReturned(k); return; }
+      if (!Q.holder) { Q.state = 'returning'; Q.retTo = k; Q.trail.active = false; }
+      else this.restart = null;
+    });
+  },
+  restartHold(k, t) {
+    this.restart = { keeper: k, side: k.side, phase: 'hold', t };
+  },
+  onReturned(k) {
+    this.restartHold(k, 2.2);
+    const own = this.player && this.player.side === k.side && this.player.role === 'chaser';
+    HUD.ticker(own ? 'Keeper has it. Fly upfield and CALL for the throw-in.' : `${CONFIG.teams[this.houses[k.side]].name} Keeper restarts play.`);
+    Sound.play('whistle', { dur: 0.22, vol: 0.5 });
+  },
+  updateRestart(dt) {
+    const R = this.restart; if (!R || R.phase !== 'hold') return;
+    if (this.quaffle.holder !== R.keeper) { this.restart = null; return; }
+    if ((R.t -= dt) <= 0) this.throwIn(R.keeper);
+  },
+  throwIn(k) {
+    const sx = this.attackSign(k.side), p = this.player;
+    let tgt = null;
+    if (p && p.side === k.side && p.role === 'chaser' && p.stun <= 0 && p.pos.distanceTo(k.pos) < 80) tgt = p;
+    if (!tgt) {
+      let bs = -1e9;
+      for (const m of this.teams[k.side]) {
+        if (m.role !== 'chaser' || m.stun > 0 || m.scripted) continue;
+        let crowd = 99; for (const o of this.teams[1 - k.side]) crowd = Math.min(crowd, o.pos.distanceTo(m.pos));
+        const s = (m.pos.x - k.pos.x) * sx * 0.3 + Math.min(crowd, 15) - Math.max(0, m.pos.distanceTo(k.pos) - 55);
+        if (s > bs) { bs = s; tgt = m; }
+      }
+    }
+    this.restart = null;
+    if (tgt) { this.pass(k, tgt); if (tgt.isPlayer) HUD.popup('THROW-IN'); }
+  },
+  // ---------- ball focus: keeps your broom pointed at the play ----------
+  toggleFocus() {
+    this.focusOn = !this.focusOn; Sound.play('ui');
+    HUD.popup(this.focusOn ? 'BALL FOCUS ON' : 'BALL FOCUS OFF'); Platform.vibrate(10);
+  },
+  focusTarget(p) {
+    const Q = this.quaffle, out = this.focusPt || (this.focusPt = new THREE.Vector3()), R = this.restart;
+    let kind = null;
+    if (p.role === 'seeker') { if (this.snitch.active) { out.copy(this.snitch.pos).addScaledVector(this.snitch.vel, 0.25); kind = 'SNITCH'; } }
+    else if (p.hasBall) { const h = this.targetHoop(p); if (h) { out.copy(h.pos); kind = 'HOOP'; } }
+    else if (R && R.side === p.side) {
+      // our Keeper is restarting: get into space upfield to receive the throw-in
+      const sx = this.attackSign(p.side); out.set(R.keeper.pos.x + sx * 38, 14, clamp(p.pos.z, -18, 18)); kind = 'GET OPEN';
+    } else if (R) { out.set(0, 14, clamp(p.pos.z, -20, 20)); kind = 'REGROUP'; }
+    else if (!Q.holder) { if (Q.state === 'flying' || Q.state === 'free') { out.copy(Q.pos).addScaledVector(Q.vel, 0.3); kind = 'QUAFFLE'; } }
+    else if (Q.holder.side !== p.side) { out.copy(Q.holder.pos).addScaledVector(Q.holder.vel, 0.3); kind = 'CARRIER'; }
+    else {
+      const c = Q.holder, sx = this.attackSign(p.side);
+      out.set(c.pos.x + sx * 16, c.pos.y + 1, c.pos.z + (p.pos.z > c.pos.z ? 9 : -9)); kind = 'SUPPORT';
+    }
+    this.focusKind = kind;
+    return kind ? out : null;
+  },
+  focusSteer(p) {
+    this.focusKind = null;
+    if (!this.focusOn || Settings.ballFocus === 'off' || p.dodge || this.lunge) return false;
+    const T = this.focusTarget(p); if (!T) return false;
+    _v2.subVectors(T, p.pos); const d = _v2.length();
+    if (d < 2.5) return true;
+    const [ty, tp] = yawPitchFromDir(_v2);
+    const dy = wrapAngle(ty - p.yaw), dp = clamp(tp, -0.9, 0.9) - p.pitch;
+    const stick = Math.min(1, Math.hypot(Input.steer.x, Input.steer.y));
+    const k = stick > 0.35 ? 0.35 : 0.95;
+    p.input.x = clamp(p.input.x * (1 - k * 0.6) + clamp(-dy * 3, -1, 1) * k, -1, 1);
+    p.input.y = clamp(p.input.y * (1 - k * 0.6) + clamp(dp * 3, -1, 1) * k, -1, 1);
+    if (Math.abs(dy) > 1.2 && d > 10) p.turnMul = 1.75; // swing round quickly instead of circling
+    return true;
+  },
   tryPlayerSteal() {
     const p = this.player, Q = this.quaffle;
     if (this.stealCd > 0 || this.lunge) return;
     const c = Q.holder;
+    if (this.restart && (c === this.restart.keeper || !c)) { if (this.rtime - (this.stealMsgT || -9) > 2.5) { HUD.popup("KEEPER'S RESTART", true); this.stealMsgT = this.rtime; } return; }
     this.stealCd = 0.9; this.throwAnim = 0.25;
     if (c && c.side !== p.side) {
       _v1.subVectors(c.pos, p.pos); const d = _v1.length();
@@ -4137,7 +4273,7 @@ const Game = {
   goal(side, hoop, info) {
     this.score[side] += 10;
     const Q = this.quaffle, scorer = info.scorer || Q.thrower;
-    if (!info.finisher) { Q.state = 'free'; Q.vel.multiplyScalar(0.25); Q.trail.active = false; Q.holder = null; }
+    if (!info.finisher) { Q.state = 'dead'; Q.vel.multiplyScalar(0.3); Q.trail.active = false; Q.holder = null; Q.passTarget = null; }
     hoop.glow = 1.3; FX.shockwave(hoop.pos, linCol(2.6, 1.9, 0.8), 12); FX.sparks(hoop.pos, linCol(3, 2.2, 0.9), 50, 13);
     const pSide = this.player ? this.player.side : 0, house = this.houses[side];
     World.excite[house] = 1;
@@ -4159,7 +4295,7 @@ const Game = {
     const k = this.keeper(1 - side);
     if (info.finisher) { /* restart handled when the cinematic ends */ }
     else if (this.mode === 'lab') this.after(1.4, () => { if (this.mode === 'lab' && this.state === 'play') this.labReset(); });
-    else if (k) this.after(1.1, () => { if (!Q.holder && (this.state === 'play' || this.state === 'finisher')) { Q.attach(k); } });
+    else if (k) this.beginRestart(k, 1.0);
   },
   releaseSnitch() {
     this.snitch.release(); Sound.play('snitch');
@@ -4957,10 +5093,11 @@ const Finishers = {
     HUD.cinematic(false);
     const Q = c.Q;
     if (c.outcome === 'goal') {
-      Q.state = 'free'; Q.vel.copy(c.n).multiplyScalar(5); Q.trail.active = false;
+      Q.state = 'dead'; Q.vel.copy(c.n).multiplyScalar(5); Q.trail.active = false; Q.holder = null;
       if (Game.mode === 'lab') Game.after(0.6, () => { if (Game.mode === 'lab' && Game.state === 'play') Game.labReset(); });
-      else { const k = c.K; Game.after(0.8, () => { if (k && !Q.holder && Game.state === 'play') Q.attach(k); }); }
+      else Game.beginRestart(c.K, 0.5);
     } else if (Game.mode === 'lab') Game.after(1.0, () => { if (Game.mode === 'lab' && Game.state === 'play') Game.labReset(); });
+    else if (c.K) Game.restartHold(c.K, 1.4);
     this.active = null; this.ctx = null;
     if (Game.state === 'finisher') Game.state = 'play';
   },
@@ -4973,7 +5110,7 @@ const Input = {
   gyroYaw: 0, gyroPitch: 0, stick: null, lastStickUp: -9, path: [], swipe: null,
   init() {
     const $ = id => document.getElementById(id);
-    const el = this.el = { zStick: $('zStick'), zSwipe: $('zSwipe'), base: $('stickBase'), knob: $('stickKnob'), ghost: $('stickGhost'), shoot: $('bShoot'), pass: $('bPass'), boost: $('bBoost'), look: $('bLook'), swap: $('bSwap'), pause: $('bPause') };
+    const el = this.el = { zStick: $('zStick'), zSwipe: $('zSwipe'), base: $('stickBase'), knob: $('stickKnob'), ghost: $('stickGhost'), shoot: $('bShoot'), pass: $('bPass'), boost: $('bBoost'), look: $('bLook'), focus: $('bFocus'), swap: $('bSwap'), pause: $('bPause') };
     const now = () => performance.now() / 1000;
     const skipCheck = () => { if (Game.state === 'finisher') { Finishers.skip(); return true; } return false; };
 
@@ -5023,6 +5160,7 @@ const Input = {
     hold(el.pass, () => Game.onPassTap());
     hold(el.boost, () => { this.boost = true; }, () => { this.boost = false; });
     hold(el.look, () => { this.look = true; }, () => { this.look = false; });
+    hold(el.focus, () => Game.toggleFocus());
     hold(el.swap, () => Game.seekerSwap());
     hold(el.pause, () => UI.pause());
 
@@ -5094,6 +5232,7 @@ const HUD = {
     this.el = { ptsA: $('ptsA'), ptsB: $('ptsB'), nameA: $('nameA'), nameB: $('nameB'), chipA: $('chipA'), chipB: $('chipB'), clock: $('clock'), ring: $('flairRing'), reticle: $('reticle'), rank: $('rankLetter'), stylePts: $('stylePts'), banner: $('banner'), stamp: $('stamp'), popups: $('popups'), ticker: $('ticker'), hint: $('hint'), warn: $('warnArc'), comfort: $('comfort'), shoot: $('bShoot'), shootLbl: $('shootLbl'), swap: $('bSwap'), radar: $('radar'), overlay: $('overlayMsg') };
     this.radarCtx = this.el.radar.getContext('2d');
     this.el.pass = $('bPass'); this.el.passLbl = $('passLbl'); this.el.lock = $('lockOn'); this.el.lockLbl = $('lockLbl');
+    this.el.focusBtn = $('bFocus'); this.el.farrow = $('focusArrow'); this.el.farrowG = $('focusArrowG'); this.el.farrowLbl = $('focusArrowLbl');
     this.boostCtx = $('boostMeter').getContext('2d');
     this.chargeCtx = $('chargeMeter').getContext('2d');
     const box = $('inds'); this.inds = [];
@@ -5223,7 +5362,7 @@ const HUD = {
         this.ind(i++, 'mate' + m.house, IND_SVG.mate(T.ui), _v4.copy(m.pos).addScaledVector(UP, 1.6), lbl, T.ui);
       }
       if (p.hasBall && p.role === 'chaser') { const h = G.targetHoop(); if (h) { const ok = G.shotLinedUp(); this.ind(i++, ok ? 'targetOk' : 'target', IND_SVG.target(ok ? '#7dff9a' : '#ffe39a'), h.pos, '', ok ? '#7dff9a' : '#ffe39a'); } }
-      else if (Q.holder !== p && !Q.hidden && G.lock !== Q) this.ind(i++, 'q', IND_SVG.quaffle(), Q.pos, Q.holder ? '' : 'QUAFFLE', '#e0533a');
+      else if (Q.holder !== p && !Q.hidden && G.lock !== Q && !(G.focusOn && G.focusKind === 'QUAFFLE')) this.ind(i++, 'q', IND_SVG.quaffle(), Q.pos, Q.holder ? '' : 'QUAFFLE ' + Math.round(Q.pos.distanceTo(p.pos)) + 'm', '#e0533a');
       for (const b of G.bludgers) { if (b.state === 'struck' && b.byside !== p.side && b.pos.distanceTo(p.pos) < 60) this.ind(i++, 'b', IND_SVG.bludger(), b.pos, '', '#ff4a2a'); }
       if (G.snitch.active) this.ind(i++, 'sn', IND_SVG.snitch(), G.snitch.pos, p.role === 'seeker' ? Math.round(G.snitch.pos.distanceTo(p.pos)) + 'm' : '', '#ffd65a');
     }
@@ -5246,36 +5385,57 @@ const HUD = {
     if (Settings.radar && this.frame % 3 === 0) this.drawRadar();
   },
   updateLock(G, p) {
-    const t = G.lock, el = this.el.lock;
-    if (!t || this.inCine) { if (this.lockOn) { el.style.display = 'none'; this.lockOn = false; } return; }
-    const pr = this.project(t.pos, this._lp || (this._lp = {}), 40);
-    if (!pr.on) { if (this.lockOn) { el.style.display = 'none'; this.lockOn = false; } return; }
+    const el = this.el.lock, fa = this.el.farrow;
+    const fb = this.el.focusBtn, showBtn = Settings.ballFocus === 'toggle' && Game.mode !== 'slab';
+    if (this.cache.fbShow !== showBtn) { this.cache.fbShow = showBtn; fb.style.display = showBtn ? '' : 'none'; }
+    fb.classList.toggle('on', !!G.focusOn);
+    // focus mode shows the objective; otherwise the lock-on target
+    let pos = null, kind = null;
+    if (G.focusOn && G.focusKind && Settings.ballFocus !== 'off') { pos = G.focusPt; kind = G.focusKind; }
+    else if (G.lock) { pos = G.lock.pos; kind = G.lock === G.snitch ? 'SNITCH' : G.lock === G.quaffle ? 'QUAFFLE' : 'CARRIER'; }
+    const hideBoth = () => { if (this.lockOn) { el.style.display = 'none'; this.lockOn = false; } if (this.faOn) { fa.style.display = 'none'; this.faOn = false; } };
+    if (!pos || this.inCine || kind === 'HOOP') { hideBoth(); return; }
+    const pr = this.project(pos, this._lp || (this._lp = {}), 46);
+    const d = Math.round(pos.distanceTo(p.pos)), lbl = kind + ' ' + d + 'm';
+    if (!pr.on) {
+      if (this.lockOn) { el.style.display = 'none'; this.lockOn = false; }
+      if (!this.faOn) { fa.style.display = 'block'; this.faOn = true; }
+      const ay = clamp(pr.y, 96, Platform.h - 70), ax = clamp(pr.x, 60, Platform.w - 60);
+      fa.style.transform = `translate3d(${ax.toFixed(1)}px,${ay.toFixed(1)}px,0)`;
+      this.el.farrowG.style.transform = `rotate(${pr.ang}rad)`;
+      if (this.cache.fa !== lbl) { this.cache.fa = lbl; this.el.farrowLbl.textContent = lbl; }
+      return;
+    }
+    if (this.faOn) { fa.style.display = 'none'; this.faOn = false; }
     if (!this.lockOn) { el.style.display = 'block'; this.lockOn = true; }
-    const age = clamp((G.rtime - G.lockT) / 0.25, 0, 1), sc = lerp(1.8, 1, easeOut(age));
+    const age = clamp((G.rtime - (G.lockT || 0)) / 0.25, 0, 1), sc = lerp(1.8, 1, easeOut(age));
     el.style.transform = `translate3d(${pr.x.toFixed(1)}px,${pr.y.toFixed(1)}px,0) scale(${sc.toFixed(3)})`;
-    const d = Math.round(t.pos.distanceTo(p.pos));
-    const lbl = (t === G.snitch ? 'SNITCH ' : t === G.quaffle ? 'QUAFFLE ' : 'CARRIER ') + d + 'm';
     if (this.cache.lock !== lbl) { this.cache.lock = lbl; this.el.lockLbl.textContent = lbl; }
-    el.classList.toggle('near', t !== G.quaffle && d < 13);
+    el.classList.toggle('near', kind !== 'QUAFFLE' && d < 13);
+    el.classList.toggle('focus', !!G.focusOn && !!G.focusKind);
   },
+  // heading-up radar: whatever is in front of you is at the top
   drawRadar() {
-    const c = this.radarCtx, W = c.canvas.width, H = c.canvas.height, G = Game;
-    const mx = x => W / 2 + x / 105 * (W / 2 - 8), mz = z => H / 2 + z / 62 * (H / 2 - 8);
+    const c = this.radarCtx, W = c.canvas.width, H = c.canvas.height, G = Game, p = G.player;
+    if (!p) return;
+    const fl = Math.hypot(p.fwd.x, p.fwd.z) || 1, fx = p.fwd.x / fl, fz = p.fwd.z / fl;
+    const cx = W / 2, cy = H * 0.6, s = (W / 2 - 6) / 95;
+    const X = (x, z) => cx + ((x - p.pos.x) * -fz + (z - p.pos.z) * fx) * s;
+    const Y = (x, z) => cy - ((x - p.pos.x) * fx + (z - p.pos.z) * fz) * s;
+    const dot = (x, z, r, fill, stroke) => { const px = X(x, z), py = Y(x, z); c.beginPath(); c.arc(clamp(px, 4, W - 4), clamp(py, 4, H - 4), r, 0, TAU); c.fillStyle = fill; c.fill(); if (stroke) { c.strokeStyle = stroke; c.lineWidth = 1.5; c.stroke(); } };
     c.clearRect(0, 0, W, H);
-    c.strokeStyle = 'rgba(241,228,198,.35)'; c.lineWidth = 2;
-    c.beginPath(); c.ellipse(W / 2, H / 2, CONFIG.pitch.a / 105 * (W / 2 - 8), CONFIG.pitch.b / 62 * (H / 2 - 8), 0, 0, TAU); c.stroke();
-    c.fillStyle = '#e8b84a'; for (const h of World.hoops) { c.beginPath(); c.arc(mx(h.pos.x), mz(h.pos.z), 3, 0, TAU); c.fill(); }
-    for (const f of G.flyers) {
-      if (f.isPlayer) continue;
-      c.fillStyle = CONFIG.teams[f.house].ui; c.beginPath(); c.arc(mx(f.pos.x), mz(f.pos.z), f.role === 'keeper' ? 4 : 3.2, 0, TAU); c.fill();
-    }
-    for (const b of G.bludgers) { if (!b.mesh.visible) continue; c.fillStyle = '#111'; c.strokeStyle = '#ff5a3a'; c.lineWidth = 1.5; c.beginPath(); c.arc(mx(b.pos.x), mz(b.pos.z), 3, 0, TAU); c.fill(); c.stroke(); }
-    c.fillStyle = '#ff5a4a'; c.beginPath(); c.arc(mx(G.quaffle.pos.x), mz(G.quaffle.pos.z), 3.6, 0, TAU); c.fill();
-    if (G.snitch.active) { c.fillStyle = '#ffd65a'; c.beginPath(); c.arc(mx(G.snitch.pos.x), mz(G.snitch.pos.z), 3, 0, TAU); c.fill(); }
-    const p = G.player; if (p) {
-      c.save(); c.translate(mx(p.pos.x), mz(p.pos.z)); c.rotate(Math.atan2(p.fwd.z, p.fwd.x));
-      c.fillStyle = '#fff'; c.beginPath(); c.moveTo(8, 0); c.lineTo(-5, -5); c.lineTo(-3, 0); c.lineTo(-5, 5); c.closePath(); c.fill(); c.restore();
-    }
+    c.save(); c.beginPath(); c.rect(0, 0, W, H); c.clip();
+    c.strokeStyle = 'rgba(241,228,198,.35)'; c.lineWidth = 2; c.beginPath();
+    for (let i = 0; i <= 40; i++) { const a = i / 40 * TAU, x = Math.cos(a) * CONFIG.pitch.a, z = Math.sin(a) * CONFIG.pitch.b; i ? c.lineTo(X(x, z), Y(x, z)) : c.moveTo(X(x, z), Y(x, z)); }
+    c.stroke();
+    c.restore();
+    const sx = G.attackSign(p.side);
+    for (const h of World.hoops) dot(h.pos.x, h.pos.z, 3.2, h.side === sx ? '#ffe39a' : '#8a7a50');
+    for (const f of G.flyers) { if (f.isPlayer) continue; dot(f.pos.x, f.pos.z, f.role === 'keeper' ? 4 : 3.2, CONFIG.teams[f.house].ui); }
+    for (const b of G.bludgers) if (b.mesh.visible) dot(b.pos.x, b.pos.z, 3, '#111', '#ff5a3a');
+    if (!G.quaffle.hidden) dot(G.quaffle.pos.x, G.quaffle.pos.z, 4.6, '#ff3a2a', '#fff');
+    if (G.snitch.active) dot(G.snitch.pos.x, G.snitch.pos.z, 3.4, '#ffd65a');
+    c.fillStyle = '#fff'; c.beginPath(); c.moveTo(cx, cy - 8); c.lineTo(cx - 5.5, cy + 5); c.lineTo(cx, cy + 2); c.lineTo(cx + 5.5, cy + 5); c.closePath(); c.fill();
   },
 };
 
@@ -5288,6 +5448,7 @@ const SETTINGS_SCHEMA = [
   { key: 'invert', label: 'Invert pitch', type: 'seg', opts: [[false, 'Off'], [true, 'On']] },
   { key: 'gyro', label: 'Gyro aim', type: 'seg', opts: [[false, 'Off'], [true, 'On']], apply: v => Input.setGyro(v) },
   { key: 'aimAssist', label: 'Aim assist', type: 'seg', opts: [['auto', 'Auto'], ['off', 'Off'], ['low', 'Low'], ['high', 'High']] },
+  { key: 'ballFocus', label: 'Ball focus', type: 'seg', opts: [['toggle', 'Button'], ['always', 'Always on'], ['off', 'Off']] },
   { key: 'trackAssist', label: 'Lock-on steering', type: 'seg', opts: [['high', 'Strong'], ['low', 'Light'], ['off', 'Off']] },
   { key: 'finisherLen', label: 'Finishers', type: 'seg', opts: [['full', 'Full'], ['short', 'Short'], ['off', 'Off']] },
   { key: 'haptics', label: 'Haptics', type: 'seg', opts: [[true, 'On'], [false, 'Off']] },

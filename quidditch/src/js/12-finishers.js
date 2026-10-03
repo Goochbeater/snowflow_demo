@@ -601,10 +601,11 @@ const Finishers = {
     HUD.cinematic(false);
     const Q = c.Q;
     if (c.outcome === 'goal') {
-      Q.state = 'free'; Q.vel.copy(c.n).multiplyScalar(5); Q.trail.active = false;
+      Q.state = 'dead'; Q.vel.copy(c.n).multiplyScalar(5); Q.trail.active = false; Q.holder = null;
       if (Game.mode === 'lab') Game.after(0.6, () => { if (Game.mode === 'lab' && Game.state === 'play') Game.labReset(); });
-      else { const k = c.K; Game.after(0.8, () => { if (k && !Q.holder && Game.state === 'play') Q.attach(k); }); }
+      else Game.beginRestart(c.K, 0.5);
     } else if (Game.mode === 'lab') Game.after(1.0, () => { if (Game.mode === 'lab' && Game.state === 'play') Game.labReset(); });
+    else if (c.K) Game.restartHold(c.K, 1.4);
     this.active = null; this.ctx = null;
     if (Game.state === 'finisher') Game.state = 'play';
   },

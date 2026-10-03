@@ -6,6 +6,7 @@ const SETTINGS_SCHEMA = [
   { key: 'invert', label: 'Invert pitch', type: 'seg', opts: [[false, 'Off'], [true, 'On']] },
   { key: 'gyro', label: 'Gyro aim', type: 'seg', opts: [[false, 'Off'], [true, 'On']], apply: v => Input.setGyro(v) },
   { key: 'aimAssist', label: 'Aim assist', type: 'seg', opts: [['auto', 'Auto'], ['off', 'Off'], ['low', 'Low'], ['high', 'High']] },
+  { key: 'ballFocus', label: 'Ball focus', type: 'seg', opts: [['toggle', 'Button'], ['always', 'Always on'], ['off', 'Off']] },
   { key: 'trackAssist', label: 'Lock-on steering', type: 'seg', opts: [['high', 'Strong'], ['low', 'Light'], ['off', 'Off']] },
   { key: 'finisherLen', label: 'Finishers', type: 'seg', opts: [['full', 'Full'], ['short', 'Short'], ['off', 'Off']] },
   { key: 'haptics', label: 'Haptics', type: 'seg', opts: [[true, 'On'], [false, 'Off']] },

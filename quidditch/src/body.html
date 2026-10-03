@@ -23,6 +23,7 @@
   </div>
   <div id="hint"></div>
   <div id="lockOn"><i></i><i></i><i></i><i></i><span id="lockLbl"></span></div>
+  <div id="focusArrow"><div id="focusArrowG"><svg viewBox="-24 -24 48 48"><path d="M20 0 L-8 -15 L-2 0 L-8 15 Z" fill="#ffd25a" stroke="#2a1600" stroke-width="2"/></svg></div><span id="focusArrowLbl"></span></div>
   <div id="rank"><div class="letter" id="rankLetter">D</div><div class="sub">STYLE</div><div class="pts" id="stylePts">0</div></div>
   <div id="popups"></div>
   <div id="banner"></div>
@@ -35,6 +36,7 @@
   <div class="zone" id="zStick"></div>
   <div id="stickGhost">STEER</div>
   <div id="stickBase"><div id="stickKnob"></div></div>
+  <button class="btn" id="bFocus" aria-label="Ball focus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg><span class="cap">FOCUS</span></button>
   <button class="btn" id="bLook" aria-label="Look back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
   <button class="btn" id="bBoost" aria-label="Boost"><canvas class="meter" width="96" height="96" id="boostMeter"></canvas><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></button>
   <button class="btn" id="bPass" aria-label="Pass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 18c4-9 10-11 16-11"/><path d="M15 3l5 4-4 5"/></svg><span class="cap" id="passLbl">PASS</span></button>
@@ -137,6 +139,7 @@
       <div><b>BOOST</b>Hold the bolt. Tuck into another flyer's slipstream to refill it fast.</div>
       <div><b>PASS &amp; SHOOT</b>PASS throws to the teammate nearest your aim; without the ball it calls for a pass. Hold SHOOT and release in the green part of the ring for a perfect shot the Keeper struggles to stop. The hoop marker turns green when you're lined up.</div>
       <div><b>DODGE</b>Swipe on the right side. A last-instant dodge past a Bludger is a Perfect Dodge.</div>
+      <div><b>BALL FOCUS</b>Tap FOCUS and your broom keeps turning toward the play: the Quaffle, the carrier, an open spot for a pass, or the hoop once you have it. Push the stick to override. A gold arrow points the way when it's off screen.</div>
       <div><b>DEFEND</b>Your broom locks onto the carrier and steers you after them. SHOOT becomes STEAL: within about 12 m it launches a homing tackle. Carriers fly slower than everyone else.</div>
       <div><b>FLAIR</b>Perfect dodges, perfect catches, near misses, skimming the grass and slipstreams fill the ring around your crosshair.</div>
       <div><b>THE SNITCH</b>Released at half time. Tap SEEKER SWAP to chase it. Fly through its golden rings for speed and focus; at half focus GRAB becomes CATCH: hold and swipe for a catch finisher.</div>

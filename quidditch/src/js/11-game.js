@@ -98,7 +98,9 @@ const Game = {
     if (this.vm) Render.camera.add(this.vm.group);
     const Q = this.quaffle; Q.holder = null; Q.state = 'free'; Q.trail.reset(); Q.trail.active = false;
     for (const b of this.bludgers) { b.mesh.visible = mode !== 'lab' && mode !== 'slab'; b.state = 'roam'; b.trail.reset(); b.trail.active = false; b.vel.set(0, 0, 0); }
-    Q.mesh.visible = mode !== 'slab'; Q.hidden = mode === 'slab';
+    Q.mesh.visible = mode !== 'slab'; Q.hidden = mode === 'slab'; Q.retTo = null;
+    this.restart = null;
+    this.focusOn = Settings.ballFocus !== 'off';
     Cam.showVM = false; Cam.vmOverride = null;
     this.bludgers[0].pos.set(-4, 10, 6); this.bludgers[1].pos.set(4, 10, -6);
     this.snitch.hide();
@@ -159,7 +161,7 @@ const Game = {
       return;
     }
     if (this.state === 'finisher') Finishers.update(rdt);
-    if (this.state === 'play') this.updateClock(dt);
+    if (this.state === 'play') { this.updateClock(dt); this.updateRestart(dt); }
     this.updatePlayerInput(rdt);
     AI.update(dt);
     const steps = dt > 1 / 50 ? 2 : 1, sdt = dt / steps;
@@ -203,15 +205,16 @@ const Game = {
     }
     p.turnMul = 1.05; p.speedMul = 1;
     this.stealCd -= rdt;
+    if (Settings.ballFocus === 'always') this.focusOn = true; else if (Settings.ballFocus === 'off') this.focusOn = false;
     this.updateLock();
-    this.steerAssist(p);
+    if (!this.focusSteer(p)) this.steerAssist(p);
     this.updateLunge(rdt * this.curTs);
   },
 
   // ---------- interactions ----------
   interactions(dt) {
     const Q = this.quaffle;
-    if (Q.state === 'flying' || Q.state === 'free') { this.checkGoal(); if (!Q.holder && Q.state !== 'scripted') this.checkCatch(); }
+    if (Q.state === 'flying' || Q.state === 'free') { this.checkGoal(); if (!Q.holder && (Q.state === 'flying' || Q.state === 'free')) this.checkCatch(); }
     for (const b of this.bludgers) if (b.mesh.visible) this.checkBludger(b);
   },
   checkGoal() {
@@ -230,7 +233,7 @@ const Game = {
       if (f === Q.thrower && this.time - Q.throwT < 0.45) continue;
       let reach = CONFIG.ball.catchR;
       const hostileShot = Q.thrower && Q.thrower.side !== f.side && Q.state === 'flying';
-      if (f.role === 'keeper') reach = hostileShot ? this.diff.keeperReach * (Q.perfect ? 0.55 : 1) : 2.2;
+      if (f.role === 'keeper') reach = hostileShot ? this.diff.keeperReach * (Q.perfect ? 0.55 : 1) + (Q.thrower && !Q.thrower.isPlayer ? 0.6 : 0) : 2.2;
       if (f.isPlayer) reach = 2.9;
       _v1.copy(f.pos).addScaledVector(f.up, 0.35);
       if (_v1.distanceTo(Q.pos) > reach) continue;
@@ -242,7 +245,7 @@ const Game = {
       let p = f.role === 'keeper' ? 0.9 : hostileShot ? 0.32 * this.diff.aim : 0.85;
       if (f.role === 'keeper' && hostileShot) {
         const range = Q.thrower ? Q.thrower.pos.distanceTo(f.pos) : 30;
-        p = this.diff.keeperSave * (Q.perfect ? 0.45 : 1) * (range < 16 ? 0.75 : 1) * (Q.thrower && Q.thrower.isPlayer ? 1 : 1.15);
+        p = Math.min(0.85, this.diff.keeperSave * (Q.perfect ? 0.45 : 1) * (range < 16 ? 0.75 : 1) * (Q.thrower && Q.thrower.isPlayer ? 1 : 1.6));
       }
       if (Math.random() < p) { this.catchBy(f); return; }
     }
@@ -266,6 +269,8 @@ const Game = {
   },
   onSave(k, shooter) {
     FX.sparks(k.pos, linCol(2, 1.6, 1), 14, 6);
+    if (this.mode === 'lab') this.after(1.2, () => { if (this.mode === 'lab' && this.state === 'play') this.labReset(); });
+    else this.restartHold(k, 1.4);
     if (shooter.isPlayer) { HUD.banner('SAVED', 'THE KEEPER READ IT'); Sound.crowdGroan(); }
     else if (this.player && k.side === this.player.side) { HUD.ticker(`Huge save by the ${CONFIG.teams[this.houses[k.side]].name} Keeper!`); Sound.crowdRoar(0.5, 2); World.excite[this.houses[k.side]] = 0.7; }
   },
@@ -328,16 +333,18 @@ const Game = {
   },
   pass(from, to) {
     const Q = this.quaffle; if (Q.holder !== from) return;
+    if (this.restart && from === this.restart.keeper) this.restart = null;
     from.hand(_v1);
-    const t = clamp(_v1.distanceTo(to.pos) / CONFIG.ball.pass, 0.1, 2);
-    _v2.copy(to.pos).addScaledVector(to.vel, t * 0.9).addScaledVector(UP, 0.3);
-    this.ballistic(_v1, _v2, CONFIG.ball.pass, _v3);
+    const dist = _v1.distanceTo(to.pos), sp = clamp(dist * 0.85, CONFIG.ball.pass, 46);
+    const t = clamp(dist / sp, 0.1, 2);
+    _v2.copy(to.pos).addScaledVector(to.vel, t * (to.isPlayer ? 0.9 : 0.6)).addScaledVector(UP, 0.3);
+    this.ballistic(_v1, _v2, sp, _v3);
     Q.release(_v3, to); Q.rolled = null;
     if (from.isPlayer) { Sound.play('throw'); this.throwAnim = 0.3; this.lastPlayerPassT = this.time; Platform.vibrate(12); }
     else if (Render.camera.position.distanceTo(from.pos) < 30) Sound.play('throw', { vol: 0.4 });
   },
   aiShoot(f, hoop) {
-    const err = (1 - this.diff.aim) * 3.4;
+    const err = (1 - this.diff.aim) * 5.2;
     _v4.copy(hoop.pos).add(_v5.set(0, rnd(-err, err), rnd(-err, err)));
     f.hand(_v1); this.ballistic(_v1, _v4, 38, _v3);
     this.quaffle.release(_v3, null); this.quaffle.rolled = null;
@@ -451,7 +458,8 @@ const Game = {
     if (this.callPending) return;
     this.callPending = true; Input.callT = this.rtime; c.ai.passingT = this.rtime;
     HUD.popup('CALLING FOR IT'); Sound.play('ui');
-    this.after((c.role === 'keeper' ? 0.3 : 0.16) + Math.random() * 0.14, () => {
+    const R = this.restart, kd = R && R.keeper === c ? Math.max(0.35, R.t - 1.4) : 0;
+    this.after(kd + (c.role === 'keeper' ? 0.3 : 0.16) + Math.random() * 0.14, () => {
       this.callPending = false;
       const p = this.player;
       if (this.state === 'play' && p && this.quaffle.holder === c && c.stun <= 0 && !c.scripted) { this.pass(c, p); c.ai.cool = 1.5; this.calls = []; }
@@ -468,7 +476,7 @@ const Game = {
     const Q = this.quaffle;
     let cand = null;
     if (p.role === 'seeker') cand = this.snitch.active ? this.snitch : null;
-    else if (!p.hasBall) cand = Q.holder ? (Q.holder.side !== p.side ? Q.holder : null) : (Q.state === 'scripted' ? null : Q);
+    else if (!p.hasBall) cand = Q.holder ? (Q.holder.side !== p.side && !(this.restart && this.restart.keeper === Q.holder) ? Q.holder : null) : (Q.state === 'flying' || Q.state === 'free' ? Q : null);
     if (!cand) { this.lock = null; return; }
     _v1.subVectors(cand.pos, p.pos); const d = _v1.length(), dot = _v1.divideScalar(Math.max(d, 1e-3)).dot(p.fwd);
     if (this.lock === cand) { if (d > 115 || dot < 0.05) this.lock = null; }
@@ -488,10 +496,91 @@ const Game = {
     p.input.y = clamp(p.input.y + clamp(dp * 2.6, -1, 1) * k, -1, 1);
     if (t !== this.quaffle && d < 32) p.speedMul = 1.07;
   },
+  // ---------- restarts: Keeper throw-in after goals and saves ----------
+  beginRestart(k, delay = 1.0) {
+    const Q = this.quaffle; if (!k) return;
+    const id = this.restartId = (this.restartId || 0) + 1;
+    this.restart = { keeper: k, side: k.side, phase: 'return', t: 99, id };
+    this.after(delay, () => {
+      const R = this.restart; if (!R || R.id !== id || this.state === 'end') return;
+      if (Q.holder === k) { this.onReturned(k); return; }
+      if (!Q.holder) { Q.state = 'returning'; Q.retTo = k; Q.trail.active = false; }
+      else this.restart = null;
+    });
+  },
+  restartHold(k, t) {
+    this.restart = { keeper: k, side: k.side, phase: 'hold', t };
+  },
+  onReturned(k) {
+    this.restartHold(k, 2.2);
+    const own = this.player && this.player.side === k.side && this.player.role === 'chaser';
+    HUD.ticker(own ? 'Keeper has it. Fly upfield and CALL for the throw-in.' : `${CONFIG.teams[this.houses[k.side]].name} Keeper restarts play.`);
+    Sound.play('whistle', { dur: 0.22, vol: 0.5 });
+  },
+  updateRestart(dt) {
+    const R = this.restart; if (!R || R.phase !== 'hold') return;
+    if (this.quaffle.holder !== R.keeper) { this.restart = null; return; }
+    if ((R.t -= dt) <= 0) this.throwIn(R.keeper);
+  },
+  throwIn(k) {
+    const sx = this.attackSign(k.side), p = this.player;
+    let tgt = null;
+    if (p && p.side === k.side && p.role === 'chaser' && p.stun <= 0 && p.pos.distanceTo(k.pos) < 80) tgt = p;
+    if (!tgt) {
+      let bs = -1e9;
+      for (const m of this.teams[k.side]) {
+        if (m.role !== 'chaser' || m.stun > 0 || m.scripted) continue;
+        let crowd = 99; for (const o of this.teams[1 - k.side]) crowd = Math.min(crowd, o.pos.distanceTo(m.pos));
+        const s = (m.pos.x - k.pos.x) * sx * 0.3 + Math.min(crowd, 15) - Math.max(0, m.pos.distanceTo(k.pos) - 55);
+        if (s > bs) { bs = s; tgt = m; }
+      }
+    }
+    this.restart = null;
+    if (tgt) { this.pass(k, tgt); if (tgt.isPlayer) HUD.popup('THROW-IN'); }
+  },
+  // ---------- ball focus: keeps your broom pointed at the play ----------
+  toggleFocus() {
+    this.focusOn = !this.focusOn; Sound.play('ui');
+    HUD.popup(this.focusOn ? 'BALL FOCUS ON' : 'BALL FOCUS OFF'); Platform.vibrate(10);
+  },
+  focusTarget(p) {
+    const Q = this.quaffle, out = this.focusPt || (this.focusPt = new THREE.Vector3()), R = this.restart;
+    let kind = null;
+    if (p.role === 'seeker') { if (this.snitch.active) { out.copy(this.snitch.pos).addScaledVector(this.snitch.vel, 0.25); kind = 'SNITCH'; } }
+    else if (p.hasBall) { const h = this.targetHoop(p); if (h) { out.copy(h.pos); kind = 'HOOP'; } }
+    else if (R && R.side === p.side) {
+      // our Keeper is restarting: get into space upfield to receive the throw-in
+      const sx = this.attackSign(p.side); out.set(R.keeper.pos.x + sx * 38, 14, clamp(p.pos.z, -18, 18)); kind = 'GET OPEN';
+    } else if (R) { out.set(0, 14, clamp(p.pos.z, -20, 20)); kind = 'REGROUP'; }
+    else if (!Q.holder) { if (Q.state === 'flying' || Q.state === 'free') { out.copy(Q.pos).addScaledVector(Q.vel, 0.3); kind = 'QUAFFLE'; } }
+    else if (Q.holder.side !== p.side) { out.copy(Q.holder.pos).addScaledVector(Q.holder.vel, 0.3); kind = 'CARRIER'; }
+    else {
+      const c = Q.holder, sx = this.attackSign(p.side);
+      out.set(c.pos.x + sx * 16, c.pos.y + 1, c.pos.z + (p.pos.z > c.pos.z ? 9 : -9)); kind = 'SUPPORT';
+    }
+    this.focusKind = kind;
+    return kind ? out : null;
+  },
+  focusSteer(p) {
+    this.focusKind = null;
+    if (!this.focusOn || Settings.ballFocus === 'off' || p.dodge || this.lunge) return false;
+    const T = this.focusTarget(p); if (!T) return false;
+    _v2.subVectors(T, p.pos); const d = _v2.length();
+    if (d < 2.5) return true;
+    const [ty, tp] = yawPitchFromDir(_v2);
+    const dy = wrapAngle(ty - p.yaw), dp = clamp(tp, -0.9, 0.9) - p.pitch;
+    const stick = Math.min(1, Math.hypot(Input.steer.x, Input.steer.y));
+    const k = stick > 0.35 ? 0.35 : 0.95;
+    p.input.x = clamp(p.input.x * (1 - k * 0.6) + clamp(-dy * 3, -1, 1) * k, -1, 1);
+    p.input.y = clamp(p.input.y * (1 - k * 0.6) + clamp(dp * 3, -1, 1) * k, -1, 1);
+    if (Math.abs(dy) > 1.2 && d > 10) p.turnMul = 1.75; // swing round quickly instead of circling
+    return true;
+  },
   tryPlayerSteal() {
     const p = this.player, Q = this.quaffle;
     if (this.stealCd > 0 || this.lunge) return;
     const c = Q.holder;
+    if (this.restart && (c === this.restart.keeper || !c)) { if (this.rtime - (this.stealMsgT || -9) > 2.5) { HUD.popup("KEEPER'S RESTART", true); this.stealMsgT = this.rtime; } return; }
     this.stealCd = 0.9; this.throwAnim = 0.25;
     if (c && c.side !== p.side) {
       _v1.subVectors(c.pos, p.pos); const d = _v1.length();
@@ -555,7 +644,7 @@ const Game = {
   goal(side, hoop, info) {
     this.score[side] += 10;
     const Q = this.quaffle, scorer = info.scorer || Q.thrower;
-    if (!info.finisher) { Q.state = 'free'; Q.vel.multiplyScalar(0.25); Q.trail.active = false; Q.holder = null; }
+    if (!info.finisher) { Q.state = 'dead'; Q.vel.multiplyScalar(0.3); Q.trail.active = false; Q.holder = null; Q.passTarget = null; }
     hoop.glow = 1.3; FX.shockwave(hoop.pos, linCol(2.6, 1.9, 0.8), 12); FX.sparks(hoop.pos, linCol(3, 2.2, 0.9), 50, 13);
     const pSide = this.player ? this.player.side : 0, house = this.houses[side];
     World.excite[house] = 1;
@@ -577,7 +666,7 @@ const Game = {
     const k = this.keeper(1 - side);
     if (info.finisher) { /* restart handled when the cinematic ends */ }
     else if (this.mode === 'lab') this.after(1.4, () => { if (this.mode === 'lab' && this.state === 'play') this.labReset(); });
-    else if (k) this.after(1.1, () => { if (!Q.holder && (this.state === 'play' || this.state === 'finisher')) { Q.attach(k); } });
+    else if (k) this.beginRestart(k, 1.0);
   },
   releaseSnitch() {
     this.snitch.release(); Sound.play('snitch');

@@ -17,6 +17,7 @@ const HUD = {
     this.el = { ptsA: $('ptsA'), ptsB: $('ptsB'), nameA: $('nameA'), nameB: $('nameB'), chipA: $('chipA'), chipB: $('chipB'), clock: $('clock'), ring: $('flairRing'), reticle: $('reticle'), rank: $('rankLetter'), stylePts: $('stylePts'), banner: $('banner'), stamp: $('stamp'), popups: $('popups'), ticker: $('ticker'), hint: $('hint'), warn: $('warnArc'), comfort: $('comfort'), shoot: $('bShoot'), shootLbl: $('shootLbl'), swap: $('bSwap'), radar: $('radar'), overlay: $('overlayMsg') };
     this.radarCtx = this.el.radar.getContext('2d');
     this.el.pass = $('bPass'); this.el.passLbl = $('passLbl'); this.el.lock = $('lockOn'); this.el.lockLbl = $('lockLbl');
+    this.el.focusBtn = $('bFocus'); this.el.farrow = $('focusArrow'); this.el.farrowG = $('focusArrowG'); this.el.farrowLbl = $('focusArrowLbl');
     this.boostCtx = $('boostMeter').getContext('2d');
     this.chargeCtx = $('chargeMeter').getContext('2d');
     const box = $('inds'); this.inds = [];
@@ -146,7 +147,7 @@ const HUD = {
         this.ind(i++, 'mate' + m.house, IND_SVG.mate(T.ui), _v4.copy(m.pos).addScaledVector(UP, 1.6), lbl, T.ui);
       }
       if (p.hasBall && p.role === 'chaser') { const h = G.targetHoop(); if (h) { const ok = G.shotLinedUp(); this.ind(i++, ok ? 'targetOk' : 'target', IND_SVG.target(ok ? '#7dff9a' : '#ffe39a'), h.pos, '', ok ? '#7dff9a' : '#ffe39a'); } }
-      else if (Q.holder !== p && !Q.hidden && G.lock !== Q) this.ind(i++, 'q', IND_SVG.quaffle(), Q.pos, Q.holder ? '' : 'QUAFFLE', '#e0533a');
+      else if (Q.holder !== p && !Q.hidden && G.lock !== Q && !(G.focusOn && G.focusKind === 'QUAFFLE')) this.ind(i++, 'q', IND_SVG.quaffle(), Q.pos, Q.holder ? '' : 'QUAFFLE ' + Math.round(Q.pos.distanceTo(p.pos)) + 'm', '#e0533a');
       for (const b of G.bludgers) { if (b.state === 'struck' && b.byside !== p.side && b.pos.distanceTo(p.pos) < 60) this.ind(i++, 'b', IND_SVG.bludger(), b.pos, '', '#ff4a2a'); }
       if (G.snitch.active) this.ind(i++, 'sn', IND_SVG.snitch(), G.snitch.pos, p.role === 'seeker' ? Math.round(G.snitch.pos.distanceTo(p.pos)) + 'm' : '', '#ffd65a');
     }
@@ -169,35 +170,56 @@ const HUD = {
     if (Settings.radar && this.frame % 3 === 0) this.drawRadar();
   },
   updateLock(G, p) {
-    const t = G.lock, el = this.el.lock;
-    if (!t || this.inCine) { if (this.lockOn) { el.style.display = 'none'; this.lockOn = false; } return; }
-    const pr = this.project(t.pos, this._lp || (this._lp = {}), 40);
-    if (!pr.on) { if (this.lockOn) { el.style.display = 'none'; this.lockOn = false; } return; }
+    const el = this.el.lock, fa = this.el.farrow;
+    const fb = this.el.focusBtn, showBtn = Settings.ballFocus === 'toggle' && Game.mode !== 'slab';
+    if (this.cache.fbShow !== showBtn) { this.cache.fbShow = showBtn; fb.style.display = showBtn ? '' : 'none'; }
+    fb.classList.toggle('on', !!G.focusOn);
+    // focus mode shows the objective; otherwise the lock-on target
+    let pos = null, kind = null;
+    if (G.focusOn && G.focusKind && Settings.ballFocus !== 'off') { pos = G.focusPt; kind = G.focusKind; }
+    else if (G.lock) { pos = G.lock.pos; kind = G.lock === G.snitch ? 'SNITCH' : G.lock === G.quaffle ? 'QUAFFLE' : 'CARRIER'; }
+    const hideBoth = () => { if (this.lockOn) { el.style.display = 'none'; this.lockOn = false; } if (this.faOn) { fa.style.display = 'none'; this.faOn = false; } };
+    if (!pos || this.inCine || kind === 'HOOP') { hideBoth(); return; }
+    const pr = this.project(pos, this._lp || (this._lp = {}), 46);
+    const d = Math.round(pos.distanceTo(p.pos)), lbl = kind + ' ' + d + 'm';
+    if (!pr.on) {
+      if (this.lockOn) { el.style.display = 'none'; this.lockOn = false; }
+      if (!this.faOn) { fa.style.display = 'block'; this.faOn = true; }
+      const ay = clamp(pr.y, 96, Platform.h - 70), ax = clamp(pr.x, 60, Platform.w - 60);
+      fa.style.transform = `translate3d(${ax.toFixed(1)}px,${ay.toFixed(1)}px,0)`;
+      this.el.farrowG.style.transform = `rotate(${pr.ang}rad)`;
+      if (this.cache.fa !== lbl) { this.cache.fa = lbl; this.el.farrowLbl.textContent = lbl; }
+      return;
+    }
+    if (this.faOn) { fa.style.display = 'none'; this.faOn = false; }
     if (!this.lockOn) { el.style.display = 'block'; this.lockOn = true; }
-    const age = clamp((G.rtime - G.lockT) / 0.25, 0, 1), sc = lerp(1.8, 1, easeOut(age));
+    const age = clamp((G.rtime - (G.lockT || 0)) / 0.25, 0, 1), sc = lerp(1.8, 1, easeOut(age));
     el.style.transform = `translate3d(${pr.x.toFixed(1)}px,${pr.y.toFixed(1)}px,0) scale(${sc.toFixed(3)})`;
-    const d = Math.round(t.pos.distanceTo(p.pos));
-    const lbl = (t === G.snitch ? 'SNITCH ' : t === G.quaffle ? 'QUAFFLE ' : 'CARRIER ') + d + 'm';
     if (this.cache.lock !== lbl) { this.cache.lock = lbl; this.el.lockLbl.textContent = lbl; }
-    el.classList.toggle('near', t !== G.quaffle && d < 13);
+    el.classList.toggle('near', kind !== 'QUAFFLE' && d < 13);
+    el.classList.toggle('focus', !!G.focusOn && !!G.focusKind);
   },
+  // heading-up radar: whatever is in front of you is at the top
   drawRadar() {
-    const c = this.radarCtx, W = c.canvas.width, H = c.canvas.height, G = Game;
-    const mx = x => W / 2 + x / 105 * (W / 2 - 8), mz = z => H / 2 + z / 62 * (H / 2 - 8);
+    const c = this.radarCtx, W = c.canvas.width, H = c.canvas.height, G = Game, p = G.player;
+    if (!p) return;
+    const fl = Math.hypot(p.fwd.x, p.fwd.z) || 1, fx = p.fwd.x / fl, fz = p.fwd.z / fl;
+    const cx = W / 2, cy = H * 0.6, s = (W / 2 - 6) / 95;
+    const X = (x, z) => cx + ((x - p.pos.x) * -fz + (z - p.pos.z) * fx) * s;
+    const Y = (x, z) => cy - ((x - p.pos.x) * fx + (z - p.pos.z) * fz) * s;
+    const dot = (x, z, r, fill, stroke) => { const px = X(x, z), py = Y(x, z); c.beginPath(); c.arc(clamp(px, 4, W - 4), clamp(py, 4, H - 4), r, 0, TAU); c.fillStyle = fill; c.fill(); if (stroke) { c.strokeStyle = stroke; c.lineWidth = 1.5; c.stroke(); } };
     c.clearRect(0, 0, W, H);
-    c.strokeStyle = 'rgba(241,228,198,.35)'; c.lineWidth = 2;
-    c.beginPath(); c.ellipse(W / 2, H / 2, CONFIG.pitch.a / 105 * (W / 2 - 8), CONFIG.pitch.b / 62 * (H / 2 - 8), 0, 0, TAU); c.stroke();
-    c.fillStyle = '#e8b84a'; for (const h of World.hoops) { c.beginPath(); c.arc(mx(h.pos.x), mz(h.pos.z), 3, 0, TAU); c.fill(); }
-    for (const f of G.flyers) {
-      if (f.isPlayer) continue;
-      c.fillStyle = CONFIG.teams[f.house].ui; c.beginPath(); c.arc(mx(f.pos.x), mz(f.pos.z), f.role === 'keeper' ? 4 : 3.2, 0, TAU); c.fill();
-    }
-    for (const b of G.bludgers) { if (!b.mesh.visible) continue; c.fillStyle = '#111'; c.strokeStyle = '#ff5a3a'; c.lineWidth = 1.5; c.beginPath(); c.arc(mx(b.pos.x), mz(b.pos.z), 3, 0, TAU); c.fill(); c.stroke(); }
-    c.fillStyle = '#ff5a4a'; c.beginPath(); c.arc(mx(G.quaffle.pos.x), mz(G.quaffle.pos.z), 3.6, 0, TAU); c.fill();
-    if (G.snitch.active) { c.fillStyle = '#ffd65a'; c.beginPath(); c.arc(mx(G.snitch.pos.x), mz(G.snitch.pos.z), 3, 0, TAU); c.fill(); }
-    const p = G.player; if (p) {
-      c.save(); c.translate(mx(p.pos.x), mz(p.pos.z)); c.rotate(Math.atan2(p.fwd.z, p.fwd.x));
-      c.fillStyle = '#fff'; c.beginPath(); c.moveTo(8, 0); c.lineTo(-5, -5); c.lineTo(-3, 0); c.lineTo(-5, 5); c.closePath(); c.fill(); c.restore();
-    }
+    c.save(); c.beginPath(); c.rect(0, 0, W, H); c.clip();
+    c.strokeStyle = 'rgba(241,228,198,.35)'; c.lineWidth = 2; c.beginPath();
+    for (let i = 0; i <= 40; i++) { const a = i / 40 * TAU, x = Math.cos(a) * CONFIG.pitch.a, z = Math.sin(a) * CONFIG.pitch.b; i ? c.lineTo(X(x, z), Y(x, z)) : c.moveTo(X(x, z), Y(x, z)); }
+    c.stroke();
+    c.restore();
+    const sx = G.attackSign(p.side);
+    for (const h of World.hoops) dot(h.pos.x, h.pos.z, 3.2, h.side === sx ? '#ffe39a' : '#8a7a50');
+    for (const f of G.flyers) { if (f.isPlayer) continue; dot(f.pos.x, f.pos.z, f.role === 'keeper' ? 4 : 3.2, CONFIG.teams[f.house].ui); }
+    for (const b of G.bludgers) if (b.mesh.visible) dot(b.pos.x, b.pos.z, 3, '#111', '#ff5a3a');
+    if (!G.quaffle.hidden) dot(G.quaffle.pos.x, G.quaffle.pos.z, 4.6, '#ff3a2a', '#fff');
+    if (G.snitch.active) dot(G.snitch.pos.x, G.snitch.pos.z, 3.4, '#ffd65a');
+    c.fillStyle = '#fff'; c.beginPath(); c.moveTo(cx, cy - 8); c.lineTo(cx - 5.5, cy + 5); c.lineTo(cx, cy + 2); c.lineTo(cx + 5.5, cy + 5); c.closePath(); c.fill();
   },
 };

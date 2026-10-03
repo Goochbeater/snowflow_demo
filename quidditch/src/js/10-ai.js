@@ -44,7 +44,10 @@ const AI = {
       }
       if (f.role === 'seeker') this.seekerCatch(f, dt);
       const bd = f.role === 'seeker' && Game.snitch.active ? 8 : 34;
+      const Q = Game.quaffle, receiving = Q.state === 'flying' && Q.passTarget === f;
+      f.speedMul = receiving ? 0.5 : 1;
       this.steer(f, f.ai.target, dt, bd);
+      if (receiving) f.input.boost = false;
       if (f.role === 'chaser' && f.ai.tackle) this.tryTackle(f);
     }
   },
@@ -56,7 +59,7 @@ const AI = {
     for (const h of World.hoops) {
       if (h.side !== sx) continue;
       const kd = keeper ? keeper.pos.distanceTo(h.pos) : 10;
-      const s = kd * 1.4 - Math.abs(h.pos.z - f.pos.z) * 0.15 + rnd(0, 2);
+      const s = kd * 0.45 - Math.abs(h.pos.z - f.pos.z) * 0.2 + rnd(0, 5);
       if (s > bs) { bs = s; best = h; }
     }
     return best;
@@ -78,6 +81,12 @@ const AI = {
   chaser(f) {
     const Q = Game.quaffle, sx = Game.attackSign(f.side), D = Game.diff, T = f.ai.target;
     f.ai.tackle = false; f.ai.call = 0;
+    const R = Game.restart;
+    if (R && !f.hasBall) {
+      if (R.side === f.side) T.set(R.keeper.pos.x + sx * (26 + f.slot * 11), 13 + f.slot * 2, (f.slot - 1) * 15);
+      else T.set(-sx * (8 + f.slot * 6), 14, (f.slot - 1) * 14);
+      this.clampTarget(T); return;
+    }
     if (f.hasBall) {
       const hoop = f.ai.hoop && Math.random() > 0.08 ? f.ai.hoop : (f.ai.hoop = this.pickHoop(f.side, f));
       const dist = f.pos.distanceTo(hoop.pos);
@@ -91,7 +100,7 @@ const AI = {
         if (m && (m.pos.x - f.pos.x) * sx > -3) { Game.pass(f, m); f.ai.cool = 1.2; return; }
       }
       _v2.subVectors(hoop.pos, f.pos).normalize();
-      if (dist < 32 && f.ai.cool <= 0 && _v2.dot(f.fwd) > 0.72) { Game.aiShoot(f, hoop); f.ai.cool = 1.5; f.ai.hoop = null; return; }
+      if (dist < 29 && f.ai.cool <= 0 && _v2.dot(f.fwd) > 0.74) { Game.aiShoot(f, hoop); f.ai.cool = 1.5; f.ai.hoop = null; return; }
       const weave = Math.sin(Game.time * 0.9 + f.id) * 8;
       T.set(hoop.pos.x - sx * 20, hoop.pos.y + Math.sin(Game.time * 0.7 + f.id) * 3, hoop.pos.z + weave);
     } else if (Q.holder && Q.holder.side === f.side) {
@@ -119,6 +128,7 @@ const AI = {
   },
   tryTackle(f) {
     const c = Game.quaffle.holder; if (!c || c.side === f.side || f.ai.cool > 0) return;
+    if (Game.restart && Game.restart.keeper === c) return;
     if (f.pos.distanceTo(c.pos) > 3.4) return;
     f.ai.cool = 1.4;
     if (c.invuln > 0) { if (c.isPlayer) Game.styleEvent('SLIPPED THE TACKLE', 0.12, 120); return; }
@@ -166,6 +176,7 @@ const AI = {
     if (f.hasBall) {
       f.ai.hold = (f.ai.hold || 0) + dt;
       T.set(hx - sx * 4, 14, 0);
+      if (Game.restart && Game.restart.keeper === f) f.ai.hold = 0;
       if (f.ai.hold > 1.3) { const m = Game.teams[f.side].filter(o => o.role === 'chaser' && o.stun <= 0).sort((a, b) => a.pos.distanceToSquared(f.pos) - b.pos.distanceToSquared(f.pos))[0]; if (m) Game.pass(f, m); f.ai.hold = 0; }
     } else {
       f.ai.hold = 0;
@@ -178,7 +189,7 @@ const AI = {
       } else if (carrier) {
         const c = Q.holder; let best = null, bd = 1e9;
         for (const h of World.hoops) { if (h.side !== sx) continue; _v2.subVectors(h.pos, c.pos).normalize(); const a = 1 - _v2.dot(c.fwd); if (a < bd) { bd = a; best = h; } }
-        if (best) T.set(hx - sx * 3.2, best.pos.y, best.pos.z * 0.8 + c.pos.z * 0.08);
+        if (best) T.set(hx - sx * 3.2, lerp(14, best.pos.y, 0.5), best.pos.z * 0.45 + c.pos.z * 0.06);
       } else if (!Q.holder && Math.abs(Q.pos.x - hx) < 18 && Q.pos.distanceTo(f.pos) < 14) {
         T.copy(Q.pos);
       }
@@ -186,14 +197,16 @@ const AI = {
     }
     // reaction-lagged kinematic hover
     f.ai.smooth = f.ai.smooth || T.clone();
-    f.ai.smooth.lerp(T, 1 - Math.exp(-dt / Math.max(D.react, 0.05) * 1.6));
+    const shotIn = Q.state === 'flying' && Q.vel.x * sx > 0 && Q.thrower && Q.thrower.side !== f.side;
+    f.ai.smooth.lerp(T, 1 - Math.exp(-dt / Math.max(D.react, 0.05) * (shotIn ? 2.6 : 1.6)));
     _v1.subVectors(f.ai.smooth, f.pos);
-    const d = _v1.length(), step = D.keeperSpeed * dt;
+    const d = _v1.length(), step = D.keeperSpeed * (shotIn ? 1.9 : 1) * dt;
     const prev = _v3.copy(f.pos);
     if (d > step) _v1.multiplyScalar(step / d);
     f.pos.add(_v1);
     f.vel.subVectors(f.pos, prev).divideScalar(Math.max(dt, 1e-4));
-    _v2.subVectors(Q.pos, f.pos); f.lookDir(_v2, 6, dt);
+    if (f.hasBall) _v2.set(-sx, 0, 0); else _v2.subVectors(Q.pos, f.pos);
+    f.lookDir(_v2, 6, dt);
     f.roll = damp(f.roll, clamp(-f.vel.z * sx * 0.12, -0.9, 0.9), 6, dt);
     f.extraRoll = 0; f.frame();
   },
