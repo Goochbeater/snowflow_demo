@@ -69,7 +69,7 @@ const Game = {
   keeper(side) { return this.teams[side].find(f => f.role === 'keeper'); },
   after(t, fn) { this.timers.push({ at: this.rtime + t, fn }); },
   clearFlyers() {
-    for (const f of this.flyers) { Render.scene.remove(f.mesh); f.mesh.userData.rider.geometry.dispose(); }
+    for (const f of this.flyers) { Render.scene.remove(f.mesh); const r = f.mesh.userData.rider; if (r.geometry) r.geometry.dispose(); }
     Robes.clear();
     this.flyers = []; this.teams = [[], []]; this.player = null; this.lock = null; this.lunge = null; this.focus = 0;
   },
@@ -156,6 +156,7 @@ const Game = {
       if (n !== this.countShown && n >= 1 && n <= 3) { this.countShown = n; HUD.bigCount(String(n)); Sound.play('ui'); }
       if (this.countT <= 0) { this.state = 'play'; HUD.bigCount('GO', 0.6); Sound.play('whistle', { dur: 0.5 }); Sound.crowdRoar(0.6, 2); }
       for (const f of this.flyers) f.sync();
+      RiderAnim.frame++; for (const f of this.flyers) RiderAnim.update(f, rdt);
       this.quaffle.update(0);
       this.updateViewmodel(rdt);
       return;
@@ -173,6 +174,7 @@ const Game = {
       if (this.state === 'play') this.interactions(sdt);
     }
     for (const f of this.flyers) f.sync();
+    RiderAnim.frame++; for (const f of this.flyers) RiderAnim.update(f, dt);
     if (this.player) this.updatePlayerFeel(rdt, dt);
     this.updateViewmodel(rdt);
     this.styleUpdate(rdt);

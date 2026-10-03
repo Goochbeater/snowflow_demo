@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 
 // ===================== CONFIG =====================
 const TAU = Math.PI * 2;
@@ -143,4 +144,6 @@ const Settings = Object.assign({}, DEFAULT_SETTINGS, lsGet('qsb_settings', {}));
 const saveSettings = () => lsSet('qsb_settings', Settings);
 const SaveData = Object.assign({ best: 0, wins: 0, matches: 0, finishers: 0, bestRank: 0, unlocked: { thunder: false, starfall: false }, seenHints: false }, lsGet('qsb_save', {}));
 const persist = () => lsSet('qsb_save', SaveData);
+// embedded asset (data URI) -> ArrayBuffer
+function assetBuffer(key) { const b64 = ASSET_DATA[key].split(',')[1]; return Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer; }
 const nextFrame = () => new Promise(r => requestAnimationFrame(() => r()));

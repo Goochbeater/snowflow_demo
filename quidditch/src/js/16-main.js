@@ -41,6 +41,8 @@ function frame(now) {
     await World.build(progress);
     progress(0.7, 'Stitching the gloves…'); await nextFrame();
     await Hands.load();
+    progress(0.71, 'Fitting the robes…'); await nextFrame();
+    await Humans.load();
     progress(0.72, 'Waxing the brooms…'); await nextFrame();
     Models.init(); Robes.init(); FX.init(); Game.init(); HUD.init(); Input.init(); UI.init();
     World.setWeather(Settings.weather === 'overcast' ? 'golden' : Settings.weather);
@@ -57,7 +59,7 @@ function frame(now) {
     for (const m of warm) m.visible = false;
     Render.scene.remove(ghost); World.lanterns.visible = lv; World.rain.visible = rv; Game.snitch.group.visible = false;
     progress(1, 'Ready.'); await nextFrame();
-    window.__game = { Robes, Hands, AI, Game, Finishers, Input, UI, Render, Settings, World, Cam, HUD, Perf, Sound, SaveData };
+    window.__game = { Robes, Hands, Humans, Human, RidePoses, Kits, Models, AI, Game, Finishers, Input, UI, Render, Settings, World, Cam, HUD, Perf, Sound, SaveData };
     window.__ready = true;
     requestAnimationFrame(frame);
     UI.title();

@@ -61,6 +61,6 @@ ${js}
 </html>
 `;
 
-writeFileSync(join(root, 'index.html'), full);
+writeFileSync(process.env.OUT || join(root, 'index.html'), full);
 if (process.argv[2]) writeFileSync(process.argv[2], fragment);
 console.log('built', (full.length / 1024).toFixed(1) + ' KB');

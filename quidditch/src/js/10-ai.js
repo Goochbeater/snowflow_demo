@@ -162,7 +162,7 @@ const AI = {
   swing(f, dt) {
     f.ai.swing -= dt;
     if (f.ai.swing > 0) return;
-    const b = Game.bludgers[f.slot % 2], tgt = f.ai.swingTarget; f.ai.swingTarget = null;
+    const b = Game.bludgers[f.slot % 2], tgt = f.ai.swingTarget; f.ai.swingTarget = null; f.swungT = Game.time;
     f.ai.cool = Game.diff.beaterCd + rnd(0, 2);
     if (!tgt || b.pos.distanceTo(f.pos) > 6.5 || b.state !== 'roam') return;
     const t = tgt.pos.distanceTo(b.pos) / CONFIG.bludger.struck;

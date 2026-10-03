@@ -140,13 +140,38 @@ const Models = {
     return Geo.merge(P, ['aFlutter']);
   },
   flyer(team, role, seed) {
-    const look = { skin: SKIN[seed % SKIN.length], hair: HAIR[(seed * 3 + 1) % HAIR.length], style: seed % 3 };
     const g = new THREE.Group();
-    const rider = new THREE.Mesh(this.riderGeo(team, role, look), this.flyerMat);
     const broom = new THREE.Mesh(this.broomLo || (this.broomLo = this.broomGeo(false)), this.flyerMat);
-    for (const m of [rider, broom]) { m.castShadow = true; m.receiveShadow = true; g.add(m); }
-    g.userData = { rider, broom };
+    broom.castShadow = true; broom.receiveShadow = true; g.add(broom);
+    let rider, human = null, cape = null;
+    if (Humans.ready) {
+      const K = Kits.of(team), look = Humans.look(seed, K.body); delete K.body;
+      human = new Human(Object.assign({}, look, { outfit: 'kit' }, K));
+      rider = human.root; rider.rotation.y = Math.PI; g.add(rider);
+      if (role === 'beater') human.attach('hand_r', this.bat(human));
+      cape = Humans.poses[human.o.body].pins;
+    } else {
+      const look = { skin: SKIN[seed % SKIN.length], hair: HAIR[(seed * 3 + 1) % HAIR.length], style: seed % 3 };
+      rider = new THREE.Mesh(this.riderGeo(team, role, look), this.flyerMat);
+      rider.castShadow = true; rider.receiveShadow = true; g.add(rider);
+    }
+    g.userData = { rider, broom, human, cape };
     return g;
+  },
+  // Beater's bat, held in the fist: runs along the knuckle line and out past the thumb
+  bat(h) {
+    const S = h.S, i = S.idx, rp = n => S.restP[i[n]];
+    const side = rp('index_01_r').clone().sub(rp('pinky_01_r')).normalize();
+    const palm = rp('middle_01_r').clone().multiplyScalar(0.55);
+    if (!this.batGeo) {
+      const pts = [];
+      for (let k = 0; k <= 24; k++) { const y = k / 24 * 0.78; let r = y < 0.16 ? 0.016 : lerp(0.02, 0.042, smoothstep(0.16, 0.7, y)); if (y > 0.74) r *= Math.sqrt(Math.max(0.05, 1 - ((y - 0.74) / 0.045) ** 2)); pts.push(new THREE.Vector2(r, y)); }
+      const lg = new THREE.LatheGeometry(pts, 12);
+      this.batGeo = Geo.merge([Geo.prep(lg, (x, y, z) => y < 0.16 ? linCol(0.08, 0.045, 0.025) : linCol(0.32, 0.19, 0.09).lerp(linCol(0.2, 0.11, 0.05), vnoise2(y * 30, Math.atan2(z, x) * 2)), null, { attr: { aFlutter: () => 0 } })], ['aFlutter']);
+    }
+    const m = new THREE.Mesh(this.batGeo, this.flyerMat); m.castShadow = true;
+    m.quaternion.setFromUnitVectors(UP, side); m.position.copy(palm).addScaledVector(side, -0.07);
+    return m;
   },
 
   viewmodel(team) {

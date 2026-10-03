@@ -52,9 +52,10 @@ class Robe {
     this.f = f; const W = ROBE_W, H = ROBE_H, n = W * H;
     this.p = new Float32Array(n * 3); this.o = new Float32Array(n * 3);
     // pins: an arc across the upper back, shoulder to shoulder (flyer-local space)
-    const back = V(0, 0.6, 0.09), nb = V(0, 0.664, 0.747);
-    this.pinLocal = [];
-    for (let i = 0; i < W; i++) {
+    const back = V(0, 0.6, 0.09), nb = V(0, 0.664, 0.747), cape = f.mesh.userData.cape;
+    this.pinLocal = []; this.cape = cape;
+    if (cape) this.pinLocal = cape.pins.map(p => p.clone());
+    else for (let i = 0; i < W; i++) {
       const a = lerp(-Math.PI / 2 * 0.92, Math.PI / 2 * 0.92, i / (W - 1));
       this.pinLocal.push(back.clone().add(V(Math.sin(a) * 0.21, -Math.abs(Math.sin(a)) * 0.04, 0)).addScaledVector(nb, (Math.cos(a) - 1) * 0.13));
     }
@@ -117,8 +118,9 @@ class Robe {
     }
     for (let i = 0; i < W; i++) { this.pin(i, _v4); const q = i * 3; O[q] = P[q]; O[q + 1] = P[q + 1]; O[q + 2] = P[q + 2]; P[q] = _v4.x; P[q + 1] = _v4.y; P[q + 2] = _v4.z; }
     // collision primitives in world space
-    const A = _v1.set(0, 0.2, 0.22).applyQuaternion(f.quat).add(f.pos), B = _v2.set(0, 0.6, -0.1).applyQuaternion(f.quat).add(f.pos);
-    const hip = _v3.set(0, 0.1, 0.24).applyQuaternion(f.quat).add(f.pos);
+    const cp = this.cape;
+    const A = (cp ? _v1.copy(cp.colA) : _v1.set(0, 0.2, 0.22)).applyQuaternion(f.quat).add(f.pos), B = (cp ? _v2.copy(cp.colB) : _v2.set(0, 0.6, -0.1)).applyQuaternion(f.quat).add(f.pos);
+    const hip = (cp ? _v3.copy(cp.hip) : _v3.set(0, 0.1, 0.24)).applyQuaternion(f.quat).add(f.pos);
     const ABx = B.x - A.x, ABy = B.y - A.y, ABz = B.z - A.z, AB2 = ABx * ABx + ABy * ABy + ABz * ABz;
     const C = this.c, nc = C.length;
     for (let it = 0; it < (this.iters || 4); it++) {
