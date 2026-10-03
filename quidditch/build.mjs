@@ -14,7 +14,8 @@ const jsDir = join(src, 'js');
 // binary assets (hand models etc.) are embedded as data URIs so the page stays a single file
 const assetDir = join(src, 'assets');
 const assets = {};
-for (const f of readdirSync(assetDir).filter(f => f.endsWith('.glb'))) assets[f.replace('.glb', '')] = 'data:model/gltf-binary;base64,' + readFileSync(join(assetDir, f)).toString('base64');
+const MIME = { glb: 'model/gltf-binary', bin: 'application/octet-stream' };
+for (const f of readdirSync(assetDir).filter(f => /\.(glb|bin)$/.test(f))) { const ext = f.split('.').pop(); assets[f.replace(/\.(glb|bin)$/, '')] = `data:${MIME[ext]};base64,` + readFileSync(join(assetDir, f)).toString('base64'); }
 const assetJs = `// ---- 00b-assets (generated) ----\nconst ASSET_DATA = ${JSON.stringify(assets)};\n`;
 const files = readdirSync(jsDir).filter(f => f.endsWith('.js')).sort();
 const js = files.map(f => `// ---- ${f} ----\n` + readFileSync(join(jsDir, f), 'utf8') + (f.startsWith('00-') ? '\n' + assetJs : '')).join('\n');
