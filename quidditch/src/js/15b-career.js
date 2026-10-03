@@ -46,7 +46,7 @@ const Career = {
   // ---------- creation ----------
   create(p, rules) {
     const chaser = p.pos !== 'seeker';
-    const base = chaser ? { spd: 44, hnd: 43, sht: 48, pas: 46, def: 40, sta: 44, sek: 28 } : { spd: 47, hnd: 48, sht: 26, pas: 32, def: 33, sta: 44, sek: 52 };
+    const base = chaser ? { spd: 48, hnd: 47, sht: 52, pas: 50, def: 44, sta: 48, sek: 30 } : { spd: 51, hnd: 52, sht: 30, pas: 36, def: 37, sta: 48, sek: 56 };
     const seed = (Date.now() & 0xffffff) ^ 0x5bd1e995;
     this.S = {
       v: 1, seed, created: Date.now(), profile: p, rules: Object.assign({ snitch: 'arcade', length: 1, diff: 'normal' }, rules),
@@ -83,10 +83,10 @@ const Career = {
   ovr(a = this.S.attrs, pos = this.S.profile.pos) {
     const w = ATTR_W[pos === 'seeker' ? 'seeker' : 'chaser']; let v = 0; for (const k in w) v += a[k] * w[k]; return Math.round(v);
   },
-  xpNeed(l = this.S.lvl) { return Math.round(120 * Math.pow(l, 1.35)); },
+  xpNeed(l = this.S.lvl) { return Math.round(95 * Math.pow(l, 1.15)); },
   addXP(n) {
     const S = this.S; S.xp += Math.round(n); let ups = 0;
-    while (S.xp >= this.xpNeed()) { S.xp -= this.xpNeed(); S.lvl++; S.sp += 3; ups++; }
+    while (S.xp >= this.xpNeed()) { S.xp -= this.xpNeed(); S.lvl++; S.sp += 5; ups++; }
     return ups;
   },
   attrCap() { const S = this.S; return Math.min(99, S.pot + (S.phase === 'school' ? -14 + S.year * 2 : 0)); },
@@ -228,7 +228,14 @@ const Career = {
     // tables
     if (ev.comp === 'house') { const cup = this.ensureCup(); this.record(cup.t, mine, opp, res.score[0], res.score[1]); cup.results.push({ a: mine, b: opp, sa: res.score[0], sb: res.score[1] }); }
     if (ev.comp === 'league') { const L = S.league; this.record(L.t, mine, opp, res.score[0], res.score[1]); const fx = L.rounds[ev.round].find(f => (f.h === mine || f.a === mine)); if (fx) { fx.done = true; fx.sh = fx.h === mine ? res.score[0] : res.score[1]; fx.sa = fx.h === mine ? res.score[1] : res.score[0]; } }
-    if (ev.comp === 'wc') this.wcRecord(ev, res);
+    if (ev.comp === 'wc') {
+      this.wcRecord(ev, res);
+      if (ev.ko) {
+        const won = res.score[0] > res.score[1] || (res.score[0] === res.score[1] && res.snitchSide === 0);
+        if (!won) { S.cal = S.cal.filter((e, i) => i <= S.ev || !(e.comp === 'wc' && e.ko)); S.cal.splice(S.ev + 1, 0, { t: 'scene', id: 'wcOut', label: 'Out of the World Cup', month: 'July' }); News.wcOut(ev.stage); }
+        else if (ev.stage === 'Final') { S.tot.wcs++; S.fame = clamp(S.fame + 15, 0, 100); S.gal += 800; News.wcWin(); S.cal.splice(S.ev + 1, 0, { t: 'scene', id: 'wcWin', label: 'World champions', month: 'July' }); }
+      }
+    }
     // career totals
     const T = S.tot; T.apps++; T.goals += st.goals; T.assists += st.assists; T.steals += st.steals; T.finishers += st.finishers; if (st.snitch) T.snitch++; if (res.win === 0) T.wins++;
     const potm = rating >= 8.2; if (potm) T.potm++;
@@ -257,6 +264,9 @@ const Career = {
     }
     if (S.rival && ev.opp === S.rival.house) S.rival.heat = clamp(S.rival.heat + (res.win === 0 ? 8 : 3), 0, 100);
     out.levels = this.addXP(out.xp);
+    // natural development from what you actually did on the pitch
+    const grow = S.grow || (S.grow = {}), cap = this.attrCap(), add = (k, v) => { grow[k] = (grow[k] || 0) + v; while (grow[k] >= 1) { grow[k] -= 1; if (S.attrs[k] < cap) { S.attrs[k]++; (out.grew || (out.grew = [])).push(k); } } };
+    add('sht', st.goals * 0.12 + st.shots * 0.03); add('pas', st.passes * 0.02 + st.assists * 0.1); add('def', st.steals * 0.12); add('sta', 0.12); add('spd', 0.08); add('hnd', st.dodges * 0.04 + 0.05); add('sek', st.snitch ? 0.5 : res.role === 'seeker' ? 0.15 : 0);
     // the rest of the round
     if (ev.comp === 'house') this.simHouseRound(ev);
     if (ev.comp === 'league') this.simLeagueRound(ev.round);
@@ -353,7 +363,7 @@ const Career = {
     if (champ === S.club) { S.tot.leagues++; aw.mine.push('League Cup winner'); S.fame = clamp(S.fame + 8, 0, 100); S.gal += 400; }
     if (golden === S.profile.name) { aw.mine.push('Golden Quaffle'); S.fame = clamp(S.fame + 5, 0, 100); }
     if (S.fans >= 70) aw.mine.push('Witch Weekly Fan Favourite');
-    S.hist.push({ season: S.season, club: S.club, pos, goals: goals.find(g => g[0].startsWith(S.profile.name + '|'))?.[1] || 0, ovr: this.ovr() });
+    S.hist.push({ season: S.season, club: S.club, pos, lvl: S.lvl, goals: goals.find(g => g[0].startsWith(S.profile.name + '|'))?.[1] || 0, ovr: this.ovr() });
     if (S.contract) { S.contract.years--; if (S.contract.years <= 0) S.flags.offers = true; }
     S.pot = Math.min(97, S.pot + (S.season < 6 ? 2 : S.season > 9 ? -2 : 0));
     News.seasonEnd(aw);

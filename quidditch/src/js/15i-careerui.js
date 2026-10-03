@@ -177,7 +177,7 @@ const CareerUI = {
       <div class="rating"><b>${out.rating.toFixed(1)}</b><span>MATCH RATING${S.last.potm ? ' · PLAYER OF THE MATCH' : ''}</span></div>
       <div class="stats">${[['GOALS', st.goals], ['ASSISTS', st.assists], ['STEALS', st.steals], ['FINISHERS', st.finishers], ['SNITCH', st.snitch ? 'CAUGHT' : '-'], ['XP', '+' + Math.round(out.xp)], ['GALLEONS', '+' + out.gal], ['FAME', (out.fame >= 0 ? '+' : '') + out.fame]].map(([k, v]) => `<div class="stat"><i>${k}</i><b>${v}</b></div>`).join('')}</div>
       ${out.goalsDone.length || chemLines ? `<div class="resGoals">${out.goalsDone.map(g => `<div class="ok">✔ ${g.text}</div>`).join('')}${chemLines ? `<div class="chem">${chemLines}</div>` : ''}</div>` : ''}
-      ${out.levels ? `<div class="lvlUp">LEVEL UP · ${S.lvl} · +${out.levels * 3} skill points</div>` : ''}
+      ${out.levels ? `<div class="lvlUp">LEVEL UP · ${S.lvl} · +${out.levels * 5} skill points</div>` : ''}${out.grew ? `<div class="note" style="text-align:center;margin-top:6px">Development: ${out.grew.map(k => ATTRS.find(a => a[0] === k)[1] + ' +1').join(' · ')}</div>` : ''}
       <div class="actions sticky"><button class="act" id="rSkip">SKIP PRESS</button><button class="act go" id="rPress">PRESS CONFERENCE</button></div></div>`);
     const after = () => this.press(true);
     this.root.querySelector('#rPress').addEventListener('click', () => { Sound.play('ui'); this.root.hidden = true; PressRoom.run('post', null, () => { Career.advance(); after(); }); });

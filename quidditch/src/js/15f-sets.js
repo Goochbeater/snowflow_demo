@@ -642,7 +642,8 @@ const SetBuilders = {
     const feathers = [];
     if (charms) { const fm = stdMat({ color: 0xf4f0e8, roughness: 0.6, side: THREE.DoubleSide }, { key: 'feather' }); for (let i = 0; i < 14; i++) { const f = mesh(new THREE.PlaneGeometry(0.05, 0.28), fm, rnd(-5, 5), rnd(1.5, 3), rnd(-2, 4), 0, false); f.userData.ph = Math.random() * 9; scene.add(f); feathers.push(f); } }
     scene.add(new THREE.HemisphereLight(charms ? 0xc8d4f0 : 0x6a7a68, 0x2a1e12, charms ? 1.5 : 1.0));
-    const key = charms ? new THREE.DirectionalLight(0xfff0d8, 3) : new THREE.SpotLight(0xd8ffd0, 40, 18, 0.8, 0.7, 1.2);
+    if (!charms) { const warm = new THREE.PointLight(0xffb070, 18, 9, 1.6); warm.position.set(-3, 2.6, 2.2); scene.add(warm); const warm2 = new THREE.PointLight(0xffb070, 10, 9, 1.6); warm2.position.set(3, 2.6, 0); scene.add(warm2); }
+    const key = charms ? new THREE.DirectionalLight(0xfff0d8, 3) : new THREE.SpotLight(0xe8ffe0, 34, 18, 0.8, 0.7, 1.2);
     key.position.set(charms ? -9 : 0, charms ? 7 : 5.2, charms ? 2 : 1); key.target.position.set(0, 0, 1); key.castShadow = true; key.shadow.mapSize.set(1024, 1024); if (charms) { const c = key.shadow.camera; c.left = -9; c.right = 9; c.top = 9; c.bottom = -9; } scene.add(key, key.target);
     scene.add(Props.motes(260, [-6, 6, 0.3, 5, -5, 5]));
     scene.environment = setEnvMap(charms ? 0xa0b0c8 : 0x203020, charms ? 0x7a6a5a : 0x1a1a14, 0x0a0806);
@@ -650,9 +651,9 @@ const SetBuilders = {
     const cams = {
       default: { p: [0, 2.4, 6], l: [0, 1.2, -3], fov: 50 },
       potionsWide: { p: [-5.5, 3.2, 5.5], l: [0, 1.2, -2], p2: [-3.5, 2.6, 4.5], fov: 50, dur: 10 },
-      cauldron: { p: [anchors.deskMe[0] + 1.6, 1.6, anchors.deskMe[2] + 1.6], l: [anchors.deskMe[0] + 0.3, 1.25, anchors.deskMe[2] - 0.5], p2: [anchors.deskMe[0] + 1.2, 1.55, anchors.deskMe[2] + 1.3], fov: 40, dur: 10 },
+      cauldron: { p: [anchors.deskMe[0] + 0.7, 1.75, anchors.deskMe[2] - 2.1], l: [anchors.deskMe[0] + 0.5, 1.3, anchors.deskMe[2]], p2: [anchors.deskMe[0] + 0.9, 1.7, anchors.deskMe[2] - 1.9], fov: 44, dur: 10 },
     };
-    return { scene, anchors, cams, env: { fog: charms ? 0x6a6a70 : 0x101a12, fogDen: charms ? 0.01 : 0.022, exposure: charms ? 1.0 : 1.45, bloom: 1.2, tint: charms ? 0xffffff : 0xe8ffe8, sh: [0, 0.015, 0.01], hi: [0.02, 0.03, -0.01] },
+    return { scene, anchors, cams, env: { fog: charms ? 0x6a6a70 : 0x101a12, fogDen: charms ? 0.01 : 0.014, exposure: charms ? 1.0 : 1.35, bloom: 1.2, tint: charms ? 0xffffff : 0xf4fff0, sh: [0, 0.015, 0.01], hi: [0.02, 0.03, -0.01] },
       update(dt, t) { Props.flicker(fires, t); for (const v of vapours) { v.position.y = 1.55 + ((t * 0.35 + v.id * 0.37) % 1) * 0.8; v.material.opacity = 0.35 * (1 - ((t * 0.35 + v.id * 0.37) % 1)); v.scale.setScalar(0.5 + ((t * 0.35 + v.id * 0.37) % 1) * 0.9); } for (const f of feathers) { f.position.y += Math.sin(t * 1.3 + f.userData.ph) * 0.003; f.rotation.y += dt * 0.4; f.rotation.z = Math.sin(t + f.userData.ph) * 0.4; } } };
   },
   // ---------------- HOGSMEADE ----------------
@@ -863,7 +864,7 @@ const SetBuilders = {
       default: { p: [0.9, 1.45, 1.6], l: [0, 1.25, -2.7], fov: 36 },
       player: { p: [0.9, 1.45, 1.6], l: [0, 1.25, -2.7], p2: [0.7, 1.42, 1.2], fov: 34, dur: 14 },
       reporters: { p: [-0.6, 1.5, -1.6], l: [0.4, 1.0, 2.2], fov: 52, dur: 8 },
-      rep: i => ({ p: [anchors['rep' + i][0] - 0.8, 1.4, anchors['rep' + i][2] - 1.8], l: [anchors['rep' + i][0], 1.15, anchors['rep' + i][2]], fov: 38, dur: 8 }),
+      rep: i => ({ p: [anchors['rep' + i][0] * 0.6 - 0.4, 1.95, anchors['rep' + i][2] - 3.4], l: [anchors['rep' + i][0], 1.05, anchors['rep' + i][2] + 0.1], p2: [anchors['rep' + i][0] * 0.6 - 0.3, 1.9, anchors['rep' + i][2] - 3.1], fov: 30, dur: 8 }),
       quill: { p: [2.4, 1.6, 1.4], l: [2.9, 1.25, 2.2], fov: 30, dur: 6 },
     };
     return { scene, anchors, cams, quill: qg, quillPen: quill,
@@ -892,6 +893,7 @@ const SetBuilders = {
   },
   // ---------------- THE STADIUM / GROUNDS (uses the live world) ----------------
   world(variant) {
+    Props.init();
     const anchors = {
       pitchMe: [-2, 0, 5, Math.PI * 0.85], pitchCapt: [-0.6, 0, 3.8, -Math.PI * 0.15], pitchF: [-3.3, 0, 5.9, Math.PI * 0.75],
       standsMe: [-58, 0, 34, -2.2], standsF: [-57.2, 0, 34.9, -2.4],

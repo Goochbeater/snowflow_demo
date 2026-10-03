@@ -204,6 +204,12 @@ const Story = {
         { cam: 'lockerWide' },
         { say: ['coach', `The whole country is watching. Seven of you, one Snitch, and the Cup. Let's go.`] },
       ] }),
+      wcWin: () => ({ set: 'locker', variant: 'nation', cast: [{ id: ME, at: 'lockMe', anim: 'dance', o: { outfit: 'kit', team: S.nation } }, { id: 'coach', at: 'board', anim: 'dance', o: { outfit: 'track', team: S.nation } }], beats: [
+        { title: 'World Champions', sub: c.nation },
+        { cam: 'lockerWide' },
+        { say: ['coach', `Champions of the world! Every one of you. Every single one!`] },
+        { choice: [{ t: '"For everyone back home."', tone: 'gr', fx: { fans: 5 } }, { t: '"Told you we would."', tone: 'sh', fx: { fame: 3 } }] },
+      ] }),
       wcWatch: () => ({ set: 'common', variant: 'office', cast: [{ id: ME, at: 'chairL', anim: 'sit', o: { outfit: 'casual' } }], beats: [
         { cam: 'fire' },
         { say: ['narr', `The World Cup call-up never came. You watch the final on the wireless, and you promise yourself: next time.`] },
