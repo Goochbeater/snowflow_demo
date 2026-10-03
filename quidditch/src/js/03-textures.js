@@ -78,7 +78,8 @@ function drawCrest(g, team, cx, cy, w, h, font) {
   g.globalAlpha = 1;
   g.fillStyle = T.c2; g.font = `900 ${Math.round(h * 0.42)}px ${font}`; g.textAlign = 'center'; g.textBaseline = 'middle';
   g.shadowColor = 'rgba(0,0,0,.5)'; g.shadowBlur = w * 0.04;
-  g.fillText(T.letter, cx, cy - h * 0.14);
+  if (T.kind && T.kind !== 'house' && T.emblem) drawEmblem(g, T.emblem, cx, cy - h * 0.13, w * 0.52, T.c2, shade(T.c1, -0.25));
+  else g.fillText(T.letter, cx, cy - h * 0.14);
   g.shadowBlur = 0;
   // stars
   g.fillStyle = shade(T.c2, 0.3);
@@ -89,6 +90,28 @@ function shade(hex, amt) {
   const c = new THREE.Color(hex); const hsl = {}; c.getHSL(hsl, THREE.SRGBColorSpace);
   c.setHSL(hsl.h, hsl.s, clamp(hsl.l + amt * (amt > 0 ? 1 - hsl.l : hsl.l), 0, 1), THREE.SRGBColorSpace);
   return '#' + c.getHexString(THREE.SRGBColorSpace);
+}
+
+function drawBannerAtlas(g, teams, font) {
+  for (let i = 0; i < 4; i++) {
+    const team = teams[i], T = CONFIG.teams[team], x0 = i * 256;
+    const gr = g.createLinearGradient(x0, 0, x0, 768); gr.addColorStop(0, shade(T.c1, 0.12)); gr.addColorStop(1, shade(T.c1, -0.3));
+    g.fillStyle = gr; g.fillRect(x0, 0, 256, 768);
+    g.fillStyle = T.c2; g.fillRect(x0, 0, 18, 768); g.fillRect(x0 + 238, 0, 18, 768);
+    g.fillStyle = shade(T.c2, -0.25); g.fillRect(x0 + 24, 0, 4, 768); g.fillRect(x0 + 228, 0, 4, 768);
+    // valance scallops
+    g.fillStyle = T.c2; g.fillRect(x0, 0, 256, 34);
+    for (let s = 0; s < 6; s++) { g.beginPath(); g.arc(x0 + 21 + s * 43, 34, 21, 0, Math.PI); g.fill(); }
+    drawCrest(g, team, x0 + 128, 250, 170, 210, font);
+    // lower stripes (also used by long stand banners: v in [0, 0.22])
+    for (let s = 0; s < 5; s++) { g.fillStyle = s % 2 ? T.c2 : shade(T.c1, -0.1); g.fillRect(x0, 520 + s * 34, 256, 34); }
+    g.fillStyle = T.c2;
+    for (let s = 0; s < 16; s++) { g.beginPath(); g.moveTo(x0 + s * 16, 690); g.lineTo(x0 + s * 16 + 16, 690); g.lineTo(x0 + s * 16 + 8, 740); g.closePath(); g.fill(); }
+    // cloth weave noise
+    g.globalAlpha = 0.06;
+    for (let k = 0; k < 1400; k++) { g.fillStyle = k % 2 ? '#000' : '#fff'; g.fillRect(x0 + Math.random() * 256, Math.random() * 768, 2, 1 + Math.random() * 6); }
+    g.globalAlpha = 1;
+  }
 }
 
 async function buildTextures() {
@@ -102,28 +125,8 @@ async function buildTextures() {
   Tex.font = font;
   Tex.noise = makeNoiseTexture(256);
 
-  // tall banner atlas: 4 cells of 256x768
-  Tex.banners = canvasTex(1024, 768, (g) => {
-    for (let i = 0; i < 4; i++) {
-      const T = CONFIG.teams[i], x0 = i * 256;
-      const gr = g.createLinearGradient(x0, 0, x0, 768); gr.addColorStop(0, shade(T.c1, 0.12)); gr.addColorStop(1, shade(T.c1, -0.3));
-      g.fillStyle = gr; g.fillRect(x0, 0, 256, 768);
-      g.fillStyle = T.c2; g.fillRect(x0, 0, 18, 768); g.fillRect(x0 + 238, 0, 18, 768);
-      g.fillStyle = shade(T.c2, -0.25); g.fillRect(x0 + 24, 0, 4, 768); g.fillRect(x0 + 228, 0, 4, 768);
-      // valance scallops
-      g.fillStyle = T.c2; g.fillRect(x0, 0, 256, 34);
-      for (let s = 0; s < 6; s++) { g.beginPath(); g.arc(x0 + 21 + s * 43, 34, 21, 0, Math.PI); g.fill(); }
-      drawCrest(g, i, x0 + 128, 250, 170, 210, font);
-      // lower stripes (also used by long stand banners: v in [0, 0.22])
-      for (let s = 0; s < 5; s++) { g.fillStyle = s % 2 ? T.c2 : shade(T.c1, -0.1); g.fillRect(x0, 520 + s * 34, 256, 34); }
-      g.fillStyle = T.c2;
-      for (let s = 0; s < 16; s++) { g.beginPath(); g.moveTo(x0 + s * 16, 690); g.lineTo(x0 + s * 16 + 16, 690); g.lineTo(x0 + s * 16 + 8, 740); g.closePath(); g.fill(); }
-      // cloth weave noise
-      g.globalAlpha = 0.06;
-      for (let k = 0; k < 1400; k++) { g.fillStyle = k % 2 ? '#000' : '#fff'; g.fillRect(x0 + Math.random() * 256, Math.random() * 768, 2, 1 + Math.random() * 6); }
-      g.globalAlpha = 1;
-    }
-  });
+  // tall banner atlas: 4 cells of 256x768, one per stand sector (re-drawn when the stadium is dressed)
+  Tex.banners = canvasTex(1024, 768, (g) => drawBannerAtlas(g, [0, 1, 2, 3], font));
   Tex.crestURL = CONFIG.teams.map((_, i) => {
     const c = document.createElement('canvas'); c.width = 92; c.height = 112;
     drawCrest(c.getContext('2d'), i, 46, 56, 80, 100, font);

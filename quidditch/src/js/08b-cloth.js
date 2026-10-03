@@ -7,24 +7,33 @@ const ROBE_W = 8, ROBE_H = 11, ROBE_DT = 1 / 60;
 const Robes = {
   list: [], mat: null, tex: null, acc: 0,
   init() {
-    this.tex = canvasTex(1024, 512, (g) => {
-      for (let i = 0; i < 4; i++) {
-        const T = CONFIG.teams[i], x0 = i * 256;
-        const gr = g.createLinearGradient(0, 0, 0, 512); gr.addColorStop(0, shade(T.c1, 0.06)); gr.addColorStop(1, shade(T.c1, -0.28));
-        g.fillStyle = gr; g.fillRect(x0, 0, 256, 512);
-        for (let k = 0; k < 10; k++) { g.fillStyle = `rgba(0,0,0,${0.05 + 0.05 * Math.sin(k * 1.7)})`; g.fillRect(x0 + k * 26 + 8, 0, 9, 512); }
-        g.globalAlpha = 0.07;
-        for (let k = 0; k < 2200; k++) { g.fillStyle = k % 2 ? '#000' : '#fff'; g.fillRect(x0 + Math.random() * 256, Math.random() * 512, 1, 2 + Math.random() * 4); }
-        g.globalAlpha = 1;
-        g.fillStyle = T.c2;
-        g.fillRect(x0, 0, 256, 18); g.fillRect(x0, 0, 16, 512); g.fillRect(x0 + 240, 0, 16, 512);
-        g.fillRect(x0, 470, 256, 42);
-        g.fillStyle = shade(T.c1, -0.15); g.fillRect(x0, 482, 256, 8); g.fillRect(x0 + 20, 0, 3, 470); g.fillRect(x0 + 233, 0, 3, 470);
-        drawCrest(g, i, x0 + 128, 92, 64, 78, Tex.font);
-      }
-    });
+    // two-cell atlas (home side 0, away side 1), redrawn per match for whichever teams are playing
+    this.tex = canvasTex(512, 512, () => {});
     this.tex.wrapS = this.tex.wrapT = THREE.ClampToEdgeWrapping;
     this.mat = stdMat({ map: this.tex, side: THREE.DoubleSide, roughness: 0.86, metalness: 0 }, { key: 'robe' });
+    this.setTeams([0, 1]);
+  },
+  setTeams(teams) {
+    const key = teams.join(','); if (this.teamsKey === key) return; this.teamsKey = key;
+    const c = this.tex.userData.canvas, g = c.getContext('2d');
+    teams.forEach((team, i) => {
+      const T = CONFIG.teams[team], x0 = i * 256;
+      const gr = g.createLinearGradient(0, 0, 0, 512); gr.addColorStop(0, shade(T.c1, 0.06)); gr.addColorStop(1, shade(T.c1, -0.28));
+      g.fillStyle = gr; g.fillRect(x0, 0, 256, 512);
+      if (T.pattern === 1) { g.fillStyle = T.c2; for (let k = 0; k < 6; k++) g.fillRect(x0 + 18 + k * 40, 0, 20, 470); }
+      if (T.pattern === 2) { g.fillStyle = T.c2; for (let k = 0; k < 6; k++) g.fillRect(x0, 40 + k * 70, 256, 34); }
+      if (T.pattern === 3) { g.fillStyle = T.c2; g.fillRect(x0 + 128, 0, 128, 470); }
+      for (let k = 0; k < 10; k++) { g.fillStyle = `rgba(0,0,0,${0.05 + 0.05 * Math.sin(k * 1.7)})`; g.fillRect(x0 + k * 26 + 8, 0, 9, 512); }
+      g.globalAlpha = 0.07;
+      for (let k = 0; k < 2200; k++) { g.fillStyle = k % 2 ? '#000' : '#fff'; g.fillRect(x0 + Math.random() * 256, Math.random() * 512, 1, 2 + Math.random() * 4); }
+      g.globalAlpha = 1;
+      g.fillStyle = T.c2;
+      g.fillRect(x0, 0, 256, 18); g.fillRect(x0, 0, 16, 512); g.fillRect(x0 + 240, 0, 16, 512);
+      g.fillRect(x0, 470, 256, 42);
+      g.fillStyle = shade(T.c1, -0.15); g.fillRect(x0, 482, 256, 8); g.fillRect(x0 + 20, 0, 3, 470); g.fillRect(x0 + 233, 0, 3, 470);
+      drawCrest(g, team, x0 + 128, 92, 64, 78, Tex.font);
+    });
+    this.tex.needsUpdate = true;
   },
   create(f) { const r = new Robe(f); this.list.push(r); Render.scene.add(r.mesh); return r; },
   clear() { for (const r of this.list) { Render.scene.remove(r.mesh); r.mesh.geometry.dispose(); } this.list = []; },
@@ -74,7 +83,7 @@ class Robe {
     this.c = new Float32Array(C);
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(this.p, 3).setUsage(THREE.DynamicDrawUsage));
-    const uv = new Float32Array(n * 2), u0 = f.house * 0.25 + 0.002, uw = 0.246;
+    const uv = new Float32Array(n * 2), u0 = f.side * 0.5 + 0.004, uw = 0.492;
     for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { uv[id(i, j) * 2] = u0 + uw * i / (W - 1); uv[id(i, j) * 2 + 1] = 1 - j / (H - 1); }
     g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
     const idx = []; for (let j = 0; j < H - 1; j++) for (let i = 0; i < W - 1; i++) { const a = id(i, j), b = a + 1, c2 = a + W, d = c2 + 1; idx.push(a, c2, b, b, c2, d); }

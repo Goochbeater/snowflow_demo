@@ -73,16 +73,21 @@ const Game = {
     Robes.clear();
     this.flyers = []; this.teams = [[], []]; this.player = null; this.lock = null; this.lunge = null; this.focus = 0;
   },
-  setup(mode) {
+  // opts (career fixtures): { houses, diff, length, snitch, role, pm, mates, opps, tactic, career }
+  setup(mode, opts = {}) {
     this.clearFlyers(); FX.clear(); this.timers = [];
-    this.mode = mode;
-    this.houses = mode === 'demo' ? [Math.floor(Math.random() * 4), 0] : [Settings.team, Settings.opp];
+    this.mode = mode; this.career = opts.career || null; this.opts = opts;
+    this.houses = opts.houses ? opts.houses.slice() : mode === 'demo' ? [Math.floor(Math.random() * 4), 0] : [Settings.team, Settings.opp];
     if (this.houses[1] === this.houses[0]) this.houses[1] = (this.houses[0] + 1 + Math.floor(Math.random() * 3)) % 4;
-    this.diff = CONFIG.difficulty[Settings.difficulty] || CONFIG.difficulty.pro;
-    this.length = [180, 360, 600][Settings.length] || 360;
+    this.diff = CONFIG.difficulty[opts.diff || Settings.difficulty] || CONFIG.difficulty.pro;
+    this.length = opts.length || [180, 360, 600][Settings.length] || 360;
+    this.snitchVal = (opts.snitch || Settings.snitch) === 'classic' ? 150 : 30;
+    this.pm = Object.assign({ speed: 1, turn: 1, drain: 1, regen: 1, perfect: 1, save: 1, homing: 1, steal: 1, stealOk: 0, flair: 1, focus: 1, callOk: 1, callDelay: 1 }, opts.pm || {});
+    Robes.setTeams(this.houses);
+    this.drill = opts.drill ? Object.assign({ score: 0, done: false }, opts.drill) : null;
     this.clock = this.length; this.overtime = false; this.otT = 0; this.snitchReleased = false; this.swapT = 0; this.score = [0, 0];
     this.flair = mode === 'lab' ? 1 : 0; this.style = { val: 0, score: 0, lastT: -9, rank: 0 }; this.readyNotified = false;
-    this.stats = { goals: 0, assists: 0, passes: 0, steals: 0, shots: 0, dodges: 0, finishers: 0, best: null, topSpeed: 0, bestRank: 0, hits: 0 };
+    this.stats = { goals: 0, assists: 0, passes: 0, steals: 0, shots: 0, dodges: 0, finishers: 0, best: null, topSpeed: 0, bestRank: 0, hits: 0, saves: 0, passTo: {}, assistTo: {}, goalsBy: {}, finisherNames: [], tackled: 0 };
     this.ts = 1; this.slowT = 0; this.hitStop = 0; this.time = 0;
     { const fx = Render.post.fx; fx.blur = 0; fx.ca = 0; fx.flash = 0; fx.letterbox = 0; fx.keepHue = 0; fx.hit = 0; this.hitFx = 0; }
     const roles = [['chaser', 0], ['chaser', 1], ['chaser', 2], ['beater', 0], ['beater', 1], ['keeper', 0], ['seeker', 0]];
@@ -92,7 +97,12 @@ const Game = {
       const f = new Flyer(side, this.houses[side], role, slot);
       this.flyers.push(f); this.teams[side].push(f);
     }
-    if (mode !== 'demo') { this.player = this.teams[0][0]; this.player.isPlayer = true; }
+    for (const side of [0, 1]) { const names = side ? opts.opps : opts.mates; if (names) this.teams[side].forEach(f => { const n = names[f.role + f.slot]; if (n) { f.name = n.name; f.mateId = n.id; } }); }
+    if (mode !== 'demo') {
+      this.player = (opts.role === 'seeker' && this.teams[0].find(f => f.role === 'seeker')) || this.teams[0][0]; this.player.isPlayer = true;
+      const p = this.player, pm = this.pm; p.baseSpeed = pm.speed; p.baseTurn = pm.turn; p.drainMul = pm.drain; p.regenMul = pm.regen;
+      if (opts.playerName) p.name = opts.playerName;
+    }
     if (this.vm) Render.camera.remove(this.vm.group);
     this.vm = mode === 'demo' ? null : Models.viewmodel(this.houses[0]);
     if (this.vm) Render.camera.add(this.vm.group);
@@ -106,7 +116,7 @@ const Game = {
     this.snitch.hide();
     this.kickoff();
     Cam.mode = mode === 'demo' ? 'orbit' : 'fp'; Cam.shotT = 0;
-    if (mode === 'match') { this.state = 'countdown'; this.countT = 3.2; this.countShown = 4; }
+    if (mode === 'match') { this.state = 'countdown'; this.countT = 3.2; this.countShown = 4; if (this.player && this.player.role === 'seeker') HUD.setShootLabel('GRAB'); }
     else { this.state = 'play'; if (mode === 'lab') this.labReset(); if (mode === 'slab') this.slabReset(); }
     World.excite.fill(0);
     this.vmLinit = false;
@@ -182,6 +192,12 @@ const Game = {
   },
   updateClock(dt) {
     if (this.swapT > 0) { this.swapT -= dt; if (this.swapT <= 0) HUD.swap(false); }
+    const D = this.drill;
+    if (D && !D.done) {
+      D.t -= dt;
+      if (D.t <= 0) { D.done = true; this.state = 'end'; Sound.play('whistle', { dur: 0.6 }); HUD.banner('TIME', `${D.score} ${D.unit || ''}`.trim()); this.after(1.6, () => { this.drill = null; D.onEnd && D.onEnd(D.score); }); }
+      return;
+    }
     if (this.mode !== 'match') return;
     if (!this.overtime) {
       this.clock -= dt;
@@ -247,7 +263,7 @@ const Game = {
       let p = f.role === 'keeper' ? 0.9 : hostileShot ? 0.32 * this.diff.aim : 0.85;
       if (f.role === 'keeper' && hostileShot) {
         const range = Q.thrower ? Q.thrower.pos.distanceTo(f.pos) : 30;
-        p = Math.min(0.85, this.diff.keeperSave * (Q.perfect ? 0.45 : 1) * (range < 16 ? 0.75 : 1) * (Q.thrower && Q.thrower.isPlayer ? 1 : 1.6));
+        p = Math.min(0.85, this.diff.keeperSave * (Q.perfect ? 0.45 : 1) * (range < 16 ? 0.75 : 1) * (Q.thrower && Q.thrower.isPlayer ? this.pm.save : 1.6));
       }
       if (Math.random() < p) { this.catchBy(f); return; }
     }
@@ -265,7 +281,7 @@ const Game = {
     } else if (near) Sound.play('catch', { vol: 0.5 });
     if (thrower && thrower.side === f.side && thrower !== f) {
       Q.lastPasser = thrower; Q.lastPassT = this.time;
-      if (thrower.isPlayer) { this.stats.passes++; this.styleEvent(null, 0.06, 60); }
+      if (thrower.isPlayer) { this.stats.passes++; this.styleEvent(null, 0.06, 60); if (f.mateId) this.stats.passTo[f.mateId] = (this.stats.passTo[f.mateId] || 0) + 1; }
     }
     if (f.role === 'keeper' && thrower && thrower.side !== f.side && wasFlying) this.onSave(f, thrower);
   },
@@ -274,7 +290,7 @@ const Game = {
     if (this.mode === 'lab') this.after(1.2, () => { if (this.mode === 'lab' && this.state === 'play') this.labReset(); });
     else this.restartHold(k, 1.4);
     if (shooter.isPlayer) { HUD.banner('SAVED', 'THE KEEPER READ IT'); Sound.crowdGroan(); }
-    else if (this.player && k.side === this.player.side) { HUD.ticker(`Huge save by the ${CONFIG.teams[this.houses[k.side]].name} Keeper!`); Sound.crowdRoar(0.5, 2); World.excite[this.houses[k.side]] = 0.7; }
+    else if (this.player && k.side === this.player.side) { HUD.ticker(`Huge save by the ${CONFIG.teams[this.houses[k.side]].name} Keeper!`); Sound.crowdRoar(0.5, 2); World.cheer(this.houses[k.side], 0.7); }
   },
   checkBludger(b) {
     for (const f of this.flyers) {
@@ -341,7 +357,7 @@ const Game = {
     const t = clamp(dist / sp, 0.1, 2);
     _v2.copy(to.pos).addScaledVector(to.vel, t * (to.isPlayer ? 0.9 : 0.6)).addScaledVector(UP, 0.3);
     this.ballistic(_v1, _v2, sp, _v3);
-    Q.release(_v3, to); Q.rolled = null;
+    Q.release(_v3, to); Q.rolled = null; Q.homeMul = from.isPlayer ? this.pm.homing : 1;
     if (from.isPlayer) { Sound.play('throw'); this.throwAnim = 0.3; this.lastPlayerPassT = this.time; Platform.vibrate(12); }
     else if (Render.camera.position.distanceTo(from.pos) < 30) Sound.play('throw', { vol: 0.4 });
   },
@@ -413,7 +429,7 @@ const Game = {
   playerShoot(charge) {
     const p = this.player, Q = this.quaffle;
     const frac = clamp(charge / CONFIG.ball.charge, 0, 1);
-    const perfect = frac >= 0.68 && frac <= 0.94;
+    const pw = (this.pm.perfect - 1) * 0.12, perfect = frac >= 0.68 - pw && frac <= 0.94 + pw * 0.5;
     const speed = lerp(CONFIG.ball.shotMin, CONFIG.ball.shotMax, frac) * (perfect ? 1.08 : 1);
     const h = this.targetHoop();
     p.hand(_v1);
@@ -461,9 +477,12 @@ const Game = {
     this.callPending = true; Input.callT = this.rtime; c.ai.passingT = this.rtime;
     HUD.popup('CALLING FOR IT'); Sound.play('ui');
     const R = this.restart, kd = R && R.keeper === c ? Math.max(0.35, R.t - 1.4) : 0;
-    this.after(kd + (c.role === 'keeper' ? 0.3 : 0.16) + Math.random() * 0.14, () => {
+    // teammate chemistry (career): low chemistry means slower, sometimes ignored, calls
+    const ok = Math.random() < this.pm.callOk;
+    this.after((kd + (c.role === 'keeper' ? 0.3 : 0.16) + Math.random() * 0.14) * this.pm.callDelay, () => {
       this.callPending = false;
       const p = this.player;
+      if (!ok) { if (this.state === 'play' && this.quaffle.holder === c) { HUD.popup((c.name ? c.name.split(' ')[0].toUpperCase() + ' ' : '') + 'KEEPS IT', true); c.ai.cool = 1.2; } return; }
       if (this.state === 'play' && p && this.quaffle.holder === c && c.stun <= 0 && !c.scripted) { this.pass(c, p); c.ai.cool = 1.5; this.calls = []; }
     });
   },
@@ -586,7 +605,7 @@ const Game = {
     this.stealCd = 0.9; this.throwAnim = 0.25;
     if (c && c.side !== p.side) {
       _v1.subVectors(c.pos, p.pos); const d = _v1.length();
-      if (d < 13 && _v1.divideScalar(d).dot(p.fwd) > 0.3) {
+      if (d < 13 * this.pm.steal && _v1.divideScalar(d).dot(p.fwd) > 0.3) {
         this.lunge = { c, t: 0 }; Sound.play('boost', { vol: 0.6 }); Platform.vibrate(15); Cam.addShake(0.25);
         if (!c.isPlayer && d < 7 && Math.random() < this.diff.aim * 0.15) c.startDodge(Math.random() < 0.5 ? 'left' : 'right');
         return;
@@ -607,7 +626,7 @@ const Game = {
     if (d < 3.2) {
       this.lunge = null; p.lungeV = null; p.speed = 30;
       const dodged = c.dodge && c.dodge.t > 0.05;
-      const ok = !dodged && Math.random() < clamp(0.86 + (p.boosting ? 0.08 : 0) - (c.role === 'keeper' ? 0.2 : 0), 0.1, 0.97);
+      const ok = !dodged && Math.random() < clamp(0.86 + this.pm.stealOk + (p.boosting ? 0.08 : 0) - (c.role === 'keeper' ? 0.2 : 0), 0.1, 0.97);
       if (ok) this.steal(p, c); else { HUD.popup(dodged ? 'DODGED' : 'SHRUGGED OFF', true); Sound.play('thud'); Cam.addShake(0.4); p.speed = 18; }
     }
   },
@@ -634,7 +653,7 @@ const Game = {
       if (_v4.length() > 2.3 * r.scale.x) continue;
       r.userData.passed = true;
       const was = this.focus;
-      this.focus = Math.min(1, this.focus + 0.15); p.boost = Math.min(1, p.boost + 0.3); p.speed += 7;
+      this.focus = Math.min(1, this.focus + 0.15 * this.pm.focus); p.boost = Math.min(1, p.boost + 0.3); p.speed += 7;
       this.ringCombo = this.rtime - (this.ringT || -9) < 3 ? (this.ringCombo || 0) + 1 : 1; this.ringT = this.rtime;
       FX.ring(r.position, linCol(3, 2.2, 0.8), 6, 0.45); Sound.play('ring', { vol: 0.8 }); Platform.vibrate(12);
       HUD.popup('RING ×' + this.ringCombo);
@@ -649,13 +668,15 @@ const Game = {
     if (!info.finisher) { Q.state = 'dead'; Q.vel.multiplyScalar(0.3); Q.trail.active = false; Q.holder = null; Q.passTarget = null; }
     hoop.glow = 1.3; FX.shockwave(hoop.pos, linCol(2.6, 1.9, 0.8), 12); FX.sparks(hoop.pos, linCol(3, 2.2, 0.9), 50, 13);
     const pSide = this.player ? this.player.side : 0, house = this.houses[side];
-    World.excite[house] = 1;
+    if (scorer && scorer.mateId) this.stats.goalsBy[scorer.mateId] = (this.stats.goalsBy[scorer.mateId] || 0) + 1;
+    if (scorer && scorer.isPlayer && typeof Photo !== 'undefined') Photo.trigger(info.finisher ? 0 : 0.05, 'goal');
+    World.cheer(house, 1);
     const T = CONFIG.teams[house];
     FX.confetti(_v1.copy(hoop.pos).add(_v2.set(-hoop.side * 6, 4, 0)), [new THREE.Color(T.c1), new THREE.Color(T.c2), linCol(1, 1, 1)], 70, 8);
     if (side === pSide) { Sound.play('bell'); Sound.play('stinger'); Sound.crowdRoar(1, 3.5); }
     else { Sound.play('bell', { vol: 0.5 }); if (this.player) Sound.crowdGroan(); else Sound.crowdRoar(0.8, 3); }
     if (scorer && scorer.isPlayer) {
-      this.stats.goals++;
+      this.stats.goals++; if (this.drill) this.drill.score++;
       this.styleEvent(null, info.finisher ? 0 : 0.12, info.finisher ? 0 : 320);
       if (!info.finisher) HUD.banner('GOAL!', '+10');
       for (let i = 0; i < 2; i++) this.after(0.2 + i * 0.35, () => FX.firework(_v1.set(hoop.side * 92, rnd(30, 45), rnd(-30, 30)), new THREE.Color(T.c2).multiplyScalar(1.4)));
@@ -663,7 +684,7 @@ const Game = {
       HUD.ticker(pick(['What a strike!', 'Right through the hoop!', 'The crowd is on its feet!', 'Ten points, beautifully taken!']));
     } else if (this.player && side === pSide) {
       HUD.banner('GOAL!', T.name.toUpperCase());
-      if (Q.lastPasser && Q.lastPasser.isPlayer && this.time - Q.lastPassT < 6) { this.stats.assists++; this.styleEvent('ASSIST', 0.1, 160); }
+      if (Q.lastPasser && Q.lastPasser.isPlayer && this.time - Q.lastPassT < 6) { this.stats.assists++; this.styleEvent('ASSIST', 0.1, 160); if (scorer && scorer.mateId) this.stats.assistTo[scorer.mateId] = (this.stats.assistTo[scorer.mateId] || 0) + 1; }
     } else if (this.player) HUD.banner(`${T.short} SCORE`, '');
     const k = this.keeper(1 - side);
     if (info.finisher) { /* restart handled when the cinematic ends */ }
@@ -686,18 +707,20 @@ const Game = {
   },
   catchSnitch(f, info = {}) {
     if (this.state !== 'play' && this.state !== 'finisher') return;
-    const val = Settings.snitch === 'classic' ? 150 : 30;
+    const val = this.snitchVal || 30;
     this.snitch.hide();
     const T = CONFIG.teams[this.houses[f.side]];
     if (this.mode === 'slab') {
-      if (!info.finisher) { HUD.banner('SNITCH CAUGHT', 'AGAIN?'); Sound.play('snitch'); this.styleEvent(null, 0, 600); }
+      if (this.drill && f.isPlayer) this.drill.score++;
+      if (!info.finisher) { HUD.banner('SNITCH CAUGHT', this.drill ? `${this.drill.score} CAUGHT` : 'AGAIN?'); Sound.play('snitch'); this.styleEvent(null, 0, 600); }
       this.after(1.6, () => { if (this.mode === 'slab' && this.state === 'play') this.slabReset(); });
       return;
     }
     this.score[f.side] += val;
+    this.snitchBy = f; this.snitchT = this.length - this.clock + this.otT;
     if (f.isPlayer) { this.stats.snitch = true; if (!info.finisher) { this.styleEvent('SNITCH CAUGHT', 0, 1500); Platform.vibrate([60, 40, 60, 40, 160]); this.hitStop = 0.12; FX.star(f.pos, linCol(4, 3, 1), 3, 0.8); } }
     if (!info.finisher) HUD.banner('SNITCH CAUGHT', `${T.name.toUpperCase()} +${val}`);
-    Sound.play('end'); Sound.crowdRoar(1, 5); World.excite[this.houses[f.side]] = 1;
+    Sound.play('end'); Sound.crowdRoar(1, 5); World.cheer(this.houses[f.side], 1);
     this.endMatch();
   },
   endMatch() {
@@ -715,7 +738,12 @@ const Game = {
       if ((this.stats.bestRank >= 5 || (win === 0 && Settings.difficulty === 'legend')) && !SaveData.unlocked.starfall) { SaveData.unlocked.starfall = true; this.newUnlock = 'Starfall'; }
       persist();
     }
+    if (this.career) { const res = this.matchResult(win); this.after(3.6, () => { Sound.chant(false); World.wave.amt = 0; Career.onMatchEnd(res); }); return; }
     this.after(3.6, () => { Sound.chant(false); World.wave.amt = 0; UI.results(win); });
+  },
+  matchResult(win) {
+    const st = this.stats, me = this.player;
+    return { win, score: this.score.slice(), houses: this.houses.slice(), stats: JSON.parse(JSON.stringify(st)), style: this.style.score, snitchSide: this.snitchBy ? this.snitchBy.side : -1, snitchMine: !!st.snitch, snitchT: this.snitchT || 0, role: me ? me.role : 'chaser', opts: this.opts };
   },
   onBump(impact) {
     if (impact > 6) { Cam.addShake(Math.min(1, impact / 18)); Sound.play('thud', { vol: clamp(impact / 20, 0.3, 1) }); Platform.vibrate(30); }
@@ -727,7 +755,7 @@ const Game = {
   styleEvent(label, flair, points) {
     if (this.mode === 'demo') return;
     const wasReady = this.flair >= CONFIG.finisherCost;
-    this.flair = Math.min(1, this.flair + flair);
+    this.flair = Math.min(1, this.flair + flair * (this.pm ? this.pm.flair : 1));
     this.style.val = Math.min(6.2, this.style.val + points / 170);
     this.style.lastT = this.rtime;
     this.style.score += Math.round(points * (1 + Math.floor(this.style.val) * 0.25));

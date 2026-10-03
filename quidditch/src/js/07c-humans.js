@@ -300,6 +300,16 @@ const Humans = {
       this.clips[c.key] = new THREE.AnimationClip(c.key, c.dur, tracks);
     }
   },
+  // clips were authored on the library mannequin: rescale pelvis height to each body
+  clipFor(type, key) {
+    const k = type + ':' + key; this._cc = this._cc || {};
+    if (this._cc[k]) return this._cc[k];
+    const c = this.clips[key]; if (!c) return null;
+    const S = this.S[type], ratio = S ? S.restP[S.idx.pelvis].z / 0.917 : 1;
+    const cl = c.clone();
+    for (const t of cl.tracks) if (t.name === 'pelvis.position') { t.values = t.values.slice(); for (let i = 2; i < t.values.length; i += 3) t.values[i] *= ratio; }
+    return (this._cc[k] = cl);
+  },
   clothMat(o, S, skirt) {
     const key = [S.type, o.outfit, o.c1, o.c2, o.c3, o.c4, o.skin, o.pattern, o.emblemKey || '', skirt ? 'S' + skirt : ''].join('|');
     if (this.matCache[key]) return this.matCache[key];
@@ -388,7 +398,7 @@ class Human {
   setVisible(v) { this.root.visible = v; }
   // ---- animation clips ----
   play(key, { fade = 0.35, loop = true, speed = 1, at = null } = {}) {
-    const clip = Humans.clips[key]; if (!clip) return null;
+    const clip = Humans.clipFor(this.o.body, key); if (!clip) return null;
     if (!this.mixer) this.mixer = new THREE.AnimationMixer(this.root);
     const a = this.mixer.clipAction(clip);
     a.setLoop(loop ? THREE.LoopRepeat : THREE.LoopOnce, Infinity); a.clampWhenFinished = !loop; a.timeScale = speed;

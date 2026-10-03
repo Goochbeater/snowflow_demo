@@ -36,7 +36,7 @@ const HUD = {
     this.cache = {}; this.rank(0); this.setShootLabel('SHOOT'); this.swap(false);
     this.$('radar').style.display = Settings.radar ? '' : 'none';
     this.el.clock.parentElement.style.display = '';
-    this.$('clock').style.display = Game.mode === 'lab' || Game.mode === 'slab' ? 'none' : '';
+    this.$('clock').style.display = (Game.mode === 'lab' || Game.mode === 'slab') && !Game.drill ? 'none' : '';
     this.show(true);
   },
   bigCount(t, hold = 0.8) {
@@ -115,7 +115,7 @@ const HUD = {
     const G = Game, p = G.player, e = this.el;
     this.set('a', String(G.score[0]), e.ptsA); this.set('b', String(G.score[1]), e.ptsB);
     if (G.mode === 'match') {
-      const c = G.overtime ? G.otT : G.clock, m = Math.floor(c / 60), s = Math.floor(c % 60);
+      const c = G.drill ? Math.max(0, G.drill.t) : G.overtime ? G.otT : G.clock, m = Math.floor(c / 60), s = Math.floor(c % 60);
       this.set('clock', (G.overtime ? '+' : '') + m + ':' + String(s).padStart(2, '0'), e.clock);
       e.clock.classList.toggle('ot', G.overtime);
     }

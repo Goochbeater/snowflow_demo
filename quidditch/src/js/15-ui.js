@@ -39,7 +39,7 @@ const UI = {
     $('startMatch').addEventListener('click', () => { Sound.play('ui'); this.startMatch(); });
     $('settingsDone').addEventListener('click', () => { Sound.play('ui'); saveSettings(); this.go(this.from || 'menu'); });
     $('pResume').addEventListener('click', () => this.resume(true));
-    $('pRestart').addEventListener('click', () => { this.hideAll(); this.startMode(Game.mode === 'lab' || Game.mode === 'slab' ? Game.mode : 'match'); });
+    $('pRestart').addEventListener('click', () => { this.hideAll(); if (Game.career || Game.drill) { const o = Game.opts; if (Game.drill) o.drill = Object.assign({}, Game.opts.drill); Game.setup(Game.mode, o); HUD.show(true); return; } this.startMode(Game.mode === 'lab' || Game.mode === 'slab' ? Game.mode : 'match'); });
     $('pSettings').addEventListener('click', () => { this.from = 'pause'; this.go('settings'); });
     $('pQuit').addEventListener('click', () => this.quit());
     $('resMenu').addEventListener('click', () => this.quit());
@@ -118,6 +118,7 @@ const UI = {
     else if (where === 'records') { this.records(); this.show('scrRecords'); }
     else if (where === 'lab') { this.hideAll(); this.startMode('lab'); }
     else if (where === 'slab') { this.hideAll(); this.startMode('slab'); }
+    else if (where === 'career') { this.hideAll(); CareerUI.open(); }
   },
   finList(root) {
     root.innerHTML = Object.keys(SEEKER_DEFS).map(id => { const d = SEEKER_DEFS[id]; return `<div class="fin"><b>${d.name} · SEEKER</b><span class="gest">${d.gesture}</span>${d.desc}</div>`; }).join('') + Finishers.order.map(id => {
@@ -172,6 +173,7 @@ const UI = {
   },
   quit() {
     Input.reset(); HUD.show(false); Sound.chant(false);
+    if (Game.career || (Game.drill && Career.S)) { Game.drill = null; Game.career = null; World.dress([0, 1, 2, 3]); World.setVenue && World.setVenue('hogwarts'); Game.setup('demo'); CareerUI.hub(); return; }
     World.setWeather(Settings.weather === 'overcast' ? 'golden' : Settings.weather);
     Game.setup('demo'); this.show('scrMenu');
   },

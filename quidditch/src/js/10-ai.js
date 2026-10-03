@@ -52,6 +52,8 @@ const AI = {
     }
   },
   mates(f) { return Game.teams[f.side].filter(o => o !== f && o.role === 'chaser'); },
+  // career game plan for the player's side (Hawkshead / Porskoff / Parkin's Pincer / Seeker Shield)
+  tac(f) { const t = f.side === 0 && Game.opts && Game.opts.tactic && TACTICS[Game.opts.tactic]; return t || null; },
   opps(f) { return Game.teams[1 - f.side]; },
   pickHoop(side, f) {
     const sx = Game.attackSign(side), keeper = Game.keeper(1 - side);
@@ -95,7 +97,8 @@ const AI = {
         const m = this.openMate(f);
         if (m && (threat < 8 || m.isPlayer)) { Game.pass(f, m); f.ai.cool = 1.2; return; }
       }
-      if (f.ai.cool <= 0 && Math.random() < 0.03) {
+      const tc = this.tac(f);
+      if (f.ai.cool <= 0 && Math.random() < 0.03 * (tc ? 0.6 + tc.pass * 1.2 : 1)) {
         const m = this.openMate(f);
         if (m && (m.pos.x - f.pos.x) * sx > -3) { Game.pass(f, m); f.ai.cool = 1.2; return; }
       }
@@ -106,7 +109,8 @@ const AI = {
     } else if (Q.holder && Q.holder.side === f.side) {
       const c = Q.holder, mates = Game.teams[f.side].filter(o => o.role === 'chaser' && o !== c);
       const k = mates.indexOf(f), lat = (k === 0 ? -1 : 1) * 11;
-      T.set(c.pos.x + sx * 7, c.pos.y + (k ? 2 : -1.5), c.pos.z + lat);
+      const tc = this.tac(f), push = tc ? tc.push : 0.5;
+      T.set(c.pos.x + sx * (4 + push * 7), c.pos.y + (k ? 2 : -1.5) - (tc && tc.pass > 0.8 && k ? 5 : 0), c.pos.z + lat);
       let crowd = 99; for (const o of this.opps(f)) crowd = Math.min(crowd, o.pos.distanceTo(f.pos));
       f.ai.call = crowd > 6 && c.isPlayer ? 1 : 0;
     } else if (!Q.holder) {
@@ -129,10 +133,11 @@ const AI = {
   tryTackle(f) {
     const c = Game.quaffle.holder; if (!c || c.side === f.side || f.ai.cool > 0) return;
     if (Game.restart && Game.restart.keeper === c) return;
-    if (f.pos.distanceTo(c.pos) > 3.4) return;
+    const tc = this.tac(f), press = tc ? tc.press : 0.4;
+    if (f.pos.distanceTo(c.pos) > 3.0 + press * 1.0) return;
     f.ai.cool = 1.4;
     if (c.invuln > 0) { if (c.isPlayer) Game.styleEvent('SLIPPED THE TACKLE', 0.12, 120); return; }
-    const p = Game.diff.steal * (c.isPlayer ? 0.8 : 0.55);
+    const p = Game.diff.steal * (c.isPlayer ? 0.8 : 0.55) * (f.side === 0 ? 0.8 + press * 0.5 : 1);
     if (Math.random() < p) Game.steal(f, c);
   },
   beater(f) {
@@ -152,6 +157,8 @@ const AI = {
     const Q = Game.quaffle, opps = this.opps(f).filter(o => o.role !== 'keeper' && o.stun <= 0 && !o.scripted);
     const p = Game.player;
     const ok = o => !(o.isPlayer && Game.time - o.lastHit < CONFIG.bludger.playerGap);
+    const tc = this.tac(f);
+    if (tc && tc.shield && Game.snitch.active) { const s = opps.find(o => o.role === 'seeker'); if (s && ok(s) && s.pos.distanceTo(f.pos) < 70) return s; }
     if (Q.holder && Q.holder.side !== f.side && ok(Q.holder) && Q.holder.pos.distanceTo(f.pos) < 55) return Q.holder;
     const own = -Game.attackSign(f.side) * 70;
     let best = null, bs = 1e9;

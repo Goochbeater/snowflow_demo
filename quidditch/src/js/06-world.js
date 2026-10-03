@@ -114,7 +114,8 @@ const World = {
     progress(0.5, 'Seating the crowd…'); await nextFrame();
     this.buildCrowd();
     progress(0.58, 'Planting the forest…'); await nextFrame();
-    this.buildCastle(); this.buildTrees();
+    { const n0 = S.children.length; this.buildCastle(); this.hogwarts = new THREE.Group(); for (const o of S.children.slice(n0)) this.hogwarts.add(o); S.add(this.hogwarts); }
+    this.buildTrees();
     progress(0.66, 'Gathering clouds…'); await nextFrame();
     this.buildClouds(); this.buildLanterns(); this.buildRain(); this.buildMotes();
     this.applyDensity();
@@ -179,7 +180,7 @@ const World = {
 
   buildStadium() {
     const P = CONFIG.pitch, N = P.towers;
-    const wood = [], drapes = [], pennants = [], gold = [], banners = [];
+    const wood = [], drapes = [], pennants = [], gold = [], banners = [], roofs = [];
     const rp = { x: 0, z: 0, nx: 0, nz: 0 };
     const woodCol = (k) => (x, y, z) => { const v = 0.82 + 0.25 * vnoise2(x * 0.7 + k, z * 0.7 + y * 0.3); return linCol(v, v * 0.97, v * 0.93); };
     const dark = linCol(0.55, 0.5, 0.46);
@@ -204,14 +205,12 @@ const World = {
       for (const sx of [-3.65, 3.65]) wood.push(L(new THREE.BoxGeometry(0.3, 2.4, 7.3), woodCol(i + 9), M4(sx, H + 1.5, 0), { worldUV: 0.25 }));
       wood.push(L(new THREE.BoxGeometry(7.2, 0.14, 0.14), dark, M4(0, H + 1.35, 3.35)));
       for (const sx of [-3.5, 3.5]) for (const sz of [-3.5, 3.5]) wood.push(L(new THREE.BoxGeometry(0.28, 4.6, 0.28), woodCol(i), M4(sx, H + 2.6, sz), { worldUV: 0.25 }));
-      const roofC = new THREE.Color(T.c1).multiplyScalar(0.9);
-      wood.push(L(new THREE.ConeGeometry(6.0, 5.2, 4, 1), (x, y, z) => roofC.clone().multiplyScalar(0.75 + 0.35 * vnoise2(x * 2, y * 2)), M4(0, H + 4.9 + 2.6, 0, 0, Math.PI / 4, 0)));
+      roofs.push(L(new THREE.ConeGeometry(6.0, 5.2, 4, 1), (x, y, z) => linCol(0.9, 0.9, 0.9).multiplyScalar(0.75 + 0.35 * vnoise2(x * 2, y * 2)), M4(0, H + 4.9 + 2.6, 0, 0, Math.PI / 4, 0), { attr: { aPal: () => team * 2 } }));
       gold.push(L(new THREE.SphereGeometry(0.42, 10, 8), linCol(1, 1, 1), M4(0, H + 10.4, 0)));
       gold.push(L(new THREE.CylinderGeometry(0.06, 0.08, 3.6, 6), linCol(1, 1, 1), M4(0, H + 12.2, 0)));
       // pennant
       const pen = new THREE.PlaneGeometry(3.2, 1.2, 8, 1);
-      const pc = new THREE.Color(i % 2 ? T.c2 : T.c1);
-      pennants.push(L(pen, pc, M4(1.6, H + 13.3, 0), { attr: { aWave: (x, y, z) => 0 } }));
+      pennants.push(L(pen, linCol(1, 1, 1), M4(1.6, H + 13.3, 0), { attr: { aWave: (x, y, z) => 0, aPal: () => team * 2 + (i % 2) } }));
       { // compute aWave from local x before transform: re-derive after prep using distance from pole
         const g = pennants[pennants.length - 1], p = g.attributes.position, w = g.attributes.aWave;
         const px = rp.x, pz = rp.z;
@@ -302,8 +301,8 @@ const World = {
         const u0 = (k + 0.15) / nf, u1 = (k + 0.85) / nf, p0 = pt(u0, new THREE.Vector3()), p1 = pt(u1, new THREE.Vector3());
         const tip = p0.clone().lerp(p1, 0.5).add(_v6.set(0, -0.75, 0));
         const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute([p0.x, p0.y, p0.z, p1.x, p1.y, p1.z, tip.x, tip.y, tip.z], 3));
-        const c = new THREE.Color(k % 3 === 0 ? T.c2 : k % 3 === 1 ? T.c1 : T2.c1);
-        pennants.push(Geo.prep(g, c, null, { attr: { aWave: (x, y, z, vi) => (vi === 2 ? 0.25 : 0) } }));
+        const pal = k % 3 === 0 ? t0.team * 2 + 1 : k % 3 === 1 ? t0.team * 2 : t1.team * 2;
+        pennants.push(Geo.prep(g, linCol(1, 1, 1), null, { attr: { aWave: (x, y, z, vi) => (vi === 2 ? 0.25 : 0), aPal: () => pal } }));
       }
     }
     const woodMat = stdMat({ map: Tex.wood, vertexColors: true, roughness: 0.82, metalness: 0 }, { key: 'wood' });
@@ -317,16 +316,49 @@ const World = {
     const drapeMesh = new THREE.Mesh(Geo.merge([...drapes, ...banners], ['aWave']), drapeMat);
     drapeMesh.receiveShadow = true; drapeMesh.castShadow = false; drapeMesh.matrixAutoUpdate = false;
     Render.scene.add(drapeMesh);
-    const penMat = stdMat({ vertexColors: true, roughness: 0.8, side: THREE.DoubleSide }, {
-      key: 'pennant', vHead: 'attribute float aWave;',
-      vDisp: 'transformed += normal * sin(uTime * 7.0 - aWave * 5.0 + position.x * 0.2 + position.z * 0.2) * 0.4 * aWave; transformed.y -= aWave * aWave * 0.4;',
-    });
-    const penMesh = new THREE.Mesh(Geo.merge(pennants, ['aWave']), penMat); penMesh.matrixAutoUpdate = false;
+    // team colours come from a palette uniform so the stadium can be re-dressed for any fixture
+    this.palU = { value: Array.from({ length: 8 }, () => new THREE.Color()) };
+    const palF = { fHead: 'uniform vec3 uPal[8]; varying float vPal;', albedo: 'diffuseColor.rgb *= uPal[int(vPal + 0.5)];', uniforms: { uPal: this.palU } };
+    const penMat = stdMat({ vertexColors: true, roughness: 0.8, side: THREE.DoubleSide }, Object.assign({
+      key: 'pennant', vHead: 'attribute float aWave; attribute float aPal; varying float vPal;',
+      vDisp: 'vPal = aPal; transformed += normal * sin(uTime * 7.0 - aWave * 5.0 + position.x * 0.2 + position.z * 0.2) * 0.4 * aWave; transformed.y -= aWave * aWave * 0.4;',
+    }, palF));
+    const penMesh = new THREE.Mesh(Geo.merge(pennants, ['aWave', 'aPal']), penMat); penMesh.matrixAutoUpdate = false;
     Render.scene.add(penMesh);
+    const roofMat = stdMat({ map: Tex.wood, vertexColors: true, roughness: 0.7, metalness: 0 }, Object.assign({ key: 'roof', vHead: 'attribute float aPal; varying float vPal;', vDisp: 'vPal = aPal;' }, palF));
+    const roofMesh = new THREE.Mesh(Geo.merge(roofs, ['aPal']), roofMat); roofMesh.castShadow = true; roofMesh.receiveShadow = true; roofMesh.matrixAutoUpdate = false;
+    Render.scene.add(roofMesh);
+    this.sectorTeams = [0, 1, 2, 3];
+    this.applyPalette();
     this.goldMat = stdMat({ color: 0xd9a43a, metalness: 1, roughness: 0.26, emissive: 0x3a2400, emissiveIntensity: 0.3 }, { key: 'gold' });
     const goldMesh = new THREE.Mesh(Geo.merge(gold), this.goldMat); goldMesh.castShadow = true; goldMesh.matrixAutoUpdate = false;
     Render.scene.add(goldMesh);
   },
+
+  applyPalette() {
+    const P = this.palU.value;
+    this.sectorTeams.forEach((t, i) => { const T = CONFIG.teams[t]; P[i * 2].set(T.c1).multiplyScalar(0.9); P[i * 2 + 1].set(T.c2); });
+  },
+  // re-dress banners, roofs, pennants and crowd colours for a fixture: sectors = [teamA, teamB, teamC, teamD]
+  dress(sectors) {
+    if (sectors.join() === this.sectorTeams.join()) return;
+    this.sectorTeams = sectors.slice();
+    this.applyPalette();
+    drawBannerAtlas(Tex.banners.userData.canvas.getContext('2d'), sectors, Tex.font); Tex.banners.needsUpdate = true;
+    if (this.crowd) {
+      const a = this.crowd.geometry.attributes.aShirt, d = this.crowd.geometry.attributes.aData, c = new THREE.Color();
+      const neutrals = [linCol(0.05, 0.05, 0.06), linCol(0.25, 0.22, 0.2), linCol(0.4, 0.4, 0.42), linCol(0.12, 0.09, 0.06)];
+      for (let i = 0; i < a.count; i++) {
+        const T = CONFIG.teams[sectors[Math.round(d.getY(i))]], r = Math.random();
+        if (r < 0.58) c.set(T.c1); else if (r < 0.82) c.set(T.c2); else c.copy(pick(neutrals));
+        c.multiplyScalar(0.8 + Math.random() * 0.35); a.setXYZ(i, c.r, c.g, c.b);
+      }
+      a.needsUpdate = true;
+    }
+  },
+  // Hogwarts grounds for school matches; a professional ground (castle hidden, league dressing) otherwise
+  setVenue(v) { if (this.hogwarts) this.hogwarts.visible = v === 'hogwarts'; this.venue = v; },
+  cheer(team, amt) { this.sectorTeams.forEach((t, i) => { if (t === team) this.excite[i] = Math.max(this.excite[i], amt); }); },
 
   buildCrowd() {
     const seats = this.crowdSeats;

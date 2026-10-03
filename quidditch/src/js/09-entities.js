@@ -42,17 +42,17 @@ class Flyer {
     let ix = this.input.x, iy = this.input.y;
     if (this.stun > 0) { this.stun -= dt; const t = Game.time; ix = Math.sin(t * 13 + this.id) * 0.7; iy = Math.cos(t * 9 + this.id) * 0.35; }
     this.invuln = Math.max(0, this.invuln - dt);
-    const tm = (this.input.brake ? F.brakeTurn : 1) * this.turnMul;
+    const tm = (this.input.brake ? F.brakeTurn : 1) * this.turnMul * (this.baseTurn || 1);
     const yawRate = -ix * F.yawRate * tm;
     this.yaw = wrapAngle(this.yaw + yawRate * dt);
     this.pitch = clamp(this.pitch + iy * F.pitchRate * tm * dt, -F.maxPitch, F.maxPitch);
     let target = this.input.brake ? F.brake : F.cruise;
     if (this.input.boost && this.boost > 0.02 && this.stun <= 0) {
-      target = F.boost; this.boost = Math.max(0, this.boost - F.boostDrain * dt); this.lastBoostT = Game.time;
+      target = F.boost; this.boost = Math.max(0, this.boost - F.boostDrain * dt * (this.drainMul || 1)); this.lastBoostT = Game.time;
       if (!this.boosting && this.isPlayer) Sound.play('boost', { vol: 0.7 });
       this.boosting = true;
-    } else { this.boosting = false; this.boost = Math.min(1, this.boost + F.boostRegen * dt); }
-    target = target * this.speedMul * (this.hasBall ? F.carryMul : 1) - Math.sin(this.pitch) * F.dive;
+    } else { this.boosting = false; this.boost = Math.min(1, this.boost + F.boostRegen * dt * (this.regenMul || 1)); }
+    target = target * this.speedMul * (this.baseSpeed || 1) * (this.hasBall ? F.carryMul : 1) - Math.sin(this.pitch) * F.dive;
     this.speed = damp(this.speed, target, target > this.speed ? F.accel : F.decel, dt);
     this.roll = damp(this.roll, clamp(yawRate * F.bank, -F.maxBank, F.maxBank), 5, dt);
     let lat = 0, vert = 0;
@@ -136,7 +136,7 @@ class Quaffle {
       // passes are charmed to find their receiver
       if (this.state === 'flying' && this.passTarget && Game.time - this.throwT < 2.4 && !this.passTarget.scripted) {
         this.passTarget.hand(_v2); _v2.sub(this.pos); const d = _v2.length(), sp = Math.max(this.vel.length(), 30);
-        if (d > 0.4) { _v2.multiplyScalar(sp / d); this.vel.lerp(_v2, 1 - Math.exp(-3.2 * dt)); }
+        if (d > 0.4) { _v2.multiplyScalar(sp / d); this.vel.lerp(_v2, 1 - Math.exp(-3.2 * (this.homeMul || 1) * dt)); }
       }
       const g = this.state === 'flying' ? CONFIG.ball.g : 3.2;
       this.vel.y -= g * dt;

@@ -8,6 +8,13 @@ function frame(now) {
   lastFrameT = now;
   Perf.sample(rdt);
   if (UI.contextLost) return;
+  // cutscene sets, locker room, press room and the career hub render their own scenes
+  if (Scenes.active) {
+    Scenes.update(rdt); Locker.update(rdt); PressRoom.update(rdt);
+    if (Scenes.set && Scenes.set.world) { World.update(rdt, rdt); Render.placeSun(Render.camera.position); Render.render(); }
+    else Scenes.render();
+    return;
+  }
   Game.update(rdt);
   const paused = Game.state === 'paused';
   Robes.update(paused ? 0 : rdt * Game.curTs);
@@ -25,6 +32,7 @@ function frame(now) {
   fx.flare = (World.flareBase || 0) * (inFront ? smoothstep(1.05, 0.75, edge) : 0) * (Game.state === 'finisher' ? 0.4 : 1);
   HUD.update(rdt);
   Render.render();
+  Photo.tick(rdt);
 }
 
 (async function boot() {
@@ -45,6 +53,7 @@ function frame(now) {
     await Humans.load();
     progress(0.72, 'Waxing the brooms…'); await nextFrame();
     Models.init(); Robes.init(); FX.init(); Game.init(); HUD.init(); Input.init(); UI.init();
+    Dialogue.init(); Locker.init(); PressRoom.init(); CareerUI.init();
     World.setWeather(Settings.weather === 'overcast' ? 'golden' : Settings.weather);
     Game.setup('demo');
     progress(0.86, 'Polishing the hoops…'); await nextFrame();
@@ -59,7 +68,7 @@ function frame(now) {
     for (const m of warm) m.visible = false;
     Render.scene.remove(ghost); World.lanterns.visible = lv; World.rain.visible = rv; Game.snitch.group.visible = false;
     progress(1, 'Ready.'); await nextFrame();
-    window.__game = { Robes, Hands, Humans, Human, RidePoses, Kits, Models, AI, Game, Finishers, Input, UI, Render, Settings, World, Cam, HUD, Perf, Sound, SaveData };
+    window.__game = { Robes, Hands, Humans, Human, RidePoses, Kits, Models, Career, CareerUI, Scenes, Script, Dialogue, Story, Locker, PressRoom, News, Photo, CONFIG, AI, Game, Finishers, Input, UI, Render, Settings, World, Cam, HUD, Perf, Sound, SaveData };
     window.__ready = true;
     requestAnimationFrame(frame);
     UI.title();
