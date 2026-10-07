@@ -185,8 +185,8 @@ HL.BUILD.push(async function interiors(L) {
     for (const z of [27.6, 44.4]) { KIT.cyl(84, yd, z, 0.12, 1.5, M.iron, { seg: 8 }); KIT.cyl(84, yd + 1.5, z, 0.3, 0.3, M.iron, { seg: 10, col: false, r1: 0.5 }); WORLD.fire(L, 84, yd + 1.7, z, 0.9, { range: 13, i: 5 }); }
     HL.sl(88, Y + 9, 36, 0x9fb4e8, 7, 26);                                                                   // the cool of the great west window on the dais
     // floating candles and the light they give the tables
-    { const N = 420, body = new THREE.CylinderGeometry(0.035, 0.035, 0.36, 6); body.translate(0, 0.18, 0); const fl = new THREE.SphereGeometry(0.05, 6, 5); fl.scale(1, 2.0, 1); fl.translate(0, 0.45, 0);
-      const geo = HL.mergeCol([[body, [0.9, 0.84, 0.7]], [fl, [9, 5.2, 1.6]]]), mat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false }), U = { uT: { value: 0 } };
+    { const N = 420, body = new THREE.CylinderGeometry(0.035, 0.035, 0.36, 6); body.translate(0, 0.18, 0); const fl = new THREE.SphereGeometry(0.075, 6, 5); fl.scale(1, 2.0, 1); fl.translate(0, 0.47, 0);   /* (a flame big enough to read on a phone: the wax alone read as white streaks) */
+      const geo = HL.mergeCol([[body, [0.72, 0.64, 0.5]], [fl, [9, 5.2, 1.6]]]), mat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false }), U = { uT: { value: 0 } };
       mat.onBeforeCompile = (sh) => { sh.uniforms.uT = U.uT; sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uT; attribute float aPh;').replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed.y += sin(uT * (0.6 + aPh) + aPh * 40.0) * 0.22; if (color.r > 2.0) transformed.xz *= 0.8 + 0.3 * sin(uT * 13.0 + aPh * 90.0);'); }; mat.customProgramCacheKey = () => 'hlcandle';
       const im = new THREE.InstancedMesh(geo, mat, N), m4 = new THREE.Matrix4(), ph = new Float32Array(N), rs = MG.rs('candles');
       for (let i = 0; i < N; i++) { m4.makeTranslation(22 + rs() * 60, Y + 6.4 + rs() * 4.4 + (rs() < 0.2 ? 2.2 : 0), zi0 + 1.6 + rs() * (zi1 - zi0 - 3.2)); im.setMatrixAt(i, m4); ph[i] = rs(); }
