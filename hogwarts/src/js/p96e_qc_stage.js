@@ -142,7 +142,7 @@ const STAGES = {
   press(variant) {
     const C0 = HL.PITCH, Q = HL.Q, rx = C0.x - Q.AX - 4, rz = C0.z - 30; const F = Scenes.frame(rx - 2, Q.Y0, rz, HALF);
     const A = { seat: [0, 0, -1.6, 0], rep0: [-2.0, 0, 1.4, PI], rep1: [0.4, 0, 1.6, PI], rep2: [2.3, 0, 1.2, PI], quill: [3.0, 1.2, 1.9] };
-    const C = { default: { p: [0, 1.7, 4.4], l: [0, 1.2, -1.6], fov: 48 }, reporters: { p: [0.2, 1.6, -3.4], l: [0, 1.2, 1.4], fov: 52 }, player: { p: [0.5, 1.55, 0.5], l: [0, 1.45, -1.6], fov: 38 }, quill: { p: [3.0, 1.6, 0.6], l: [3.0, 1.2, 1.9], fov: 34 } };
+    const C = { default: { p: [0, 1.7, 4.4], l: [0, 1.2, -1.6], fov: 48 }, reporters: { p: [-1.35, 1.78, -3.7], l: [0.6, 1.25, 1.4], fov: 54 }, player: { p: [0.5, 1.55, 0.5], l: [0, 1.45, -1.6], fov: 38 }, quill: { p: [3.0, 1.6, 0.6], l: [3.0, 1.2, 1.9], fov: 34 } };
     C.rep = (i) => { const a = A['rep' + i]; return { p: [a[0] * 0.4, 1.55, a[2] - 2.2], l: [a[0], 1.5, a[2]], fov: 36 }; };
     // the Quick-Quotes Quill (acid green, scribbling on its own) and the photographers' flashes
     const quill = new THREE.Group(); { const m = new THREE.MeshStandardMaterial({ color: 0x5cff6a, emissive: 0x1a8a20, emissiveIntensity: 1.4, roughness: 0.4, side: THREE.DoubleSide }), f = new THREE.Mesh(new THREE.PlaneGeometry(0.06, 0.34, 1, 4), m); f.rotation.z = 0.5; f.position.y = 0.12; quill.add(f);
