@@ -44,13 +44,13 @@ const Locker = {
     { const w = W(set.anchors.pitchMe); this.gate = w; this.uses.push(HL.interact(V3(w.x, HL.gy(w.x, w.z) + 1, w.z), 3.2, 'Take the pitch', () => this.play())); }
     // you, in kit, at your place in the huddle
     this._hero = CHAR.T.maul; CHAR.T.maul = CHAR.T[meT]; const me = W(set.anchors.lockMe); PLAYER.spawn(me.x, HL.gy(me.x, me.z) + 0.05, me.z, F.yaw + set.anchors.lockMe[3]); CAM.reset(F.yaw + set.anchors.lockMe[3]); CAM.pitch = -0.12; CAM.snap = true;
-    this.on = true; this.ui.classList.add('on'); this.panel = false; MG.state = 'play'; HL.ui.show(true); document.body.classList.add('qclocker'); IN.buf = {};
+    this.on = true; this.ui.classList.add('on'); this.panel = false; MG.state = 'play'; HL.ui.show(true); document.body.classList.add('qclocker'); if (TOUCH.on) TOUCH.layout(); IN.buf = {};
     this.ui.querySelector('#lkTitle').innerHTML = `<b>${ev.label}</b><span>${teamName(team)} v ${teamName(ev.opp)}${ev.home === false ? ' (away)' : ''}</span>`;
-    this.ui.querySelector('#lkHint').textContent = TOUCH.on ? 'Walk up to a team-mate and tap USE to talk · walk out through the gate to start' : 'Walk up to a team-mate and press E to talk · walk out through the gate to start';
+    this.ui.querySelector('#lkHint').textContent = TOUCH.on ? 'Walk up to a team-mate and TALK appears under your thumb · TAKE THE PITCH when you are ready' : 'Walk up to a team-mate and press E to talk · walk out through the gate to start';
     this.closePanel(); this.renderGoals(); HL.ui.fade(0);
   },
   exit() {
-    if (!this.on) return; this.on = false; this.ui.classList.remove('on'); this.closePanel(); document.body.classList.remove('qclocker');
+    if (!this.on) return; this.on = false; this.ui.classList.remove('on'); this.closePanel(); document.body.classList.remove('qclocker'); if (TOUCH.on) TOUCH.layout();
     for (const mt of this.mates) mt.a.dispose(); if (this.coach) this.coach.dispose(); this.mates = []; this.coach = null;
     for (const u of this.uses) { const i = HL.uses.indexOf(u); if (i >= 0) HL.uses.splice(i, 1); } this.uses = [];
     if (this._hero) { CHAR.T.maul = this._hero; this._hero = null; }
@@ -134,7 +134,7 @@ const Locker = {
 /* in the huddle and the career's screens the castle's errands, points and purse step aside; on glass only the stick, USE and the menu are shown */
 { const st = document.createElement('style'); st.textContent = `body.qcareer #hlQuest, body.qcareer #hlPts, body.qcareer #hlGold, body.qcareer #hlPot, body.qcareer #hlWay { display: none !important; }
   body.qclocker #hlVit, body.qclocker #hlBar, body.qclocker #hlBarT { display: none !important; }
-  body.qclocker #tc .tcB:not([data-id="use"]):not([data-id="pause"]):not([data-id="jump"]) { display: none !important; }
+  body.qclocker #tc .tcB:not([data-id="use"]):not([data-id="pause"]) { display: none !important; }
   #locker .lkHint { pointer-events: none; } #locker .lkTop { pointer-events: none; } #locker .lkTop > * { pointer-events: auto; }
   @media (max-height: 620px) { #locker .lkTop { top: calc(6px + env(safe-area-inset-top)); left: 10px; right: 60px; } #locker .lkTitle b { font-size: 12px; } #locker .lkTitle span { font-size: 10.5px; } #locker .lkGoals { font-size: 11px; padding: 5px 9px; max-width: 220px; } #locker .act { padding: 7px 12px; font-size: 11px; } #locker .lkHint { bottom: calc(8px + env(safe-area-inset-bottom)); font-size: 11px; }
     #locker .lkPanel { top: calc(50% + 16px); max-height: calc(100% - 70px); width: min(620px, 74vw); } #locker .lkCard { padding: 10px 14px; } #locker .lkWho b { font-size: 15px; } #locker .lkWho span { margin-bottom: 2px; } #locker .lkLine { font-size: 14px; margin: 6px 0; }

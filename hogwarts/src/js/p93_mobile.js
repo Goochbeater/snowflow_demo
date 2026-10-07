@@ -12,8 +12,8 @@ body.touch #hlQuest .t { font-size: 9px; letter-spacing: 0.26em; } body.touch #h
 body.touch #hlVit { left: 50%; bottom: auto; top: calc(6px + env(safe-area-inset-top)); width: 230px; transform: translateX(-50%); }
 body.touch #hlVit .crest { width: 26px; height: 30px; bottom: auto; top: 0; } body.touch #hlVit .bars { margin-left: 34px; } body.touch #hlVit .nm { font-size: 9px; margin-bottom: 3px; letter-spacing: 0.2em; }
 body.touch #hlHp { height: 8px; } body.touch #hlAm { height: 4px; margin-top: 4px; } body.touch #hlVit .am { display: none; }
-body.touch #hlPts { right: calc(176px * var(--tu, 1)); top: calc(6px + env(safe-area-inset-top)); } body.touch #hlPts .t { font-size: 8px; letter-spacing: 0.22em; } body.touch #hlPts .n { font-size: 17px; }
-body.touch #hlGold { right: calc(176px * var(--tu, 1)); top: calc(40px + env(safe-area-inset-top)); font-size: 12px; }
+body.touch #hlPts { right: max(226px, calc(230px * var(--tu, 1))); top: calc(6px + env(safe-area-inset-top)); } body.touch #hlPts .t { font-size: 8px; letter-spacing: 0.22em; } body.touch #hlPts .n { font-size: 17px; }
+body.touch #hlGold { right: max(226px, calc(230px * var(--tu, 1))); top: calc(40px + env(safe-area-inset-top)); font-size: 12px; }
 body.touch #hlPot { display: none; }
 body.touch #hlHint { bottom: calc(8px + env(safe-area-inset-bottom)); left: 47%; font-size: 12.5px; padding: 6px 14px; max-width: 44vw; width: max-content; line-height: 1.35; }
 body.touch #hlPrompt { top: 58%; font-size: 14px; padding: 5px 14px; }
@@ -35,7 +35,7 @@ body.touch #hlQtut { top: calc(4px + env(safe-area-inset-top)) !important; max-w
   body .hlBtn:hover, body .hlBtn.sel { letter-spacing: 0.3em; }
   body .hlTitle { padding-bottom: 5vh; } body .hlTitle h1 { font-size: min(8vw, 17vh); top: 2.5vh; } body .hlTitle h2 { font-size: min(1.7vw, 3.2vh); top: calc(2.5vh + min(9vw, 19vh)); }
   body .hlTitle .hlBtn { min-width: 272px; box-sizing: border-box; }
-  body .hlTitle .cr { font-size: 9px; max-width: 40vw; bottom: 6px; } body .hlTitle .v { font-size: 9px; bottom: 6px; }
+  body .hlTitle .cr { font-size: 10px; line-height: 1.3; max-width: calc(50vw - 172px); bottom: 6px; } body .hlTitle .v { font-size: 9px; bottom: 6px; }
   body .hlSort { overflow-y: auto; justify-content: safe center; padding: 8px 0 12px; } body .hlSort p { max-width: 86vw; text-align: center; }
   body .hlSort h3 { font-size: 19px; } body .hlSort p { font-size: 13px; margin: 0 0 10px; }
   body .hlHouses { gap: 10px; } body .hlH { height: min(50vh, 300px); width: min(19vw, 190px); } body .hlH .tr { font-size: 10px; margin-top: 4px; padding: 0 4px; line-height: 1.25; } body .hlH svg { width: 54%; margin-top: 9%; } body .hlH .nm { font-size: min(1.8vw, 16px); }
@@ -75,6 +75,9 @@ body.touch #hlQtut { top: calc(4px + env(safe-area-inset-top)) !important; max-w
   body.touch #hlToast { top: 9%; padding: 8px 30px 10px; } body.touch #hlToast .a { font-size: 17px; } body.touch #hlToast .b { font-size: 12px; }
 }
 /* ---------------- the touch layer's own adjustments */
+body.touch .dlgSkip, body.touch[data-tm="cine"] #skip { display: none !important; }   /* one SKIP on glass: the round one */
+body.touch .tcSet .tcVal { display: inline-flex; align-items: center; justify-content: center; min-width: 96px; padding: 0 6px; font: 13px 'HLA', Georgia, serif; letter-spacing: .12em; color: #e8d7a8; }
+body.touch .hlBtn.tcSure { border-color: #e06a4e; color: #ffb4a0; }
 body.touch .hlJ .foot:last-child, body.touch .hlTitle .v { opacity: 0.6; }
 body.touch .hlSlot.tcSel { border-color: #fff3c4; box-shadow: 0 0 12px rgba(255,230,160,0.6); }
 body.touch .tcKeys { max-width: 92vw; }

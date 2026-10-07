@@ -108,6 +108,7 @@ TOUCH.css = `
 #tc.on { display: block; }
 #tcZone { position: absolute; inset: 0; pointer-events: auto; touch-action: none; }
 #tc[data-mode="menu"] #tcZone, #tc[data-mode="cine"] #tcZone, #tc[data-mode=""] #tcZone { display: none; }
+.tcB::after { content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 46px); height: max(100%, 46px); transform: translate(-50%, -50%); border-radius: 50%; }
 .tcB { position: absolute; width: calc(var(--r) * 2); height: calc(var(--r) * 2); margin: calc(var(--r) * -1) 0 0 calc(var(--r) * -1); border-radius: 50%; pointer-events: auto; touch-action: none; display: none;
   background: radial-gradient(circle at 50% 38%, rgba(46,38,24,0.62), rgba(8,7,10,0.66) 70%); border: 1.5px solid rgba(217,184,106,0.55); box-shadow: 0 2px 10px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(0,0,0,0.5);
   color: #f1e3bd; align-items: center; justify-content: center; flex-direction: column; transition: transform 0.08s, background 0.12s, opacity 0.2s; user-select: none; -webkit-user-select: none; }
@@ -180,6 +181,7 @@ TOUCH.layout = function () {
   if (!TOUCH.root) return; const W = window.innerWidth, H = window.innerHeight, u = TOUCH.u = clamp(Math.min(W, H) / 412, 0.82, 1.4) * TOUCH.cfg.size;
   TOUCH.root.style.setProperty('--u', u.toFixed(3)); document.body.style.setProperty('--tu', u.toFixed(3)); TOUCH.root.style.setProperty('--sr', (58 * u).toFixed(1) + 'px');
   const cx = W - 74 * u, cy = H - 74 * u, at = (deg, r) => [cx + Math.cos(deg * D2R) * r, cy - Math.sin(deg * D2R) * r];
+  const step = Math.max(44, 44 * u), ty = 24 * u, tx = (i) => W - 24 * u - i * step, col = (i) => ty + (i + 1) * step;
   const P = {
     cast: [cx, cy, 41], shoot: [cx, cy, 41],
     protego: [cx - 102 * u, cy + 10 * u, 30], pass: [cx - 102 * u, cy + 10 * u, 31], down: [cx - 102 * u, cy + 10 * u, 28],
@@ -188,13 +190,16 @@ TOUCH.layout = function () {
     s0: [...at(95, 176 * u), 25], s1: [...at(119, 176 * u), 25], s2: [...at(143, 176 * u), 25], s3: [...at(167, 176 * u), 25], swap: [...at(131, 236 * u), 17],
     up: [...at(131, 166 * u), 24], roll: [...at(163, 170 * u), 25],
     use: [cx - 246 * u, cy - 136 * u, 31], ancient: [cx - 214 * u, cy + 14 * u, 27],
-    pause: [W - 24 * u, 24 * u, 18], map: [W - 66 * u, 24 * u, 18], journal: [W - 108 * u, 24 * u, 18], bag: [W - 150 * u, 24 * u, 18],
-    broom: [W - 24 * u, 74 * u, 19], revelio: [W - 24 * u, 120 * u, 19], lumos: [W - 24 * u, 166 * u, 19], potion: [W - 24 * u, 212 * u, 19],
+    // the top bar and the tool column: never closer than 44 px apart (the potion joins the bar: in the column it sat 3 px off ROLL)
+    pause: [tx(0), ty, 18], map: [tx(1), ty, 18], journal: [tx(2), ty, 18], bag: [tx(3), ty, 18], potion: [tx(4), ty, 18],
+    broom: [W - 24 * u, col(0), 19], revelio: [W - 24 * u, col(1), 19], lumos: [W - 24 * u, col(2), 19],
     skip: [W - 44 * u, 34 * u, 22], close: [W - 30 * u, 30 * u, 20],
   };
   // in flight UP sits where the spells were, DOWN where Protego was; in a match the roll joins the arc
   if (TOUCH.mode === 'match') { P.up = [...at(103, 178 * u), 24]; P.down = [...at(147, 178 * u), 24]; P.roll = [...at(176, 178 * u), 25]; }
-  for (const id in P) { const b = TOUCH.btn[id]; if (!b) continue; const [x, y, r] = P[id]; b.style.left = x.toFixed(1) + 'px'; b.style.top = y.toFixed(1) + 'px'; b.style.setProperty('--r', (r * u).toFixed(1) + 'px'); }
+  // in the career's huddle the only thing to do is talk: USE takes the big button under the thumb
+  if (document.body.classList.contains('qclocker')) P.use = [cx, cy, 41];
+  for (const id in P) { const b = TOUCH.btn[id]; if (!b) continue; const [x, y, r] = P[id]; b.style.left = x.toFixed(1) + 'px'; b.style.top = y.toFixed(1) + 'px'; b.style.setProperty('--r', Math.max(r * u, 19).toFixed(1) + 'px'); }   // (nothing drawn under 38 px; every button answers over 46)
   TOUCH.home = [Math.max(96 * u, W * 0.11), H - 100 * u];
   if (TOUCH.stick.id === null) TOUCH.placeStick(TOUCH.home[0], TOUCH.home[1], 0, 0);
 };
@@ -225,6 +230,7 @@ TOUCH.release = function (id, pid) {
 };
 TOUCH.releaseAll = function () { for (const id in Object.assign({}, TOUCH.held)) TOUCH.release(id); TOUCH.stickUp(); for (const k in TOUCH.look) delete TOUCH.look[k]; };
 TOUCH.skip = function () {
+  if (MG.state === 'scene' && window.Script && Script.beats) { Script.skip(); return; }
   if (CAM.cine) { TOUCH.key('Enter', true); setTimeout(() => TOUCH.key('Enter', false), 60); if (CAM.cine && CAM.cine.skip !== false && MG.state !== 'title') { /* a scene that listens for no key is skipped all the same */ CAM.cine.t = Math.max(CAM.cine.t, CAM.cine.dur || 0); } }
   else { TOUCH.key('Enter', true); setTimeout(() => TOUCH.key('Enter', false), 60); }
 };
@@ -284,7 +290,7 @@ TOUCH.tap = function (x, y) {   // taps on things the game draws under the contr
   TOUCH.frame();
 }; }
 TOUCH.modeNow = function () {
-  if (!TOUCH.on || MG.state === 'scene') return '';
+  if (!TOUCH.on) return ''; if (MG.state === 'scene') return window.Script && Script.beats ? 'cine' : '';   // (a career scene: the one round SKIP; the creator and hubs have none)
   if (CAM.cine && (MG.state === 'play' || PLAYER.state === 'cine')) return 'cine';
   if (MG.state === 'play') { if (PLAYER.state === 'cine' || PLAYER.state === 'dead') return 'wait'; return HL.Q && HL.Q.on ? 'match' : PLAYER.state === 'fly' ? 'fly' : 'foot'; }
   if (MG.state === 'journal' || MG.state === 'inv' || MG.state === 'map' || (MG.state === 'house' && HL._floo)) return 'menu';
@@ -388,7 +394,7 @@ TOUCH.screenFix = function (S) {
 { const p0 = HL.ui.pause; HL.ui.pause = function () {
   p0.apply(this, arguments); if (!TOUCH.on || MG.state !== 'pause') return; const S = HL.ui.el.Screen, keys = S.querySelector('.hlKeys'); if (!keys) return;
   keys.outerHTML = `<div class="hlKeys tcKeys" data-tf="1"><b>Move · look</b><span>the stick on the left · drag the right side</span><b>Run</b><span>push the stick all the way</span><b>Cast</b><span>tap or hold CAST · the four spells around it · ⇄ swaps to the other four</span><b>Protego</b><span>hold it as a curse comes · late is perfect</span><b>Broom</b><span>the broom at the top right · stick forward to fly, sideways to turn</span><b>Quidditch</b><span>hold SHOOT to wind a shot up · PASS · FACE turns you to the play</span></div>
-    <div class="hlRow tcSet"><div class="hlBtn" data-t="s-">LOOK −</div><div class="hlBtn sel" style="min-width:110px">${TOUCH.cfg.sens.toFixed(1)}×</div><div class="hlBtn" data-t="s+">LOOK +</div><div class="hlBtn" data-t="z">BUTTONS · ${TOUCH.cfg.size < 0.95 ? 'SMALL' : TOUCH.cfg.size > 1.05 ? 'LARGE' : 'MEDIUM'}</div><div class="hlBtn" data-t="h">BUZZ · ${TOUCH.cfg.haptic ? 'ON' : 'OFF'}</div></div>`;
+    <div class="hlRow tcSet"><div class="hlBtn" data-t="s-">LOOK −</div><output class="tcVal">LOOK ${TOUCH.cfg.sens.toFixed(1)}×</output><div class="hlBtn" data-t="s+">LOOK +</div><div class="hlBtn" data-t="z">BUTTONS · ${TOUCH.cfg.size < 0.95 ? 'SMALL' : TOUCH.cfg.size > 1.05 ? 'LARGE' : 'MEDIUM'}</div><div class="hlBtn" data-t="h">BUZZ · ${TOUCH.cfg.haptic ? 'ON' : 'OFF'}</div></div>`;
   S.querySelectorAll('[data-t]').forEach((b) => b.onclick = () => { const t = b.dataset.t, C = TOUCH.cfg;
     if (t === 's-') C.sens = Math.max(0.4, +(C.sens - 0.1).toFixed(1)); else if (t === 's+') C.sens = Math.min(2.5, +(C.sens + 0.1).toFixed(1)); else if (t === 'z') C.size = C.size < 0.95 ? 1 : C.size > 1.05 ? 0.88 : 1.14; else if (t === 'h') C.haptic = !C.haptic;
     TOUCH.save(); TOUCH.layout(); MG.state = 'play'; HL.ui.pause(); });

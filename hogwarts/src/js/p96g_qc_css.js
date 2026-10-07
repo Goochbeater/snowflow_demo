@@ -292,7 +292,7 @@ QC.CSS = String.raw`#scrCareer, #press, #locker { --night: #0a0c16; --ink: #1215
 #press .prRep.easy em { color: #7ae08a; }
 #press .prRep.mid em { color: #e8b84a; }
 #press .prRep.hard em { color: #ff7a6a; }
-#press .prRep.hard { border-color: rgba(90,255,58,.35); }
+#press .prRep.hard { border-color: rgba(255,122,106,.55) !important; }
 #press .prQ { position: absolute; left: 50%; top: calc(14% + var(--st)); transform: translateX(-50%); width: min(760px, 92vw); padding: 12px 16px; border-radius: 14px; background: rgba(8,9,16,.86); border: 1px solid rgba(232,184,74,.35); display: none; }
 #press .prQ.on { display: block; }
 #press .prBy { font-size: 12px; opacity: .8; margin-bottom: 4px; }
@@ -309,7 +309,7 @@ QC.CSS = String.raw`#scrCareer, #press, #locker { --night: #0a0c16; --ink: #1215
 #press .prToast { position: absolute; left: 50%; top: 46%; transform: translateX(-50%); display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; opacity: 0; pointer-events: none; }
 #press .prToast.on { animation: card 2.4s ease both; }
 #press .prToast i { font-style: normal; font-family: var(--f-head); letter-spacing: .12em; font-size: 15px; text-shadow: 0 2px 8px #000; }
-#press .prToast i.quill { color: #7aff5a; flex-basis: 100%; text-align: center; font-size: 13px; }
+#press .prToast i.quill { color: #8fd16a; opacity: .92; flex-basis: 100%; text-align: center; font-size: 13px; }
 @media (max-height: 420px) {
 #scrCareer .hub { grid-template-columns: minmax(280px, 380px) 1fr; gap: 6px 14px; }
 #scrCareer .hubTop { padding: 6px 10px; }
