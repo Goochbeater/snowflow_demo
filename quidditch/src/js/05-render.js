@@ -54,12 +54,13 @@ void main() {
     vec2 ruv = vec2(uv.x * aspect, uv.y) * 1.7;
     vec4 n = texture2D(tNoise, ruv + vec2(0.0, uTime * 0.02));
     vec4 n2 = texture2D(tNoise, ruv * 1.9 + vec2(0.37, uTime * 0.035));
-    float drop = smoothstep(0.55, 0.75, n.a) + smoothstep(0.6, 0.8, n2.a) * 0.6;
-    uv += (n.rg - 0.5) * 0.035 * drop * uRain;
+    // sparse droplets on the lens: discrete lenses, not a full-screen warp
+    float drop = smoothstep(0.82, 0.9, n.a) + smoothstep(0.86, 0.93, n2.a) * 0.7;
+    uv += (n.rg - 0.5) * 0.009 * drop * uRain;
   }
   vec2 dc = uv - 0.5;
   vec3 col;
-  if (uCA > 0.0005) { vec2 off = dc * uCA; col = vec3(texture2D(tScene, uv - off).r, texture2D(tScene, uv).g, texture2D(tScene, uv + off).b); }
+  if (uCA > 0.0005) { vec2 off = dc * uCA * smoothstep(0.35, 1.0, length(dc * 2.0)); col = vec3(texture2D(tScene, uv - off).r, texture2D(tScene, uv).g, texture2D(tScene, uv + off).b); }
   else col = texture2D(tScene, uv).rgb;
   if (uBlur > 0.0005) {
     vec2 dir = (uv - uBlurCenter) * uBlur;
@@ -67,6 +68,7 @@ void main() {
     for (int i = 1; i < 10; i++) acc += texture2D(tScene, uv - dir * (float(i) / 10.0)).rgb;
     col = acc / 10.0;
   }
+  if (uRain > 0.001) { vec2 ruv2 = vec2(vUv.x * aspect, vUv.y) * 1.7; float dr = smoothstep(0.84, 0.9, texture2D(tNoise, ruv2 + vec2(0.0, uTime * 0.02)).a); col = col * (1.0 - dr * 0.12 * uRain) + dr * 0.05 * uRain; }
   vec3 bloom = texture2D(tBloom, uv).rgb;
   col += bloom * uBloom;
   if (uShafts > 0.001) {
@@ -79,14 +81,14 @@ void main() {
   if (uFlare > 0.001) {
     float vis = clamp(dot(texture2D(tBloom, uSunScreen).rgb, vec3(0.333)) * 0.35, 0.0, 1.0);
     vec2 sv = uSunScreen - 0.5; vec3 fl = vec3(0.0);
-    for (int i = 0; i < 4; i++) {
-      float k = -0.35 - float(i) * 0.42;
+    for (int i = 0; i < 2; i++) {
+      float k = -0.45 - float(i) * 0.6;
       vec2 gp = 0.5 + sv * k;
-      float d = length((uv - gp) * vec2(aspect, 1.0)), r = 0.025 + float(i) * 0.022;
-      fl += mix(vec3(0.45, 0.75, 1.0), vec3(1.0, 0.6, 0.35), float(i) / 3.0) * (1.0 - smoothstep(r * 0.55, r, d)) * (0.22 - float(i) * 0.035);
+      float d = length((uv - gp) * vec2(aspect, 1.0)), r = 0.022 + float(i) * 0.012;
+      fl += mix(vec3(0.5, 0.8, 1.0), vec3(1.0, 0.65, 0.4), float(i)) * (1.0 - smoothstep(r * 0.3, r, d)) * 0.055;
     }
     float dy = abs(uv.y - uSunScreen.y), dx = abs(uv.x - uSunScreen.x) * aspect;
-    fl += vec3(1.0, 0.72, 0.45) * exp(-dy * 120.0) * exp(-dx * 2.0) * 0.5;
+    fl += vec3(1.0, 0.72, 0.45) * exp(-dy * 160.0) * exp(-dx * 3.0) * 0.25;
     fl += vec3(1.0, 0.8, 0.6) * exp(-length((uv - uSunScreen) * vec2(aspect, 1.0)) * 7.0) * 0.25;
     col += fl * uFlare * vis;
   }
@@ -110,7 +112,7 @@ void main() {
   col = mix(col, vec3(0.6, 0.0, 0.0), uHit * vig * 0.85);
   col = mix(col, uFlashColor, uFlash);
   col += (hash(uv * uRes + fract(uTime) * 91.7) - 0.5) * uGrain;
-  float bar = step(uv.y, uLetterbox) + step(1.0 - uLetterbox, uv.y);
+  float bar = step(vUv.y, uLetterbox) + step(1.0 - uLetterbox, vUv.y);
   col *= 1.0 - clamp(bar, 0.0, 1.0);
   gl_FragColor = vec4(col, 1.0);
 }`;
@@ -197,7 +199,7 @@ const Render = {
     const s = this.tier.shadow || 1024;
     this.sun.shadow.mapSize.set(s, s);
     const sc = this.sun.shadow.camera; sc.left = -78; sc.right = 78; sc.top = 78; sc.bottom = -78; sc.near = 10; sc.far = 900;
-    this.sun.shadow.bias = -0.00035; this.sun.shadow.normalBias = 0.06;
+    this.sun.shadow.bias = -0.00035; this.sun.shadow.normalBias = 0.1; this.sun.shadow.radius = 2.5;
     this.scene.add(this.sun, this.sun.target);
     this.hemi = new THREE.HemisphereLight(0x8899cc, 0x44361e, 0.8);
     this.scene.add(this.hemi);

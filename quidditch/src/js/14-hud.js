@@ -26,7 +26,7 @@ const HUD = {
   },
   set(k, v, el) { if (this.cache[k] !== v) { this.cache[k] = v; el.textContent = v; } },
   show(on) { this.root.classList.toggle('on', on); this.controls.classList.toggle('on', on); this.visible = on; },
-  cinematic(on) { this.root.style.opacity = on ? '0' : ''; this.controls.style.opacity = on ? '0.15' : ''; this.inCine = on; },
+  cinematic(on) { this.root.style.opacity = on ? '0' : ''; this.controls.style.opacity = on ? '0' : ''; this.inCine = on; },
   matchStart() {
     if (Game.mode === 'demo') { this.show(false); return; }
     const A = CONFIG.teams[Game.houses[0]], B = CONFIG.teams[Game.houses[1]];
@@ -36,7 +36,10 @@ const HUD = {
     this.cache = {}; this.rank(0); this.setShootLabel('SHOOT'); this.swap(false);
     this.$('radar').style.display = Settings.radar ? '' : 'none';
     this.el.clock.parentElement.style.display = '';
-    this.$('clock').style.display = (Game.mode === 'lab' || Game.mode === 'slab') && !Game.drill ? 'none' : '';
+    const lab = (Game.mode === 'lab' || Game.mode === 'slab') && !Game.drill;
+    this.$('clock').style.display = '';
+    if (lab) { this.cache.clock = Game.mode === 'lab' ? 'FINISHER LAB' : 'SEEKER LAB'; this.el.clock.textContent = this.cache.clock; }
+    this.labMode = lab;
     this.show(true);
   },
   bigCount(t, hold = 0.8) {
@@ -44,6 +47,7 @@ const HUD = {
     clearTimeout(this.countTO); this.countTO = setTimeout(() => o.classList.remove('on'), hold * 1000);
   },
   banner(title, sub) {
+    this.bannerT = performance.now();
     const b = this.el.banner; b.classList.remove('show'); void b.offsetWidth;
     b.innerHTML = `${title}${sub ? `<small>${sub}</small>` : ''}`; b.classList.add('show');
   },
@@ -62,6 +66,8 @@ const HUD = {
     clearTimeout(this.tickTO); this.tickTO = setTimeout(() => t.classList.remove('on'), 3200);
   },
   hint(text, dur = 2) {
+    const wait = 2200 - (performance.now() - (this.bannerT || -1e9));
+    if (wait > 0) { clearTimeout(this.hintQ); this.hintQ = setTimeout(() => this.hint(text, dur), wait); return; }
     const h = this.el.hint; h.textContent = text; h.classList.add('on');
     clearTimeout(this.hintTO); this.hintTO = setTimeout(() => h.classList.remove('on'), dur * 1000);
   },
@@ -80,18 +86,29 @@ const HUD = {
     if (zone) { ctx.strokeStyle = 'rgba(125,255,154,.35)'; ctx.beginPath(); ctx.arc(c.width / 2, c.width / 2, r, -Math.PI / 2 + TAU * zone[0], -Math.PI / 2 + TAU * zone[1]); ctx.stroke(); }
     if (v > 0.005) { ctx.strokeStyle = color; ctx.beginPath(); ctx.arc(c.width / 2, c.width / 2, r, -Math.PI / 2, -Math.PI / 2 + TAU * v); ctx.stroke(); }
   },
+  // the button cluster (measured on resize) is a no-go zone for off-screen arrows and labels
+  measureSafe() {
+    const r = { right: 0, bottom: 0 }, W = Platform.w, H = Platform.h;
+    for (const id of ['bShoot', 'bPass', 'bBoost', 'bFocus', 'bLook']) { const el = document.getElementById(id); if (!el || !el.offsetParent) continue; const b = el.getBoundingClientRect(); if (b.width) { r.right = Math.max(r.right, W - b.left + 8); r.bottom = Math.max(r.bottom, H - b.top + 8); } }
+    this.safe = r; this.safeT = performance.now();
+  },
   project(p, out, margin = 30) {
     const cam = Render.camera, W = Platform.w, H = Platform.h;
+    if (!this.safe || performance.now() - this.safeT > 2000) this.measureSafe();
     _v6.copy(p).project(cam);
     const behind = _v6.z > 1;
     let x = (_v6.x * 0.5 + 0.5) * W, y = (-_v6.y * 0.5 + 0.5) * H;
     if (behind) { x = W - x; y = H - y; }
-    out.on = !behind && x > margin && x < W - margin && y > margin && y < H - margin;
+    out.on = !behind && x > margin && x < W - margin && y > margin + 40 && y < H - margin;
     if (!out.on) {
       const cx = W / 2, cy = H / 2; let dx = x - cx, dy = y - cy;
       if (behind && Math.abs(dy) < 1) dy = 1;
-      const s = Math.min((cx - margin) / Math.max(Math.abs(dx), 1e-3), (cy - margin) / Math.max(Math.abs(dy), 1e-3));
+      const s = Math.min((cx - margin) / Math.max(Math.abs(dx), 1e-3), (cy - margin - 20) / Math.max(Math.abs(dy), 1e-3));
       x = cx + dx * s; y = cy + dy * s; out.ang = Math.atan2(dy, dx);
+      // slide out of the bottom-right controls and keep clear of the score bar
+      const S = this.safe;
+      if (S && x > W - S.right && y > H - S.bottom) { if (dx > dy * (W / H)) y = Math.min(y, H - S.bottom); else x = Math.min(x, W - S.right); }
+      y = Math.max(y, 64);
     }
     out.x = x; out.y = y; return out;
   },
@@ -116,7 +133,7 @@ const HUD = {
     this.set('a', String(G.score[0]), e.ptsA); this.set('b', String(G.score[1]), e.ptsB);
     if (G.mode === 'match') {
       const c = G.drill ? Math.max(0, G.drill.t) : G.overtime ? G.otT : G.clock, m = Math.floor(c / 60), s = Math.floor(c % 60);
-      this.set('clock', (G.overtime ? '+' : '') + m + ':' + String(s).padStart(2, '0'), e.clock);
+      if (!this.labMode) this.set('clock', (G.overtime ? '+' : '') + m + ':' + String(s).padStart(2, '0'), e.clock);
       e.clock.classList.toggle('ot', G.overtime);
     }
     const p0 = G.player, seekerMode = p0 && p0.role === 'seeker';

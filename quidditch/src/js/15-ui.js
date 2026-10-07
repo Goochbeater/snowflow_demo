@@ -90,9 +90,9 @@ const UI = {
   buildTeams() {
     const mk = (root, key) => {
       root.innerHTML = '';
-      CONFIG.teams.forEach((T, i) => {
+      CONFIG.teams.filter(T => T.kind === 'house').forEach((T, i) => {
         const c = document.createElement('button'); c.type = 'button'; c.className = 'teamCard';
-        c.innerHTML = `<img alt="" src="${Tex.crestURL[i]}"><span>${T.name.toUpperCase()}</span>`;
+        c.innerHTML = `<img alt="" src="${Tex.crestURL[i]}"><span class="long">${T.name.toUpperCase()}</span><span class="short">${T.short}</span>`;
         c.addEventListener('click', () => {
           Settings[key] = i;
           if (Settings.team === Settings.opp) { if (key === 'team') Settings.opp = (i + 1) % 4; else Settings.team = (i + 1) % 4; }

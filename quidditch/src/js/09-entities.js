@@ -263,7 +263,8 @@ class Snitch {
     const fl = Math.sin(this.t * 60) * 0.9;
     this.group.userData.wl.rotation.z = fl; this.group.userData.wr.rotation.z = -fl;
     const dist = this.pos.distanceTo(Render.camera.position);
-    const s = clamp(dist * 0.035, 0.8, 4); this.group.userData.glow.scale.set(s, s, 1);
+    // the glow is a beacon at range, and fades away up close so the metal reads
+    const s = clamp(dist * 0.04, 0.25, 4), gm = this.group.userData.glow; gm.scale.set(s, s, 1); gm.material.opacity = smoothstep(2.5, 10, dist);
     this.trail.push(this.pos);
   }
 }

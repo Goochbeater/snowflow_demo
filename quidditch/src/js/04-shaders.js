@@ -113,6 +113,7 @@ function patchMaterial(mat, o = {}) {
     if (o.albedo) sh.fragmentShader = sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>\n${o.albedo}`);
     if (o.rough) sh.fragmentShader = sh.fragmentShader.replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>\n${o.rough}`);
     if (o.emis) sh.fragmentShader = sh.fragmentShader.replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\n${o.emis}`);
+    if (o.normal) sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>\n${o.normal}`);
   };
   mat.customProgramCacheKey = () => 'qsb_' + (o.key || 'base');
   mat.fog = false;
@@ -120,14 +121,35 @@ function patchMaterial(mat, o = {}) {
 }
 const stdMat = (params, o) => patchMaterial(new THREE.MeshStandardMaterial(params), o);
 
+// turf detail: mowing stripes flip roughness with view angle; a fine bump near the camera
+const GROUND_HEAD = /* glsl */`float qStripe, qWear;`;
+const GROUND_NORMAL = /* glsl */`
+{
+  float gd = length(vWPos - cameraPosition);
+  float k = (1.0 - smoothstep(25.0, 90.0, gd)) * (1.0 - snow);
+  if (k > 0.01) {
+    vec2 gp = vWPos.xz;
+    float h = (texture2D(uNoise, gp * 0.85).r - 0.5) * 0.05 + (texture2D(uNoise, gp * 3.5).g - 0.5) * 0.02 + (texture2D(uNoise, gp * 11.0).b - 0.5) * 0.008;
+    vec3 sp = -vViewPosition, dx = dFdx(sp), dy = dFdy(sp);
+    float hx = dFdx(h), hy = dFdy(h);
+    vec3 r1 = cross(dy, normal), r2 = cross(normal, dx);
+    float det = dot(dx, r1);
+    normal = normalize(abs(det) * normal - sign(det) * (hx * r1 + hy * r2) * k * 1.4);
+  }
+}
+`;
 const GROUND_ALBEDO = /* glsl */`
   vec2 p = vWPos.xz;
+  qStripe = 0.0; qWear = 0.0;
   float n1 = texture2D(uNoise, p * 0.0032).r;
   float n2 = texture2D(uNoise, p * 0.019).g;
   float n3 = texture2D(uNoise, p * 0.12).b;
   float n4 = texture2D(uNoise, p * 0.85).r;
-  vec3 c = mix(vec3(0.040, 0.095, 0.020), vec3(0.095, 0.165, 0.040), n1);
-  c = mix(c, vec3(0.19, 0.16, 0.07), smoothstep(0.55, 0.82, n2 * 0.7 + n1 * 0.3) * 0.55);
+  float macro = texture2D(uNoise, p * 0.0011 + 0.3).g;
+  vec3 c = mix(vec3(0.040, 0.095, 0.020), vec3(0.085, 0.155, 0.036), n1);
+  c = mix(c, vec3(0.11, 0.15, 0.035), smoothstep(0.45, 0.8, macro) * 0.6);
+  c = mix(c, vec3(0.028, 0.07, 0.03), smoothstep(0.5, 0.2, macro) * 0.5);
+  c = mix(c, vec3(0.19, 0.16, 0.07), smoothstep(0.6, 0.85, n2 * 0.7 + n1 * 0.3) * 0.2);
   c *= (0.78 + 0.44 * n3) * (0.86 + 0.28 * n4);
   float rr = length(p);
   vec2 q = p / vec2(${CONFIG.pitch.a.toFixed(1)}, ${CONFIG.pitch.b.toFixed(1)});
@@ -135,7 +157,12 @@ const GROUND_ALBEDO = /* glsl */`
   float inP = 1.0 - smoothstep(0.985, 1.02, e);
   float stripe = step(0.5, fract(p.x / 11.0));
   vec3 pitchCol = mix(vec3(0.052, 0.135, 0.026), vec3(0.082, 0.185, 0.038), stripe) * (0.9 + 0.2 * n3) * (0.94 + 0.12 * n4);
+  // wear: scuffed goal mouths under the hoops and a trampled centre circle
+  float wearG = (1.0 - smoothstep(6.0, 15.0, length(vec2(abs(p.x) - 70.0, p.y * 0.7)))) * smoothstep(0.35, 0.75, n3 * 0.6 + n4 * 0.4);
+  float wearC = (1.0 - smoothstep(4.0, 11.0, rr)) * smoothstep(0.45, 0.8, n3 * 0.5 + n4 * 0.5);
+  pitchCol = mix(pitchCol, vec3(0.13, 0.11, 0.06) * (0.8 + 0.4 * n4), clamp(wearG + wearC * 0.7, 0.0, 1.0) * 0.75);
   c = mix(c, pitchCol, inP);
+  qStripe = stripe * inP; qWear = clamp(wearG + wearC, 0.0, 1.0) * inP;
   float fw = max(fwidth(p.x) + fwidth(p.y), 0.02) * 0.8;
   float dE = (e - 1.0) * rr / max(e, 0.001);
   float ln = 1.0 - smoothstep(0.11, 0.11 + fw, abs(dE));
@@ -155,7 +182,7 @@ const GROUND_ALBEDO = /* glsl */`
   c = mix(c, rock, clamp(smoothstep(0.32, 0.55, slope) + smoothstep(210.0, 270.0, hh) * 0.7, 0.0, 1.0));
   float snow = smoothstep(255.0, 300.0, hh + n2 * 40.0) * (1.0 - smoothstep(0.55, 0.78, slope));
   c = mix(c, vec3(0.82, 0.85, 0.9), snow);
-  float shore = (1.0 - smoothstep(0.3, 2.5, hh)) * smoothstep(-7.0, -0.4, hh) * step(240.0, rr);
-  c = mix(c, vec3(0.13, 0.11, 0.08) * (0.8 + 0.4 * n3), shore * 0.85);
+  float shore = (1.0 - smoothstep(-0.2, 1.1, hh)) * smoothstep(-7.0, -0.6, hh) * step(240.0, rr);
+  c = mix(c, vec3(0.07, 0.06, 0.045) * (0.8 + 0.4 * n3), shore * 0.85);
   diffuseColor.rgb = c;
 `;

@@ -150,20 +150,54 @@ async function buildTextures() {
     }
   }, true, true);
 
-  Tex.crowd = canvasTex(256, 128, (g) => {
-    const R = '#ff0000', Gc = '#00ff00', B = '#0000ff';
-    for (let v = 0; v < 4; v++) {
-      const x0 = v * 64, cx = x0 + 32;
-      g.fillStyle = R;
-      g.beginPath(); g.moveTo(cx - 17, 128); g.lineTo(cx - 15, 74); g.quadraticCurveTo(cx, 64, cx + 15, 74); g.lineTo(cx + 17, 128); g.fill();
-      const arm = (sx, sy, ex, ey, w = 7) => { g.strokeStyle = R; g.lineWidth = w; g.lineCap = 'round'; g.beginPath(); g.moveTo(sx, sy); g.lineTo(ex, ey); g.stroke(); g.fillStyle = Gc; g.beginPath(); g.arc(ex, ey, 4, 0, TAU); g.fill(); };
-      if (v === 0) { arm(cx - 14, 78, cx - 17, 112); arm(cx + 14, 78, cx + 17, 112); }
-      if (v === 1) { arm(cx - 13, 77, cx - 26, 40); arm(cx + 13, 77, cx + 26, 40); }
-      if (v === 2) { arm(cx - 13, 77, cx - 22, 36); arm(cx + 13, 77, cx + 22, 36); g.fillStyle = R; g.fillRect(cx - 30, 26, 60, 8); }
-      if (v === 3) { arm(cx - 14, 78, cx - 17, 112); arm(cx + 13, 77, cx + 21, 44); g.fillStyle = '#000'; g.fillRect(cx + 20, 6, 3, 42); g.fillStyle = R; g.beginPath(); g.moveTo(cx + 23, 6); g.lineTo(cx + 31, 12); g.lineTo(cx + 23, 26); g.fill(); }
-      g.fillStyle = Gc; g.beginPath(); g.ellipse(cx, 56, 10, 12, 0, 0, TAU); g.fill();
-      g.fillStyle = B; g.beginPath(); g.ellipse(cx, 50, 11, 8, 0, Math.PI, TAU); g.fill(); g.fillRect(cx - 11, 48, 3, 9); g.fillRect(cx + 8, 48, 3, 9);
-    }
+  // spectator atlas: 16 cells of 128x256. R = team colour, G = skin, B = accent colour, alpha with R+G+B = 0 = hair/dark.
+  // Channel intensity doubles as shading (rounded torsos, shaded arms).
+  Tex.crowd = canvasTex(2048, 256, (g) => {
+    const CW = 128, CH = 256;
+    const col = (r, gg, b, k = 1) => `rgb(${Math.round(r * k * 255)},${Math.round(gg * k * 255)},${Math.round(b * k * 255)})`;
+    const R = (k = 1) => col(1, 0, 0, k), Gs = (k = 1) => col(0, 1, 0, k), B = (k = 1) => col(0, 0, 1, k), HAIR = '#000';
+    const ell = (x, y, rx, ry, f) => { g.fillStyle = f; g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, TAU); g.fill(); };
+    const poly = (pts, f) => { g.fillStyle = f; g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fill(); };
+    const limb = (x0, y0, x1, y1, w, f) => { g.strokeStyle = f; g.lineWidth = w; g.lineCap = 'round'; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); };
+    const person = (v) => {
+      const cx = v.x, kid = v.kid ? 0.78 : 1, top = 256 - 150 * kid;
+      g.save(); g.translate(cx, 256); g.scale(kid, kid); g.translate(-cx, -256);
+      const sh = 256 - 150, neck = sh + 6;
+      // torso: rounded robe, shaded at the edges
+      const gr = g.createLinearGradient(cx - 34, 0, cx + 34, 0); gr.addColorStop(0, R(0.62)); gr.addColorStop(0.35, R(1)); gr.addColorStop(0.7, R(0.92)); gr.addColorStop(1, R(0.55));
+      poly([[cx - 36, 256], [cx - 34, sh + 34], [cx - 26, sh + 12], [cx, sh + 6], [cx + 26, sh + 12], [cx + 34, sh + 34], [cx + 36, 256]], gr);
+      if (v.rosette) { ell(cx - 12, sh + 46, 8, 8, B(1)); ell(cx - 12, sh + 46, 4, 4, R(1)); }
+      if (v.scarf) { for (let k = 0; k < 4; k++) poly([[cx - 22, sh + 6 + k * 6], [cx + 22, sh + 6 + k * 6], [cx + 22, sh + 12 + k * 6], [cx - 22, sh + 12 + k * 6]], k % 2 ? R(1) : B(1)); for (let k = 0; k < 6; k++) poly([[cx + 6, sh + 26 + k * 9], [cx + 18, sh + 26 + k * 9], [cx + 18, sh + 35 + k * 9], [cx + 6, sh + 35 + k * 9]], k % 2 ? R(0.9) : B(0.9)); }
+      // arms
+      const arm = (sx, ex, ey, hx, hy) => { limb(cx + sx * 26, sh + 18, ex, ey, 15, R(0.75)); limb(ex, ey, hx, hy, 13, R(0.82)); ell(hx, hy, 7, 7, Gs(0.9)); };
+      const A = v.arms || 'down';
+      if (A === 'down') { arm(-1, cx - 34, sh + 60, cx - 26, sh + 92); arm(1, cx + 34, sh + 60, cx + 26, sh + 92); }
+      else if (A === 'up') { arm(-1, cx - 44, sh - 8, cx - 46, sh - 44); arm(1, cx + 44, sh - 8, cx + 46, sh - 44); }
+      else if (A === 'clap') { arm(-1, cx - 30, sh + 50, cx - 4, sh + 40); arm(1, cx + 30, sh + 50, cx + 4, sh + 40); }
+      else if (A === 'wave') { arm(-1, cx - 34, sh + 60, cx - 26, sh + 92); arm(1, cx + 42, sh - 6, cx + 40, sh - 40); }
+      else if (A === 'cross') { arm(-1, cx - 30, sh + 50, cx + 18, sh + 52); arm(1, cx + 30, sh + 50, cx - 18, sh + 56); }
+      else if (A === 'binos') { arm(-1, cx - 28, sh + 40, cx - 10, sh - 20); arm(1, cx + 28, sh + 40, cx + 10, sh - 20); }
+      // head, ears, hair
+      ell(cx, sh - 18, 19, 23, Gs(1)); ell(cx - 18, sh - 16, 4, 7, Gs(0.8)); ell(cx + 18, sh - 16, 4, 7, Gs(0.8));
+      ell(cx - 7, sh - 20, 2.2, 2.6, HAIR); ell(cx + 7, sh - 20, 2.2, 2.6, HAIR);
+      if (v.hair === 'long') { poly([[cx - 21, sh - 26], [cx - 24, sh + 14], [cx - 14, sh + 10], [cx - 15, sh - 20]], HAIR); poly([[cx + 21, sh - 26], [cx + 24, sh + 14], [cx + 14, sh + 10], [cx + 15, sh - 20]], HAIR); }
+      g.fillStyle = HAIR; g.beginPath(); g.ellipse(cx, sh - 30, 20, 15, 0, Math.PI, TAU); g.fill();
+      if (v.hat === 'witch') { poly([[cx - 30, sh - 30], [cx + 30, sh - 30], [cx + 18, sh - 36], [cx + 6, sh - 96], [cx + 20, sh - 110], [cx - 4, sh - 98], [cx - 18, sh - 36]], R(0.85)); poly([[cx - 17, sh - 44], [cx + 17, sh - 44], [cx + 16, sh - 36], [cx - 16, sh - 36]], B(1)); }
+      if (v.hat === 'bobble') { g.fillStyle = B(1); g.beginPath(); g.ellipse(cx, sh - 32, 21, 19, 0, Math.PI, TAU); g.fill(); poly([[cx - 21, sh - 34], [cx + 21, sh - 34], [cx + 21, sh - 28], [cx - 21, sh - 28]], R(1)); ell(cx, sh - 54, 8, 8, R(1)); }
+      if (A === 'binos') { poly([[cx - 16, sh - 26], [cx + 16, sh - 26], [cx + 16, sh - 14], [cx - 16, sh - 14]], HAIR); }
+      // props
+      if (v.prop === 'scarfUp') { for (let k = 0; k < 8; k++) poly([[cx - 46 + k * 11.5, sh - 52], [cx - 35 + k * 11.5, sh - 52], [cx - 35 + k * 11.5, sh - 40], [cx - 46 + k * 11.5, sh - 40]], k % 2 ? R(1) : B(1)); }
+      if (v.prop === 'flag') { limb(cx + 40, sh - 40, cx + 40, sh - 116, 4, HAIR); poly([[cx + 40, sh - 116], [cx + 86, sh - 108], [cx + 40, sh - 96]], B(1)); poly([[cx + 40, sh - 100], [cx + 82, sh - 92], [cx + 40, sh - 82]], R(1)); }
+      if (v.prop === 'banner') { poly([[cx - 60, sh - 70], [cx + 60, sh - 70], [cx + 60, sh - 42], [cx - 60, sh - 42]], B(1)); poly([[cx - 60, sh - 62], [cx + 60, sh - 62], [cx + 60, sh - 54], [cx - 60, sh - 54]], R(1)); }
+      g.restore();
+    };
+    const V = [
+      { arms: 'down' }, { arms: 'down', scarf: true }, { arms: 'down', hat: 'witch' }, { arms: 'down', hat: 'bobble' },
+      { arms: 'clap', hair: 'long' }, { arms: 'down', kid: true, hat: 'bobble' }, { arms: 'cross', scarf: true }, { arms: 'binos' },
+      { arms: 'down', rosette: true, hair: 'long' }, { arms: 'clap', hat: 'witch' }, { arms: 'down', scarf: true, kid: true },
+      { arms: 'up' }, { arms: 'up', prop: 'scarfUp' }, { arms: 'wave', prop: 'flag' }, { arms: 'up', hat: 'witch' }, { arms: 'up', prop: 'banner' },
+    ];
+    V.forEach((v, i) => person(Object.assign({ x: i * CW + CW / 2 }, v)));
   }, false);
   Tex.crowd.anisotropy = 1;
 

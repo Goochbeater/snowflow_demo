@@ -30,12 +30,13 @@ const RM = () => (Settings.reduceMotion ? 0 : 1);
 
 const FIN_DEFS = {
   comet: {
+    cut: true,
     name: 'Comet Spike', gesture: '↓', desc: 'Climb, invert at the apex, hammer the Quaffle straight down.', dur: 2.7, rel: 1.0, imp: 1.45, trail: [3.2, 1.3, 0.35], width: 0.7,
     tracks: {
       ts: [[0, 1], [0.3, 0.25], [1.0, 0.2], [1.4, 0.5], [1.45, 0.05], [1.75, 0.3], [2.7, 1]],
       fov: [[0, 0], [0.9, 0.12], [1.1, -0.05], [1.45, 0.18], [1.8, 0], [2.7, 0]],
       blur: [[0, 0], [0.95, 0], [1.05, 0.05], [1.45, 0.08], [1.6, 0], [2.7, 0]],
-      ca: [[0, 0], [1.4, 0.004], [1.47, 0.016], [2.0, 0.002], [2.7, 0]],
+      ca: [[0, 0], [1.4, 0.004], [1.47, 0.006], [2.0, 0.002], [2.7, 0]],
       flash: [[0, 0], [1.44, 0], [1.46, 0.55], [1.75, 0]],
       letterbox: [[0, 0], [0.25, 0.085], [2.3, 0.085], [2.7, 0]],
       sat: [[0, 1], [0.3, 0.75], [1.44, 0.75], [1.5, 1.35], [2.7, 1]],
@@ -56,13 +57,14 @@ const FIN_DEFS = {
     onImpact(c) { FX.ring(_v1.set(c.H.x, 0.4, c.H.z), linCol(2.4, 1.8, 0.9), 40, 1.1); World.excite.fill(1); },
   },
   corkscrew: {
+    cut: true,
     name: 'Corkscrew Lance', gesture: '◯', desc: 'A 720° barrel roll, released on the exit in a twin-helix ribbon.', dur: 2.35, rel: 0.85, imp: 1.38, trail: [2.4, 1.4, 0.5], width: 0.3,
     tracks: {
       ts: [[0, 0.35], [0.85, 0.3], [1.3, 0.4], [1.38, 0.05], [1.6, 0.35], [2.35, 1]],
       blur: [[0, 0], [0.1, 0.12], [0.75, 0.12], [0.9, 0]],
       fov: [[0, 0], [0.4, 0.1], [0.85, 0], [1.38, 0.15], [2.35, 0]],
       flash: [[1.37, 0], [1.39, 0.7], [1.65, 0]],
-      ca: [[0, 0], [0.2, 0.004], [0.8, 0.004], [1.0, 0], [1.38, 0.01], [1.9, 0]],
+      ca: [[0, 0], [0.2, 0.004], [0.8, 0.004], [1.0, 0], [1.38, 0.006], [1.9, 0]],
       letterbox: [[0, 0], [0.2, 0.08], [2.0, 0.08], [2.35, 0]],
       sat: [[0, 1], [1.38, 1], [1.45, 1.3], [2.35, 1]],
     },
@@ -97,7 +99,7 @@ const FIN_DEFS = {
       flash: [[0.44, 0], [0.46, 0.35], [0.6, 0], [1.59, 0], [1.61, 0.6], [1.9, 0]],
       letterbox: [[0, 0], [0.45, 0.1], [2.0, 0.1], [2.3, 0]],
       fov: [[0, 0], [0.4, 0.08], [0.46, 0], [1.6, 0.1], [2.8, 0]],
-      ca: [[0, 0], [0.46, 0.008], [1.6, 0.008], [1.7, 0]],
+      ca: [[0, 0], [0.46, 0.006], [1.6, 0.006], [1.7, 0]],
     },
     pickHoops(c, gesture) {
       const p = c.p, sx = Game.attackSign(p.side);
@@ -142,7 +144,7 @@ const FIN_DEFS = {
       fov: [[0, 0], [0.3, 0.1], [0.9, 0.1], [1.5, 0.16], [2.3, 0]],
       flash: [[1.49, 0], [1.51, 0.7], [1.8, 0]],
       letterbox: [[0, 0], [0.2, 0.08], [1.9, 0.08], [2.3, 0]],
-      ca: [[0, 0], [0.3, 0.006], [0.9, 0.006], [1.0, 0], [1.5, 0.012], [1.9, 0]],
+      ca: [[0, 0], [0.3, 0.006], [0.9, 0.006], [1.0, 0], [1.5, 0.006], [1.9, 0]],
     },
     setup(c) {
       let best = null, bd = 1e9;
@@ -210,7 +212,7 @@ const FIN_DEFS = {
       fov: [[0, 0], [0.3, 0.25], [2.25, 0.2], [2.3, 0.1], [3.0, 0]],
       flash: [[2.29, 0], [2.31, 0.8], [2.6, 0]],
       letterbox: [[0, 0], [0.3, 0.1], [2.7, 0.1], [3.0, 0]],
-      ca: [[0, 0], [0.3, 0.006], [2.3, 0.01], [2.8, 0]],
+      ca: [[0, 0], [0.3, 0.006], [2.3, 0.006], [2.8, 0]],
       sat: [[0, 1], [0.3, 0.85], [2.3, 0.85], [2.35, 1.3], [3.0, 1]],
     },
     update(c, t) {
@@ -240,7 +242,7 @@ const FIN_DEFS = {
       ts: [[0, 1], [0.28, 0.1], [0.36, 0.05], [0.4, 0.3], [0.62, 0.3], [0.64, 0.03], [0.9, 0.3], [1.9, 1]],
       flash: [[0.29, 0], [0.31, 0.9], [0.5, 0], [0.61, 0], [0.63, 0.6], [0.85, 0]],
       fov: [[0, 0], [0.3, 0.3], [0.62, 0.1], [1.9, 0]],
-      ca: [[0, 0], [0.3, 0.02], [0.7, 0.005], [1.2, 0]],
+      ca: [[0, 0], [0.3, 0.006], [0.7, 0.005], [1.2, 0]],
       blur: [[0, 0], [0.3, 0.15], [0.6, 0.05], [0.8, 0]],
       letterbox: [[0, 0], [0.2, 0.07], [1.6, 0.07], [1.9, 0]],
     },
@@ -263,10 +265,11 @@ const FIN_DEFS = {
     tracks: {
       ts: [[0, 0.5], [1.0, 0.2], [2.3, 0.2], [2.35, 0.04], [2.7, 0.3], [3.4, 1]],
       fov: [[0, 0], [0.5, 0.15], [1.1, 0.05], [2.35, 0.2], [3.4, 0]],
-      flash: [[2.34, 0], [2.36, 0.9], [2.8, 0]],
+      flash: [[2.34, 0], [2.36, 0.42], [2.7, 0]],
       letterbox: [[0, 0], [0.3, 0.1], [3.0, 0.1], [3.4, 0]],
-      sat: [[0, 1], [0.9, 1.15], [2.35, 1.15], [2.4, 1.4], [3.4, 1]],
-      bloom: [[0, 0], [2.35, 0], [2.4, 0.8], [3.2, 0]],
+      sat: [[0, 1], [0.9, 1.2], [2.35, 1.2], [2.4, 1.3], [3.4, 1]],
+      bloom: [[0, 0], [2.35, 0], [2.4, 0.35], [3.2, 0]],
+      exp: [[0, 1], [0.9, 0.8], [2.6, 0.8], [3.3, 1]],
       night: [[0, 0], [0.3, 0], [0.9, 1], [2.6, 1], [3.3, 0]],
     },
     setup(c) { c.Z = c.H.clone().addScaledVector(c.n, -12).add(_v1.set(0, 46, 0)); c.C1 = c.P0.clone().add(_v1.set(0, 30, 0)); },
@@ -370,7 +373,7 @@ const SEEKER_DEFS = {
       blur: [[0, 0], [0.4, 0.05], [1.3, 0.07], [1.4, 0]],
       flash: [[1.44, 0], [1.46, 0.3], [1.6, 0], [2.69, 0], [2.71, 0.5], [3.0, 0]],
       letterbox: [[0, 0], [0.3, 0.09], [3.1, 0.09], [3.5, 0]],
-      ca: [[0, 0], [1.0, 0.006], [1.45, 0.012], [2.0, 0]],
+      ca: [[0, 0], [1.0, 0.006], [1.45, 0.006], [2.0, 0]],
     },
     setup(c) {
       c.Fh = c.F0.clone().setY(0).normalize();
@@ -466,7 +469,7 @@ const Finishers = {
     p.scripted = true; p.dodge = null; p.extraPitch = 0;
     Game.state = 'finisher'; Game.focus = Math.max(0, Game.focus - CONFIG.finisherCost); Game.stats.finishers++;
     this.active = def; this.t = 0; this.speed = Settings.finisherLen === 'short' ? 1.5 : 1;
-    this.baseSat = Render.post.fx.sat; this.baseBloom = Render.post.fx.bloom;
+    this.baseSat = Render.post.fx.sat; this.baseBloom = Render.post.fx.bloom; this.baseExp = Render.post.fx.exposure;
     Render.post.fx.keepColor.setRGB(1, 0.75, 0.25);
     Cam.vmOverride = c.ov;
     if (def.setup) def.setup(c);
@@ -524,7 +527,7 @@ const Finishers = {
     Q.state = 'scripted'; Q.trail.reset(); Q.trail.active = false;
     Game.state = 'finisher'; Game.flair = Math.max(0, Game.flair - CONFIG.finisherCost); Game.stats.finishers++;
     this.active = def; this.t = 0; this.speed = Settings.finisherLen === 'short' ? 1.6 : 1;
-    this.baseSat = Render.post.fx.sat; this.baseBloom = Render.post.fx.bloom;
+    this.baseSat = Render.post.fx.sat; this.baseBloom = Render.post.fx.bloom; this.baseExp = Render.post.fx.exposure;
     Render.post.fx.keepColor.set(T.c1).lerp(new THREE.Color(T.c2), 0.15);
     if (def.setup) def.setup(c);
     HUD.cinematic(true);
@@ -550,10 +553,23 @@ const Finishers = {
     fx.blur = sampleTrack(tr.blur, t) * rm; fx.ca = sampleTrack(tr.ca, t) * rm; fx.flash = sampleTrack(tr.flash, t);
     fx.letterbox = sampleTrack(tr.letterbox, t); fx.keepHue = sampleTrack(tr.keepHue, t);
     fx.sat = this.baseSat * (tr.sat ? sampleTrack(tr.sat, t) : 1); fx.bloom = this.baseBloom + sampleTrack(tr.bloom, t);
+    if (tr.exp && this.baseExp !== undefined) fx.exposure = this.baseExp * sampleTrack(tr.exp, t);
     Cam.sFov = 1 + sampleTrack(tr.fov, t) * (rm ? 1 : 0.3);
     c.p.roll = damp(c.p.roll, 0, 5, rdt);
     if (!def.seeker && !c.released && t >= def.rel) this.doRelease();
     def.update(c, t);
+    // first-person finishers cut to a hoop-side camera for release -> impact so the payoff is visible
+    if (def.cut) {
+      const inCut = t > def.rel + 0.08 && t < def.imp + 0.6;
+      if (inCut) {
+        if (!c.cutPos) { const side = _v3.crossVectors(c.n, UP).normalize(); const sg = (c.P0.z - c.H.z) >= 0 ? 1 : -1; c.cutPos = c.H.clone().addScaledVector(c.n, -7.5).addScaledVector(side, 6.5 * sg).add(_v4.set(0, 1.2, 0)); c.cutLook = c.H.clone(); }
+        _v5.copy(c.H).lerp(c.Q.pos, t < def.imp ? 0.45 : 0.1);
+        c.cutLook.lerp(_v5, 0.25);
+        FH.script(_v6.copy(c.cutPos).addScaledVector(c.n, -(t - def.rel) * 1.2), c.cutLook);
+        if (Game.vm) Game.vm.group.visible = false;
+        c.p.mesh.visible = true; c.p.robe.hide = false;
+      } else if (c.cutPos && !c.cutDone && t >= def.imp + 0.6) { c.cutDone = true; FH.fp(); if (Game.vm) Game.vm.group.visible = true; c.p.mesh.visible = false; }
+    }
     if (!c.impacted && t >= def.imp) def.seeker ? this.impactSeeker() : this.impact();
     if (t >= def.dur) def.seeker ? this.endSeeker() : this.end();
   },
@@ -594,8 +610,8 @@ const Finishers = {
     for (const f of c.scriptedExtra) { f.scripted = false; f.speed = CONFIG.flight.cruise; f.extraRoll = 0; f.frame(); f.vel.copy(f.fwd).multiplyScalar(f.speed); }
     if (c.K) { c.K.scripted = false; c.K.extraRoll = 0; c.K.roll = 0; c.K.ai.smooth = null; c.K.frame(); }
     p.scripted = false; p.extraRoll = 0; p.extraPitch = 0; p.pitch = clamp(p.pitch, -0.6, 0.6); p.speed = CONFIG.flight.cruise; p.frame(); p.vel.copy(p.fwd).multiplyScalar(p.speed); p.invuln = 1.0;
-    p.mesh.visible = false;
-    fx.blur = 0; fx.ca = 0; fx.flash = 0; fx.letterbox = 0; fx.keepHue = 0; fx.sat = this.baseSat; fx.bloom = this.baseBloom;
+    p.mesh.visible = false; if (Game.vm) Game.vm.group.visible = true;
+    fx.blur = 0; fx.ca = 0; fx.flash = 0; fx.letterbox = 0; fx.keepHue = 0; fx.sat = this.baseSat; fx.bloom = this.baseBloom; fx.exposure = this.baseExp ?? fx.exposure;
     if (def.tracks.night) World.applySky(0);
     Game.ts = 1; Cam.mode = 'fp'; Cam.sFov = 1;
     HUD.cinematic(false);

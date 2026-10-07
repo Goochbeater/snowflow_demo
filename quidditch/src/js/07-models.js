@@ -25,6 +25,13 @@ function cylBetween(a, b, r0, r1, color, segs = 8) {
   return Geo.prep(g, color, m, { attr: { aFlutter: () => 0 } });
 }
 
+// average the normals of coincident vertices (lathe/cylinder seams)
+function weldNormals(g) {
+  const p = g.attributes.position, n = g.attributes.normal, map = new Map();
+  for (let i = 0; i < p.count; i++) { const k = `${Math.round(p.getX(i) * 1e4)},${Math.round(p.getY(i) * 1e4)},${Math.round(p.getZ(i) * 1e4)}`; let a = map.get(k); if (!a) map.set(k, a = []); a.push(i); }
+  for (const a of map.values()) { if (a.length < 2) continue; let x = 0, y = 0, z = 0; for (const i of a) { x += n.getX(i); y += n.getY(i); z += n.getZ(i); } const l = Math.hypot(x, y, z) || 1; for (const i of a) n.setXYZ(i, x / l, y / l, z / l); }
+  n.needsUpdate = true; return g;
+}
 const Models = {
   init() {
     this.flyerMat = stdMat({ vertexColors: true, roughness: 0.7, side: THREE.DoubleSide }, { key: 'flyer', vHead: 'attribute float aFlutter;', vDisp: FLUTTER_GLSL });
@@ -55,11 +62,12 @@ const Models = {
       if (y > L - 0.07) r *= Math.sqrt(Math.max(0.02, 1 - ((y - (L - 0.07)) / 0.075) ** 2)) * 1.12;
       pts.push(new THREE.Vector2(Math.max(r, 0.004), y));
     }
-    const lg = new THREE.LatheGeometry(pts, hi ? 18 : 10);
-    lg.rotateX(-Math.PI / 2); lg.translate(0, 0, 0.78);
+    const lg = new THREE.LatheGeometry(pts, hi ? 24 : 12);
+    // put the lathe seam underneath, then weld the seam normals so the top of the handle shades smoothly
+    lg.rotateY(Math.PI); lg.rotateX(-Math.PI / 2); lg.translate(0, 0, 0.78);
     const pos = lg.attributes.position;
     for (let v = 0; v < pos.count; v++) { const z = pos.getZ(v); if (z < -0.85) pos.setY(v, pos.getY(v) + 0.05 * ((-0.85 - z) / 0.47) ** 2); }
-    lg.computeVertexNormals();
+    lg.computeVertexNormals(); weldNormals(lg);
     P.push(Geo.prep(lg, (x, y, z) => {
       const g = vnoise2(z * 38, Math.atan2(y, x) * 3) * 0.6 + vnoise2(z * 7, 3.1) * 0.4;
       return linCol(0.24, 0.12, 0.052).lerp(linCol(0.12, 0.058, 0.025), g);
@@ -181,9 +189,14 @@ const Models = {
     const sm = new THREE.Mesh(this.broomHi || (this.broomHi = this.broomGeo(true)), this.flyerMat); sm.receiveShadow = true;
     sm.position.set(0, -0.2027, -0.685); sm.rotation.x = 0.0855;
     vm.add(sm);
+    const cloth = this.sleeveMat(T);
     const sleeve = () => {
-      const R = [cylBetween(V(0, 0, -0.05), V(0, 0, 0.9), 0.075, 0.046, robe, 14), Geo.prep(new THREE.TorusGeometry(0.047, 0.012, 6, 18), trim, M4(0, 0, 0.87), { attr: { aFlutter: () => 0 } })];
-      const m = new THREE.Mesh(Geo.merge(R, ['aFlutter']), this.flyerMat); m.receiveShadow = true; vm.add(m); return m;
+      // tapered woollen sleeve with soft folds, and a turned-back cuff in the trim colour
+      const pts = []; for (let k = 0; k <= 22; k++) { const t = k / 22, r = lerp(0.078, 0.05, t) * (1 + 0.06 * Math.sin(t * 19 + 1) * (1 - t * 0.5)); pts.push(new THREE.Vector2(r, lerp(-0.05, 0.86, t))); }
+      const g = new THREE.LatheGeometry(pts, 20); g.rotateX(Math.PI / 2); g.computeVertexNormals(); weldNormals(g);
+      const cuffPts = [[0.049, 0.84], [0.058, 0.85], [0.06, 0.9], [0.054, 0.915], [0.047, 0.91]].map(([r, y]) => new THREE.Vector2(r, y));
+      const cg = new THREE.LatheGeometry(cuffPts, 20); cg.rotateX(Math.PI / 2); cg.computeVertexNormals();
+      const m = new THREE.Mesh(g, cloth.body), cuff = new THREE.Mesh(cg, cloth.cuff); m.add(cuff); m.receiveShadow = true; vm.add(m); return m;
     };
     const lArm = sleeve(), rArm = sleeve();
     let hl = null, hr = null, lGlove = null, rGlove = null;
@@ -192,7 +205,7 @@ const Models = {
       const gl = () => { const m = new THREE.Mesh(Geo.merge([Geo.prep(new THREE.SphereGeometry(0.054, 14, 10), glove, M4(0, 0, 0, 0, 0, 0, 1, 0.85, 1.25), { attr: { aFlutter: () => 0 } })], ['aFlutter']), this.flyerMat); vm.add(m); return m; };
       lGlove = gl(); rGlove = gl();
     }
-    const ball = new THREE.Mesh(this.quaffleGeo, this.quaffleMat); ball.visible = false; ball.scale.setScalar(0.44);
+    const ball = new THREE.Mesh(this.quaffleGeo, this.quaffleMat); ball.visible = false; ball.scale.setScalar(0.34);
     vm.add(ball);
     const snitch = this.snitch(); snitch.scale.setScalar(0.42); snitch.visible = false; snitch.userData.glow.scale.set(0.22, 0.22, 1); vm.add(snitch);
     vm.traverse(o => { o.frustumCulled = false; });
@@ -200,18 +213,65 @@ const Models = {
     return { group: vm, shaft: sm, lArm, rArm, hl, hr, lGlove, rGlove, ball, snitch, S, lShoulder: V(-0.3, -0.62, 0.05), shoulder: V(0.3, -0.62, 0.05), shaftAt: z => V(0, -0.2027 + (-0.685 - z) * 0.0857, z) };
   },
 
+  // woollen twill for first-person sleeves (cached per team colour)
+  sleeveMat(T) {
+    this._sleeves = this._sleeves || {};
+    if (this._sleeves[T.c1 + T.c2]) return this._sleeves[T.c1 + T.c2];
+    const tw = PBR.make('twill', { cells: () => [{ x: -2, y: -2, w: 520, h: 520, bevel: 0.001 }], color: '#ffffff', gap: '#ffffff', rough: 0.92, strength: 2.2, grain: 1.1, grainAxis: 0, ns: 0.08, seed: 23, size: 256 });
+    tw.map.repeat.set(3, 6); tw.normalMap.repeat.set(3, 6); tw.roughnessMap.repeat.set(3, 6);
+    const mk = c => stdMat({ color: new THREE.Color(c), map: tw.map, normalMap: tw.normalMap, roughnessMap: tw.roughnessMap, roughness: 1, metalness: 0 }, { key: 'sleeve' });
+    return (this._sleeves[T.c1 + T.c2] = { body: mk(T.c1), cuff: mk(T.c2) });
+  },
   quaffle() { const m = new THREE.Mesh(this.quaffleGeo, this.quaffleMat); m.castShadow = true; return m; },
   bludger() { const m = new THREE.Mesh(this.bludgerGeo, this.bludgerMat); m.castShadow = true; return m; },
   snitch() {
     const g = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.07, 16, 12), this.snitchMat); g.add(body);
-    const ws = new THREE.Shape(); ws.moveTo(0, 0); ws.quadraticCurveTo(0.12, 0.09, 0.32, 0.05); ws.quadraticCurveTo(0.2, 0.0, 0.3, -0.03); ws.quadraticCurveTo(0.15, -0.03, 0, 0);
-    const wg = new THREE.ShapeGeometry(ws, 6);
-    const wm = new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, 2.1, 1.8), transparent: true, opacity: 0.75, side: THREE.DoubleSide, depthWrite: false });
-    const wl = new THREE.Mesh(wg, wm), wr = new THREE.Mesh(wg, wm);
-    wl.rotation.y = Math.PI; wl.position.x = -0.05; wr.position.x = 0.05;
-    const pl = new THREE.Group(), pr = new THREE.Group(); pl.add(wl); pr.add(wr); g.add(pl, pr);
-    const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: new THREE.Color(3, 2.2, 1), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+    if (!this.snitchKit) {
+      // engraved gold: scrollwork height field -> albedo tint, roughness and normal maps
+      const N = 256, H = new Float32Array(N * N);
+      const cv = document.createElement('canvas'); cv.width = cv.height = N; const c = cv.getContext('2d');
+      c.fillStyle = '#000'; c.fillRect(0, 0, N, N); c.strokeStyle = '#fff'; c.lineCap = 'round';
+      c.lineWidth = 7; for (const y of [N * 0.5]) { c.beginPath(); c.moveTo(0, y); c.lineTo(N, y); c.stroke(); }
+      c.lineWidth = 3; for (const y of [N * 0.44, N * 0.56]) { c.beginPath(); c.moveTo(0, y); c.lineTo(N, y); c.stroke(); }
+      c.lineWidth = 2.2;
+      for (let k = 0; k < 8; k++) for (const sy of [-1, 1]) { const x = k * 32 + 16, y = N * 0.5 + sy * 52; c.beginPath(); for (let a = 0; a < 4.6; a += 0.12) { const r = 3 + a * 3.2; c.lineTo(x + Math.cos(a * sy) * r, y + Math.sin(a * sy) * r * 0.8); } c.stroke(); c.beginPath(); c.moveTo(x - 16, y + sy * 18); c.quadraticCurveTo(x, y + sy * 34, x + 16, y + sy * 18); c.stroke(); }
+      const d = c.getImageData(0, 0, N, N).data; for (let i = 0; i < N * N; i++) H[i] = d[i * 4] / 255;
+      const nm = new Uint8Array(N * N * 4), rm = new Uint8Array(N * N * 4), am = new Uint8Array(N * N * 4);
+      for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+        const h = (xx, yy) => H[((yy + N) % N) * N + ((xx + N) % N)], i = (y * N + x) * 4;
+        const dx = (h(x + 1, y) - h(x - 1, y)) * 2.5, dy = (h(x, y - 1) - h(x, y + 1)) * 2.5, l = Math.hypot(dx, dy, 1);
+        nm[i] = (-dx / l * 0.5 + 0.5) * 255; nm[i + 1] = (-dy / l * 0.5 + 0.5) * 255; nm[i + 2] = (1 / l * 0.5 + 0.5) * 255; nm[i + 3] = 255;
+        const v = H[y * N + x]; rm[i] = rm[i + 1] = rm[i + 2] = (0.22 + v * 0.3) * 255; rm[i + 3] = 255;
+        am[i] = (1 - v * 0.35) * 255; am[i + 1] = (1 - v * 0.42) * 255; am[i + 2] = (1 - v * 0.55) * 255; am[i + 3] = 255;
+      }
+      const tex = (arr, srgb) => { const t = new THREE.DataTexture(arr, N, N); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.needsUpdate = true; return t; };
+      const body = stdMat({ color: 0xffc25a, map: tex(am, true), normalMap: tex(nm), roughnessMap: tex(rm), roughness: 1, metalness: 1, emissive: 0xff9a20, emissiveIntensity: 0.12, envMapIntensity: 1.6 }, { key: 'snitch' });
+      // lathe body: a ball with a raised equator band and a seam
+      const pts = []; for (let k = 0; k <= 24; k++) { const a = -Math.PI / 2 + k / 24 * Math.PI, y = Math.sin(a) * 0.07; let r = Math.cos(a) * 0.07; if (Math.abs(y) < 0.008) r += 0.005; pts.push(new THREE.Vector2(Math.max(r, 0.0005), y)); }
+      const bg = new THREE.LatheGeometry(pts, 28); bg.computeVertexNormals(); weldNormals(bg);
+      // wings: veined membrane, opaque root to translucent tip
+      const wt = canvasTex(256, 128, (w, W, Hh) => {
+        const gr = w.createLinearGradient(0, 0, W, 0); gr.addColorStop(0, 'rgba(255,248,225,.95)'); gr.addColorStop(0.6, 'rgba(255,245,220,.55)'); gr.addColorStop(1, 'rgba(255,245,220,.18)');
+        w.fillStyle = gr; w.fillRect(0, 0, W, Hh);
+        w.strokeStyle = 'rgba(190,150,70,.9)'; w.lineWidth = 2.5;
+        for (let k = 0; k < 9; k++) { w.beginPath(); w.moveTo(4, Hh / 2); w.quadraticCurveTo(W * 0.4, Hh / 2 + (k - 4) * 6, W - 6, Hh / 2 + (k - 4) * 15); w.stroke(); }
+        w.lineWidth = 1; for (let k = 0; k < 7; k++) { const x = 30 + k * 30; w.beginPath(); w.moveTo(x, 10); w.lineTo(x + 8, Hh - 10); w.stroke(); }
+      }, true);
+      const wm = new THREE.MeshBasicMaterial({ map: wt, color: new THREE.Color(1.15, 1.1, 0.95), transparent: true, side: THREE.DoubleSide, depthWrite: false });
+      const ws = new THREE.Shape(); ws.moveTo(0, 0); ws.quadraticCurveTo(0.12, 0.09, 0.32, 0.05); ws.quadraticCurveTo(0.2, 0.0, 0.3, -0.03); ws.quadraticCurveTo(0.15, -0.03, 0, 0);
+      const wg = new THREE.ShapeGeometry(ws, 8), uv = wg.attributes.uv, wp = wg.attributes.position; for (let i = 0; i < uv.count; i++) uv.setXY(i, wp.getX(i) / 0.32, (wp.getY(i) + 0.04) / 0.13);
+      this.snitchKit = { body, bg, wm, wg, ghost: new THREE.MeshBasicMaterial({ map: wt, color: new THREE.Color(1, 0.95, 0.8), transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false }) };
+    }
+    const K = this.snitchKit;
+    const bm = new THREE.Mesh(K.bg, K.body); bm.rotation.x = Math.PI / 2; g.add(bm);
+    const pl = new THREE.Group(), pr = new THREE.Group();
+    for (const [grp, sx] of [[pl, -1], [pr, 1]]) {
+      const w = new THREE.Mesh(K.wg, K.wm); if (sx < 0) w.rotation.y = Math.PI; w.position.x = sx * 0.05; grp.add(w);
+      // motion-blur ghosts at the ends of the beat
+      for (const a of [0.7, -0.7]) { const gw = new THREE.Mesh(K.wg, K.ghost); if (sx < 0) gw.rotation.y = Math.PI; gw.position.x = sx * 0.05; gw.rotation.z = a * sx; grp.add(gw); }
+    }
+    g.add(pl, pr);
+    const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: new THREE.Color(1.5, 1.1, 0.5), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
     glow.scale.set(1.3, 1.3, 1); g.add(glow);
     g.userData = { wl: pl, wr: pr, glow };
     return g;

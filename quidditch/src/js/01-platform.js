@@ -30,7 +30,7 @@ const Platform = {
   },
   applyClasses() {
     document.body.classList.toggle('wide', this.wide);
-    document.documentElement.style.setProperty('--ui', (Settings.uiScale * (this.wide ? 1.15 : 1)).toFixed(3));
+    document.documentElement.style.setProperty('--ui', (Settings.uiScale * (this.wide ? 1.25 : 1)).toFixed(3));
     document.getElementById('rotate').classList.toggle('on', this.needsRotate());
   },
   needsRotate() { return this.portrait && !this.wide; },
