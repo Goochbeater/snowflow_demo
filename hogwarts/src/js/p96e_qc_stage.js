@@ -163,6 +163,7 @@ Scenes.tpl = function (id, spec) {
   if (mate) return HL.student(dress || myKey, mate.body === 'f', (mate.look && mate.look.v) || 1, kit);
   if (id === 'rival' && S && S.rival) return HL.student(dress || QC.key(S.rival.house), S.rival.body === 'f', (S.rival.look && S.rival.look.v) || 2, kit);
   if (dress) { const h = [...id].reduce((s, ch) => s + ch.charCodeAt(0), 0); return HL.student('ball', h % 2 === 1, 1 + (h % 6), false); }
+  if (S && S.phase === 'school' && /^(rep|extra)/.test(id) && (o.outfit === 'casual' || o.outfit === 'coat')) { const h = [...id].reduce((s2, ch) => s2 + ch.charCodeAt(0), 0); return HL.student(QC.key(h % 4), h % 2 === 1, 1 + (h % 6), false); }   // at school the press pack is half pupils (the commentator, the school paper)
   if (o.outfit === 'staff' || staff || formal || o.outfit === 'coat') { const h = [...id].reduce((s, ch) => s + ch.charCodeAt(0), 0); return h % 2 ? 'prof_a' : 'prof_b'; }
   const h = [...id].reduce((s, ch) => s + ch.charCodeAt(0), 0), team = o.team != null ? o.team : S ? (S.phase === 'school' ? S.profile.house : Career.myTeam()) : 0;
   return HL.student(QC.key(team), h % 2 === 1, 1 + (h % 6), kit);

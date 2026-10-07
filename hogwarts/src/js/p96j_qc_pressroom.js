@@ -15,7 +15,7 @@ const PressRoom = {
   },
   async run(kind, ev, done) {
     if (!this.ui) this.init(); const S = Career.S; HL.ui.fade(1);
-    try { await Scenes.need([{ id: 'me', o: { outfit: S.phase === 'school' ? 'kit' : 'track' } }].concat(Press.reporters().map((r) => ({ id: 'rep_' + r.id, o: {} }))).concat([0, 1, 2, 3, 4].map((k) => ({ id: 'extra' + k, o: { outfit: k % 2 ? 'coat' : 'casual' } })))); } catch (e) { /* */ }
+    try { await Scenes.need([{ id: 'me', o: { outfit: S.phase === 'school' ? 'kit' : 'track' } }].concat(Press.reporters().map((r) => ({ id: 'rep_' + r.id, o: { outfit: r.diff === 'hard' ? 'formal' : r.diff === 'mid' ? 'coat' : 'casual' } }))).concat([0, 1, 2, 3, 4].map((k) => ({ id: 'extra' + k, o: { outfit: k % 2 ? 'coat' : 'casual' } })))); } catch (e) { /* */ }
     HL.ui.fade(0); if (window.CareerUI) CareerUI.backdrop = null;
     this.on = true; this.kind = kind; this.ev = ev; this.done = done; this.recs = []; this.asked = 0; this.total = kind === 'pre' ? 1 : 2;
     const set = Scenes.enter('press', S.phase === 'school' ? 'school' : '');
