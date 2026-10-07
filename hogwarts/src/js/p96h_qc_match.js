@@ -8,7 +8,7 @@ const Tex = { font: "'HLA', Georgia, serif", crestURL: new Proxy({}, { get: (o, 
 const QUI = { cur: null, hideAll() { HL.ui.screen(''); }, go(w) { if (w === 'menu') CareerUI.exit(); }, quit() { CareerUI.exit(); } };
 const QHUD = { show() {}, ticker(t) { if (HL.ui.hint) { QC.hintOK = true; try { HL.ui.hint(t, 6); } finally { QC.hintOK = false; } } } };
 /* in the career the castle's own errands keep their hints to themselves */
-{ const h0 = HL.ui.hint; HL.ui.hint = function (html, dur) { if (QC.active && !QC.hintOK && !(HL.Q && HL.Q.on && HL.Q.opt && HL.Q.opt.career && /kbd|stick|fly|boost|shoot|pass/i.test(html))) return; return h0.apply(this, arguments); }; }
+{ const h0 = HL.ui.hint; HL.ui.hint = function (html, dur) { if (QC.active && !QC.hintOK && !(HL.Q && (HL.Q.on || HL.Q.loading))) return; return h0.apply(this, arguments); }; }   // (a match's own hints pass)
 /* …and the castle's story keeps quiet altogether: no Hogwarts letter, side quests or toasts of its own while the career
    is on (the match's own are let through) */
 { const mute = () => QC.active && !(HL.Q && (HL.Q.on || HL.Q.loading)), tq = HL.ui.toast, pp = HL.ui.pop;
@@ -43,7 +43,6 @@ QC.kickoff = async function (ev) {
   await HL.Q.start({ house: mk, rival: ok, diff: QC.DIFF[o.diff] !== undefined ? QC.DIFF[o.diff] : 1, len: [180, 300, 480][S.rules.length] || 300, role: S.profile.pos === 'seeker' ? 'seeker' : 'chaser', arcade: true, sn: S.rules.snitch === 'classic' ? 150 : 30, career: true });
   QC.nameFlyers();
   { const nm = (i) => { const n = teamName(i); return (n.length > 12 ? n.split(' ').pop() : n).toUpperCase(); }, E = HL.ui.el; if (E.Qa) { E.Qa.textContent = nm(mine); E.Qb.textContent = nm(opp); } }   // (the board fits WANDERERS, not WIGTOWN WANDERERS)
-  QHUD.ticker(`${ev.label}: ${teamName(mine)} v ${teamName(opp)}`);
 };
 QC.drill = async function (d) {
   const S = Career.S, mine = S.profile.house, mk = QC.key(mine), ok = QC.key((mine + 1) % 4);

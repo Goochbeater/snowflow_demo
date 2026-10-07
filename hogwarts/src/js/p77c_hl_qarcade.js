@@ -199,8 +199,8 @@
     // a goal, in letters you cannot miss
     if (Q.gb && Q.gb.t > 0) { const g = Q.gb, age = 2.3 - g.t, k = 1 + 0.6 * Math.exp(-9 * age), al = sat(g.t / 0.45), mine = g.team === 0, col = mine ? '#ffe28a' : rc; g.t -= dt; x.globalAlpha = al;
       txt(mine ? (g.val > 10 ? 'ROARING GOAL!' : 'GOAL!') : HL.HOUSES[Q.teams[1]].name.toUpperCase() + ' SCORE', cx, Hh * 0.385, (mine ? 66 : 40) * k * clamp(W / 1600, 0.7, 1.2), col); txt((mine ? '+' + g.val + '   ·   ' : '') + Q.score[0] + '  –  ' + Q.score[1], cx, Hh * 0.385 + (mine ? 54 : 40) * clamp(W / 1600, 0.7, 1.2), 20, '#efe6d2'); x.globalAlpha = 1; }
-    // the commentary
-    if (Q.sayT > 0 && Q.sayS && !Q.tut) { x.globalAlpha = sat(Q.sayT / 0.5); txt('“' + Q.sayS + '”', cx, Q.snitch && me.role !== 'seeker' ? 158 : 122, 15, '#efe6d2', 'center', 'italic 500 '); x.globalAlpha = 1; }
+    // the commentary (never under a toast: the final whistle used to print its headline twice)
+    if (Q.sayT > 0 && Q.sayS && !Q.tut && Q.phase !== 'over' && !HL.ui.el.Toast.classList.contains('on')) { x.globalAlpha = sat(Q.sayT / 0.5); txt('“' + Q.sayS + '”', cx, Q.snitch && me.role !== 'seeker' ? 158 : 122, 15, '#efe6d2', 'center', 'italic 500 '); x.globalAlpha = 1; }
     // House Spirit
     if (me.role !== 'seeker') { const w = 240, x0 = cx - w / 2, y0 = Hh - 52, m = Q.power ? 1 : (Q.mom || 0), fl = Q.momF || 0; bar(x0, y0, w, 7, m, Q.power ? `rgb(255,${200 + Math.round(40 * Math.sin(MG.rt * 10))},90)` : fl > 0 ? '#fff3c4' : '#d9a441');
       txt(Q.power ? 'ROARING SHOT READY' : 'HOUSE SPIRIT', cx, y0 + 20, 10.5, Q.power ? '#ffe28a' : 'rgba(217,184,106,0.95)'); }
