@@ -338,7 +338,10 @@ TOUCH.fixEl = function (el) {
   if (!TOUCH.on || !el || el.nodeType !== 1 || el.closest('#tc')) return;
   const RX = /mouse|[Cc]lick|LMB|RMB|wheel to|hold <kbd>SHIFT|PRESS ANY KEY|ESC TO CLOSE|TO SKIP|<kbd>1<\/kbd>\s*(?:–|-|&ndash;)/;
   if (el.querySelector && (el.innerHTML.indexOf('<kbd') >= 0 || RX.test(el.innerHTML)) && !el.closest('[data-tf]')) {
-    if (RX.test(el.innerHTML) && el.children.length < 60 && !el.querySelector('input,canvas,.view')) { const h = TOUCH.fixText(el.innerHTML); if (h !== el.innerHTML) el.innerHTML = h; }
+    const fix = (e) => { const h = TOUCH.fixText(e.innerHTML); if (h !== e.innerHTML) e.innerHTML = h; }, live = 'input,canvas,.view';
+    if (RX.test(el.innerHTML)) { if (el.children.length < 60 && !el.querySelector(live)) fix(el);
+      /* a screen with a live canvas in it (the pack's figure) is left whole; its plain lines of text are rewritten one by one */
+      else for (const d of el.querySelectorAll('div,p,li')) if (RX.test(d.innerHTML) && [...d.querySelectorAll('*')].every((x) => /^(B|I|EM|KBD|SPAN|BR|SMALL|STRONG)$/.test(x.tagName))) fix(d); }
     for (const k of el.querySelectorAll('kbd:not(.tk)')) { if (k.closest('.hlMap')) continue; const c = TOUCH.chip(k.textContent); if (!c) continue; if (!c.svg && !c.t) { k.style.display = 'none'; k.classList.add('tk'); continue; } k.classList.add('tk'); if (!c.t) k.classList.add('nolbl'); k.innerHTML = c.svg + (c.t ? '<span>' + c.t + '</span>' : '');
       /* "PASS pass": the chip already says it */ const n = k.nextSibling, m = c.t && n && n.nodeType === 3 && /^[\s\u00a0]*([A-Za-z]+)/.exec(n.textContent); if (m && m[1].toLowerCase() === c.t.split(' ').pop().toLowerCase()) n.textContent = ' ' + n.textContent.slice(m[0].length).replace(/^[\s\u00a0]+/, ''); }
   }
