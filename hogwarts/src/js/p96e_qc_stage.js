@@ -70,7 +70,20 @@ const STAGES = {
   },
   /* a common room: by the fire, two armchairs (chairL / chairR), a friend standing (standF) */
   common(variant) {
-    const c = HL.COMMON; if (!c) return null; const F = Scenes.frame(c[0], c[1], c[2], 0);
+    /* your own house's: the towers' lounges are furnished alike (the anchors fit either); Slytherin's runs long under the lake
+       with its armchairs in facing pairs, Hufflepuff's is round them about a low table by the cellar fire */
+    const hk = QC.key(Career.S ? Career.S.profile.house : 0), D = HL.DUN, yd = D ? HL.Y0 - D.d : 0;
+    if (hk === 'slytherin' && D && D.sly) { const R = D.sly, z = R.z0 + 11.6, F = Scenes.frame(R.cx, yd, z, PI);
+      const A = { chairL: [-1.6, 0, 0, HALF, 'sit'], chairR: [1.6, 0, 0, -HALF, 'sit'], standF: [0.9, 0, 1.6, PI - 0.4], fire: [0, 0, -(R.z1 - z) + 1.2, PI], board: [0, 0, -2.5, PI] };
+      const C = { default: { p: [0.4, 1.7, 3.6], l: [0, 1.0, -2], fov: 50 }, fire: { p: [-0.6, 1.4, 2.6], l: [0.1, 1.0, -1.4], p2: [0.4, 1.35, 1.8], fov: 44, dur: 12 }, hub: { orbit: { c: [0, 1.4, -1.2], r: 4.2, h: 0.5, a0: 0.3, w: 0.04 }, p: [0, 1.6, 3], l: [0, 1, -1], fov: 50, dur: 999 } };
+      return { F, anchors: A, cams: C, variant }; }
+    if (hk === 'hufflepuff' && D && D.huf) { const R = D.huf, ox = R.cx - 0.6, oz = R.cz, F = Scenes.frame(ox, yd, oz, PI);   // looking up the room (north), the fire on the left
+      // its armchairs stand round the table facing outward; the two on the south side face the camera
+      const ch = (a) => { const an = a / 5 * TAU + 0.5; return [-Math.cos(an) * 2.2, 0, -Math.sin(an) * 2.6, -an + HALF - PI, 'sit']; };
+      const A = { chairL: ch(3), chairR: ch(4), standF: [0.9, 0, 1.1, PI - 0.4], fire: [(ox - R.x0) - 1.2, 0, 0, HALF], board: [0, 0, -2.5, PI] };
+      const C = { default: { p: [0.3, 1.6, 5.4], l: [0, 1.0, 1.0], fov: 50 }, fire: { p: [-0.8, 1.4, 4.6], l: [0.4, 1.0, 1.2], p2: [0.4, 1.35, 4.2], fov: 46, dur: 12 }, hub: { orbit: { c: [0, 1.2, 0], r: 2.8, h: 0.8, a0: 0.3, w: 0.04 }, p: [0, 1.6, 3], l: [0, 1, -1], fov: 54, dur: 999 } };
+      return { F, anchors: A, cams: C, variant }; }
+    const c = (HL.COMMONS && HL.COMMONS[hk]) || HL.COMMON; if (!c) return null; const F = Scenes.frame(c[0], c[1], c[2], 0);
     const A = { chairL: [-1.1, 0, -0.6, PI / 2 - 0.5, 'sit'], chairR: [1.1, 0, -0.6, -PI / 2 + 0.5, 'sit'], standF: [0.9, 0, 1.1, PI - 0.4], fire: [0, 0, -3.2, PI], board: [0, 0, -2.5, PI] };
     const C = { default: { p: [0.2, 1.7, 3.4], l: [0, 1.0, -2], fov: 50 }, fire: { p: [-0.5, 1.4, 2.4], l: [0.1, 1.0, -1.4], p2: [0.4, 1.35, 1.6], fov: 44, dur: 12 }, hub: { orbit: { c: [0, 1.1, -0.6], r: 3.8, h: 0.7, a0: 0.3, w: 0.04 }, p: [0, 1.6, 3], l: [0, 1, -1], fov: 46, dur: 999 } };
     return { F, anchors: A, cams: C, variant };
