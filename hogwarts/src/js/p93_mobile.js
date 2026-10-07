@@ -75,6 +75,7 @@ body.touch #hlQtut { top: calc(4px + env(safe-area-inset-top)) !important; max-w
   body.touch #hlToast { top: 9%; padding: 8px 30px 10px; } body.touch #hlToast .a { font-size: 17px; } body.touch #hlToast .b { font-size: 12px; }
 }
 /* ---------------- the touch layer's own adjustments */
+body.touch .hlBark { font-size: 12.5px !important; max-width: 220px !important; padding: 4px 10px 5px !important; }
 /* full-screen screens (map, journal, pack) hide the HUD behind them; the storey tabs keep to one line */
 body:has(#hlScreen .hlMap, #hlScreen .hlJ, #hlScreen .hlInv) :is(#hlQuest, #hlVit, #hlPts, #hlGold, #hlHint, #hlSay) { visibility: hidden; }
 body .hlMap.mm .tab3 { white-space: nowrap; }

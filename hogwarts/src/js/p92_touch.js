@@ -125,6 +125,7 @@ TOUCH.css = `
 .tcB.sp { border-color: var(--c); }
 .tcB.sp i { position: absolute; inset: 0; border-radius: 50%; background: conic-gradient(rgba(0,0,0,0.74) calc(var(--cd) * 1turn), rgba(0,0,0,0) 0); pointer-events: none; }
 .tcB.sp em { position: absolute; font-style: normal; font-size: calc(15px * var(--u)); color: #fff; text-shadow: 0 1px 3px #000; pointer-events: none; }
+.tcB.sp b.sn { display: none; } body.tcLearn .tcB.sp b.sn, body.tcLearn #tc[data-mode="foot"] .tcB.sp b.sn { display: block; }
 .tcB.sp.ready { box-shadow: 0 0 10px var(--c), inset 0 0 0 1px rgba(0,0,0,0.5); }
 .tcB.glow { animation: tcGlow 0.9s infinite alternate; border-color: #bfe6ff; color: #dff2ff; }
 @keyframes tcGlow { from { box-shadow: 0 0 6px #58aaff; } to { box-shadow: 0 0 22px #58aaff, 0 0 4px #fff; } }
@@ -155,7 +156,7 @@ TOUCH.build = function () {
   for (const id in TOUCH.DEF) { const D = TOUCH.DEF[id], b = document.createElement('div'); b.className = 'tcB'; b.dataset.id = id;
     if (D[0]) b.innerHTML = TOUCH.svg(TOUCH.ICON[D[0]]) + (D[1] ? `<b>${D[1]}</b>` : '');
     if (id === 'cast' || id === 'shoot') { b.classList.add('big'); b.insertAdjacentHTML('beforeend', '<div class="chg"></div>'); }
-    if (/^s\d$/.test(id)) { b.classList.add('sp'); b.innerHTML = '<svg viewBox="0 0 24 24"></svg><i></i><em></em>'; }
+    if (/^s\d$/.test(id)) { b.classList.add('sp'); b.innerHTML = '<svg viewBox="0 0 24 24"></svg><i></i><em></em><b class="sn"></b>'; }
     if (['pause', 'map', 'journal', 'bag', 'broom', 'revelio', 'lumos', 'potion', 'swap', 'close', 'skip'].includes(id)) b.classList.add('sm');
     root.appendChild(b); TOUCH.btn[id] = b;
     b.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); TOUCH.lastTouch = performance.now(); try { b.setPointerCapture(e.pointerId); } catch (er) { /* */ } TOUCH.press(id, e.pointerId); });
@@ -173,7 +174,7 @@ TOUCH.build = function () {
   TOUCH.layout(); TOUCH.spellIcons();
 };
 TOUCH.enable = function () {
-  if (TOUCH.on) return; TOUCH.on = true; document.body.classList.add('touch'); TOUCH.build(); TOUCH.root.classList.add('on'); TOUCH.observe();
+  if (TOUCH.on) return; TOUCH.on = true; document.body.classList.add('touch'); TOUCH.cfg.sessions = (TOUCH.cfg.sessions || 0) + 1; TOUCH.save(); if (TOUCH.cfg.sessions <= 3) document.body.classList.add('tcLearn');   /* (the spells' names under their buttons for a player's first three sessions) */ TOUCH.build(); TOUCH.root.classList.add('on'); TOUCH.observe();
   if (MG.$('skip')) MG.$('skip').innerHTML = 'TAP <b style="font-weight:400">SKIP</b>';
 };
 /* ------------------------------------------------------------------ layout: everything from the screen's corners, scaled to it */
@@ -207,7 +208,7 @@ TOUCH.placeStick = function (ox, oy, x, y) { const s = TOUCH.stickEl.style, k = 
 /* the four spells on show (one set of two): their glyphs, colours and keys */
 TOUCH.spellIcons = function () {
   for (let i = 0; i < 4; i++) { const id = HL.BAR[TOUCH.set * 4 + i], S = HL.SPELLS[id], b = TOUCH.btn['s' + i]; if (!b || !S) continue; const c = `rgb(${S.col.map((v) => Math.round(Math.min(1, v * 0.7 + 0.3) * 255)).join(',')})`;
-    b.style.setProperty('--c', c); b.querySelector('svg').outerHTML = TOUCH.svg((HL.ui.GLYPH || {})[id] || '', ` style="color:${c}"`); b.dataset.spell = id; b.dataset.n = TOUCH.set * 4 + i + 1; }
+    b.style.setProperty('--c', c); b.querySelector('svg').outerHTML = TOUCH.svg((HL.ui.GLYPH || {})[id] || '', ` style="color:${c}"`); { const n = b.querySelector('b.sn'); if (n) n.textContent = S.name; } b.dataset.spell = id; b.dataset.n = TOUCH.set * 4 + i + 1; }
 };
 /* ------------------------------------------------------------------ pressing */
 TOUCH.press = function (id, pid) {
