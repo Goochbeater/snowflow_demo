@@ -16,4 +16,5 @@
 /* QUIT TO TITLE asks twice (it sat under the thumb and quit on one tap); the legal line and the build stamp keep out of the buttons' way */
 { const p0 = HL.ui.pause; HL.ui.pause = function () { p0.apply(this, arguments); if (MG.state !== 'pause') return; const b = HL.ui.el.Screen.querySelector('.hlBtn[data-a="t"]'); if (!b) return; const go = b.onclick, t0 = b.textContent;
   b.onclick = function (e) { if (!b.classList.contains('tcSure')) { b.classList.add('tcSure'); b.textContent = 'TAP AGAIN TO QUIT'; setTimeout(() => { if (b.isConnected) { b.classList.remove('tcSure'); b.textContent = t0; } }, 3000); return; } return go.call(this, e); }; }; }
-{ const t0 = HL.ui.title; HL.ui.title = function () { t0.apply(this, arguments); const v = HL.ui.el.Screen.querySelector('.hlTitle .v'); if (v && !MG.flags.debug) v.style.display = 'none'; }; }
+{ const t0 = HL.ui.title; HL.ui.title = function () { t0.apply(this, arguments); const U = HL.ui, v = U.el.Screen.querySelector('.hlTitle .v'); if (v && !MG.flags.debug) v.style.display = 'none';
+  /* nothing from the game left over the logo (a location card or a hint still running when you quit) */ U.el.Toast.classList.remove('on'); U.toastT = 0; U.el.Hint.classList.remove('on'); U.hintT = 0; }; }
