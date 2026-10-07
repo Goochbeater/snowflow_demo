@@ -291,7 +291,7 @@ TOUCH.modeNow = function () {
   return '';
 };
 TOUCH.frame = function () {
-  const m = TOUCH.modeNow();
+  const m = TOUCH.modeNow(), qon = !!(HL.Q && HL.Q.on); if (qon !== TOUCH.qon) { TOUCH.qon = qon; document.body.classList.toggle('tq', qon); }
   if (m !== TOUCH.mode) { const was = TOUCH.mode; TOUCH.mode = m; TOUCH.root.dataset.mode = m; document.body.dataset.tm = m; TOUCH.releaseAll(); if (was === 'match' || m === 'match') TOUCH.layout();
     for (const id in TOUCH.DEF) TOUCH.btn[id].classList.toggle('on', TOUCH.DEF[id][2].split(' ').includes(m)); }
   if (m === 'foot') {

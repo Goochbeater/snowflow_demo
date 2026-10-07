@@ -42,6 +42,7 @@ QC.kickoff = async function (ev) {
   MG.state = 'play'; HL.ui.show(true); IN.buf = {}; MG.onKey = null;
   await HL.Q.start({ house: mk, rival: ok, diff: QC.DIFF[o.diff] !== undefined ? QC.DIFF[o.diff] : 1, len: [180, 300, 480][S.rules.length] || 300, role: S.profile.pos === 'seeker' ? 'seeker' : 'chaser', arcade: true, sn: S.rules.snitch === 'classic' ? 150 : 30, career: true });
   QC.nameFlyers();
+  { const nm = (i) => { const n = teamName(i); return (n.length > 12 ? n.split(' ').pop() : n).toUpperCase(); }, E = HL.ui.el; if (E.Qa) { E.Qa.textContent = nm(mine); E.Qb.textContent = nm(opp); } }   // (the board fits WANDERERS, not WIGTOWN WANDERERS)
   QHUD.ticker(`${ev.label}: ${teamName(mine)} v ${teamName(opp)}`);
 };
 QC.drill = async function (d) {

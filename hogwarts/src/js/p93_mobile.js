@@ -19,7 +19,7 @@ body.touch #hlHint { bottom: calc(8px + env(safe-area-inset-bottom)); left: 47%;
 body.touch #hlPrompt { top: 58%; font-size: 14px; padding: 5px 14px; }
 body.touch #hlToast { top: 13%; padding: 12px 40px 14px; max-width: 70vw; } body.touch #hlToast .a { font-size: 20px; letter-spacing: 0.16em; } body.touch #hlToast .b { font-size: 13px; } body.touch #hlToast hr { width: 200px; margin: 4px auto; }
 body.touch #hlPop { top: 30%; font-size: 15px; } body.touch #hlName { bottom: 30%; font-size: 15px; }
-body.touch[data-tm="fly"] #hlHint, body.touch[data-tm="match"] #hlHint { bottom: calc(92px + env(safe-area-inset-bottom)); max-width: 50vw; }
+body.touch[data-tm="fly"] #hlHint, body.touch[data-tm="match"] #hlHint, body.touch.tq #hlHint { bottom: calc(92px + env(safe-area-inset-bottom)); max-width: 50vw; }
 body.touch #hlFly { bottom: calc(8px + env(safe-area-inset-bottom)); width: 190px; } body.touch #hlFly .sp { font-size: 20px; } body.touch #hlFly .al { font-size: 9px; margin-top: 3px; }
 body.touch #hlSay { bottom: calc(10px + env(safe-area-inset-bottom)); width: min(560px, 48vw); left: 47%; padding: 8px 16px 10px; pointer-events: none; }
 body.touch #hlSay .nm { font-size: 10px; } body.touch #hlSay .tx { font-size: 14px; min-height: 38px; margin-top: 4px; } body.touch #hlSay .more { font-size: 8px; }
@@ -64,7 +64,7 @@ body.touch #hlQtut { top: calc(4px + env(safe-area-inset-top)) !important; max-w
 /* ---------------- the Fold's cover screen (344 px tall): the hint wider and smaller so it takes fewer lines of the view */
 @media (max-height: 380px) {
   body.touch #hlHint { font-size: 11px; max-width: 58vw; padding: 4px 12px; line-height: 1.3; }
-  body.touch[data-tm="fly"] #hlHint, body.touch[data-tm="match"] #hlHint { bottom: calc(80px + env(safe-area-inset-bottom)); max-width: 58vw; }
+  body.touch[data-tm="fly"] #hlHint, body.touch[data-tm="match"] #hlHint, body.touch.tq #hlHint { bottom: calc(80px + env(safe-area-inset-bottom)); max-width: 58vw; }
   body.touch #hlQuest { width: min(38vw, 340px); } body.touch #hlQuest .o { font-size: 11.5px; } body.touch #hlQuest .n { font-size: 14px; }
   body .hlPause { padding: 4px 3vw 6px; } body .hlPause h3 { font-size: 16px; margin: 0 0 2px; }
   body .hlPause .hlKeys { font-size: 10.5px; gap: 0 14px; margin: 0 0 3px; line-height: 1.22; }
