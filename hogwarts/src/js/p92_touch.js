@@ -193,6 +193,7 @@ TOUCH.layout = function () {
     skip: [W - 44 * u, 34 * u, 22], close: [W - 30 * u, 30 * u, 20],
   };
   // in flight UP sits where the spells were, DOWN where Protego was; in a match the roll joins the arc
+  if (TOUCH.mode === 'match') { P.up = [...at(103, 178 * u), 24]; P.down = [...at(147, 178 * u), 24]; P.roll = [...at(176, 178 * u), 25]; }
   for (const id in P) { const b = TOUCH.btn[id]; if (!b) continue; const [x, y, r] = P[id]; b.style.left = x.toFixed(1) + 'px'; b.style.top = y.toFixed(1) + 'px'; b.style.setProperty('--r', (r * u).toFixed(1) + 'px'); }
   TOUCH.home = [Math.max(96 * u, W * 0.11), H - 100 * u];
   if (TOUCH.stick.id === null) TOUCH.placeStick(TOUCH.home[0], TOUCH.home[1], 0, 0);
@@ -291,7 +292,7 @@ TOUCH.modeNow = function () {
 };
 TOUCH.frame = function () {
   const m = TOUCH.modeNow();
-  if (m !== TOUCH.mode) { TOUCH.mode = m; TOUCH.root.dataset.mode = m; TOUCH.releaseAll();
+  if (m !== TOUCH.mode) { const was = TOUCH.mode; TOUCH.mode = m; TOUCH.root.dataset.mode = m; document.body.dataset.tm = m; TOUCH.releaseAll(); if (was === 'match' || m === 'match') TOUCH.layout();
     for (const id in TOUCH.DEF) TOUCH.btn[id].classList.toggle('on', TOUCH.DEF[id][2].split(' ').includes(m)); }
   if (m === 'foot') {
     const P = HL.P; for (let i = 0; i < 4; i++) { const b = TOUCH.btn['s' + i], id = b.dataset.spell, S = HL.SPELLS[id]; if (!S) continue; const cd = P.cd[id] || 0, f = S.cd ? cd / S.cd : 0, q = Math.ceil(cd);
@@ -313,12 +314,12 @@ TOUCH.frame = function () {
 };
 /* ------------------------------------------------------------------ the game's key hints, drawn as the buttons */
 TOUCH.CHIP = { foot: { E: 'use', LMB: 'cast', RMB: 'protego', Q: 'protego', SHIFT: 'dodge', SPACE: 'jump', C: 'down', B: 'broom', R: 'revelio', L: 'lumos', X: 'ancient', M: 'map', J: 'journal', I: 'bag', G: 'potion', ESC: 'pause', P: 'pause', F: 'face', TAB: 'face', V: 'face', ENTER: 'skip' },
-  fly: { E: 'use', SHIFT: 'boost', SPACE: 'up', C: 'down', R: 'roll', B: 'broom', LMB: 'boost', S: 'down' }, match: { E: 'pass', Q: 'pass', RMB: 'pass', LMB: 'shoot', SHIFT: 'boost', SPACE: 'up', C: 'down', R: 'roll', F: 'face', TAB: 'face', V: 'face', ENTER: 'skip' } };
+  fly: { E: 'use', SHIFT: 'boost', SPACE: 'up', C: 'down', R: 'roll', B: 'broom', LMB: 'boost', S: 'down' }, match: { E: 'pass', Q: 'pass', RMB: 'pass', LMB: 'shoot', SHIFT: 'boost', SPACE: 'up', C: 'down', R: 'roll', F: 'face', TAB: 'face', V: 'face', ENTER: 'skip', ESC: 'pause', P: 'pause' } };
 TOUCH.chip = function (key) {
   const K = String(key).trim().toUpperCase(), Q = HL.Q && (HL.Q.on || HL.Q.loading || MG.state === 'house' && HL.Q.pitchCam), fly = PLAYER.state === 'fly';
   if (/^[1-8]$/.test(K)) { const id = HL.BAR[+K - 1], S = HL.SPELLS[id]; if (!S) return null; const c = `rgb(${S.col.map((v) => Math.round(Math.min(1, v * 0.7 + 0.3) * 255)).join(',')})`; return { svg: TOUCH.svg((HL.ui.GLYPH || {})[id] || '', ` style="color:${c}"`), t: S.name.toUpperCase() }; }
   if (K === 'W') return { svg: TOUCH.svg('M12 3 a9 9 0 1 0 .01 0 M12 8 v8 M8.5 11.5 l3.5 -3.5 l3.5 3.5'), t: Q || fly ? 'STICK FORWARD' : 'STICK' };
-  if (K === 'S' && !(Q || fly)) return { svg: TOUCH.svg('M12 3 a9 9 0 1 0 .01 0'), t: 'STICK' };
+  if (K === 'S') return { svg: TOUCH.svg(Q || fly ? 'M12 3 a9 9 0 1 0 .01 0 M12 8 v8 M8.5 12.5 l3.5 3.5 l3.5 -3.5' : 'M12 3 a9 9 0 1 0 .01 0'), t: Q || fly ? 'STICK BACK' : 'STICK' };
   if (K === 'A' || K === 'D') return { svg: '', t: '' };
   const map = Q ? TOUCH.CHIP.match : fly ? Object.assign({}, TOUCH.CHIP.foot, TOUCH.CHIP.fly) : TOUCH.CHIP.foot, id = map[K]; if (!id) return null;
   const D = TOUCH.DEF[id]; let t = D[1] || { pause: 'MENU', map: 'MAP', journal: 'JOURNAL', bag: 'PACK', broom: 'BROOM', revelio: 'REVELIO', lumos: 'LUMOS', potion: 'WIGGENWELD', skip: 'SKIP', face: 'FACE' }[id] || id.toUpperCase();

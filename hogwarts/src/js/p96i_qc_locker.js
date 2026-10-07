@@ -30,7 +30,7 @@ const Locker = {
     QC.inject([key]); HL.ui.fade(1);
     const tpls = roster.map((m) => HL.student(key, m.body === 'f', (m.look && m.look.v) || 1, true)), coachT = capt ? HL.student(key, capt.body === 'f', (capt.look && capt.look.v) || 1, true) : (S.phase === 'school' ? 'prof_b' : 'prof_a'), meT = HL.student(key, S.profile.body === 'f', (S.profile.look && S.profile.look.v) || 1, true);
     await CAST.need([...tpls, coachT, meT]);
-    Scenes.leave(true); CareerUI.root.hidden = true;
+    Scenes.leave(true); CareerUI.root.hidden = true; CareerUI.backdrop = null;
     const set = STAGES.locker(variant), F = set.F; this.set = set; const W = (p) => { const s0 = Scenes.F; Scenes.F = F; const v = Scenes.W(p, new THREE.Vector3()); Scenes.F = s0; return v; };
     const put = (tpl, at) => { const w = W(at), y = HL.gy(w.x, w.z) + 0.05, a = new Actor(CHAR.T[tpl], { x: w.x, y, z: w.z, yaw: F.yaw + at[3], hp: 100, team: 'npc', moves: MOV.wizard, r: 0.3, h: 1.8 }); a.noTarget = true; a.base = 'calm'; a.x = w.x; a.y = y; a.z = w.z; a.animate(0.016 + RNG()); a.pose3D(0.016); return a; };
     this.mates = []; this.uses = [];
@@ -42,7 +42,7 @@ const Locker = {
     { const w = W([1.8, 0, 0.8]); this.uses.push(HL.interact(V3(w.x, HL.gy(w.x, w.z) + 1, w.z), 1.8, 'Look yourself over', () => this.mirror())); }
     { const w = W(set.anchors.pitchMe); this.gate = w; this.uses.push(HL.interact(V3(w.x, HL.gy(w.x, w.z) + 1, w.z), 3.2, 'Take the pitch', () => this.play())); }
     // you, in kit, at your place in the huddle
-    this._hero = CHAR.T.maul; CHAR.T.maul = CHAR.T[meT]; const me = W(set.anchors.lockMe); PLAYER.spawn(me.x, HL.gy(me.x, me.z) + 0.05, me.z, F.yaw + set.anchors.lockMe[3]); CAM.reset(F.yaw + set.anchors.lockMe[3] + PI); CAM.pitch = -0.12; CAM.snap = true;
+    this._hero = CHAR.T.maul; CHAR.T.maul = CHAR.T[meT]; const me = W(set.anchors.lockMe); PLAYER.spawn(me.x, HL.gy(me.x, me.z) + 0.05, me.z, F.yaw + set.anchors.lockMe[3]); CAM.reset(F.yaw + set.anchors.lockMe[3]); CAM.pitch = -0.12; CAM.snap = true;
     this.on = true; this.ui.classList.add('on'); this.panel = false; MG.state = 'play'; HL.ui.show(true); document.body.classList.add('qclocker'); IN.buf = {};
     this.ui.querySelector('#lkTitle').innerHTML = `<b>${ev.label}</b><span>${teamName(team)} v ${teamName(ev.opp)}${ev.home === false ? ' (away)' : ''}</span>`;
     this.ui.querySelector('#lkHint').textContent = TOUCH.on ? 'Walk up to a team-mate and tap USE to talk · walk out through the gate to start' : 'Walk up to a team-mate and press E to talk · walk out through the gate to start';
@@ -135,5 +135,8 @@ const Locker = {
   body.qclocker #hlVit, body.qclocker #hlBar, body.qclocker #hlBarT { display: none !important; }
   body.qclocker #tc .tcB:not([data-id="use"]):not([data-id="pause"]):not([data-id="jump"]) { display: none !important; }
   #locker .lkHint { pointer-events: none; } #locker .lkTop { pointer-events: none; } #locker .lkTop > * { pointer-events: auto; }
-  @media (max-height: 620px) { #locker .lkTop { top: calc(6px + env(safe-area-inset-top)); left: 10px; right: 60px; } #locker .lkTitle b { font-size: 12px; } #locker .lkTitle span { font-size: 10.5px; } #locker .lkGoals { font-size: 11px; padding: 5px 9px; max-width: 220px; } #locker .act { padding: 7px 12px; font-size: 11px; } #locker .lkHint { bottom: calc(8px + env(safe-area-inset-bottom)); font-size: 11px; } }`;
+  @media (max-height: 620px) { #locker .lkTop { top: calc(6px + env(safe-area-inset-top)); left: 10px; right: 60px; } #locker .lkTitle b { font-size: 12px; } #locker .lkTitle span { font-size: 10.5px; } #locker .lkGoals { font-size: 11px; padding: 5px 9px; max-width: 220px; } #locker .act { padding: 7px 12px; font-size: 11px; } #locker .lkHint { bottom: calc(8px + env(safe-area-inset-bottom)); font-size: 11px; }
+    #locker .lkPanel { top: calc(50% + 16px); max-height: calc(100% - 70px); width: min(620px, 74vw); } #locker .lkCard { padding: 10px 14px; } #locker .lkWho b { font-size: 15px; } #locker .lkWho span { margin-bottom: 2px; } #locker .lkLine { font-size: 14px; margin: 6px 0; }
+    #locker .lkOpts { grid-template-columns: 1fr 1fr; } #locker .lkOpt { padding: 7px 10px; font-size: 13px; } #locker .lkGoalOffer, #locker .lkDone, #locker .lkOpts > .actions { grid-column: 1 / -1; } #locker .lkCard .actions { margin-top: 8px; } }
+  #locker:has(.lkPanel.on) .lkHint { opacity: 0; }`;
   HL.START.push(() => document.head.appendChild(st)); }

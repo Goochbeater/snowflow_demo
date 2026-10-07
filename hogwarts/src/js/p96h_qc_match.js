@@ -6,7 +6,15 @@
    matches. Also: the shims the ported screens expect, the crests, and the career's door on the title screen. */
 const Tex = { font: "'HLA', Georgia, serif", crestURL: new Proxy({}, { get: (o, k) => (typeof k === 'string' && /^\d+$/.test(k)) ? (o[k] || (o[k] = QC.crest(+k))) : undefined }) };
 const QUI = { cur: null, hideAll() { HL.ui.screen(''); }, go(w) { if (w === 'menu') CareerUI.exit(); }, quit() { CareerUI.exit(); } };
-const QHUD = { show() {}, ticker(t) { if (HL.ui.hint) HL.ui.hint(t, 6); } };
+const QHUD = { show() {}, ticker(t) { if (HL.ui.hint) { QC.hintOK = true; try { HL.ui.hint(t, 6); } finally { QC.hintOK = false; } } } };
+/* in the career the castle's own errands keep their hints to themselves */
+{ const h0 = HL.ui.hint; HL.ui.hint = function (html, dur) { if (QC.active && !QC.hintOK && !(HL.Q && HL.Q.on && HL.Q.opt && HL.Q.opt.career && /kbd|stick|fly|boost|shoot|pass/i.test(html))) return; return h0.apply(this, arguments); }; }
+/* …and the castle's story keeps quiet altogether: no Hogwarts letter, side quests or toasts of its own while the career
+   is on (the match's own are let through) */
+{ const mute = () => QC.active && !(HL.Q && (HL.Q.on || HL.Q.loading)), tq = HL.ui.toast, pp = HL.ui.pop;
+  HL.ui.toast = function () { if (mute()) return; return tq.apply(this, arguments); };
+  HL.ui.pop = function () { if (mute()) return; return pp.apply(this, arguments); };
+  HL.START.push(function (L) { const U = L && L.updates; if (!U) return; for (let i = 0; i < U.length; i++) { const f = U[i]; if (f._qc || !/NEW SIDE QUEST|J\.letter\(\)/.test(String(f))) continue; U[i] = Object.assign(function (dt, t) { if (QC.active) { IN.take('journal'); return; } return f.call(this, dt, t); }, { _qc: 1 }); } }); }
 const Platform = { requestWake() {} };
 const Input = { reset() { IN.buf = {}; } };
 /* a team's crest: its shield in its colours, its emblem on it */
@@ -18,7 +26,7 @@ QC.crest = function (i) {
   drawEmblem(g, T.emblem, 46, 52, 64, T.c2, T.c1); return c.toDataURL();
 };
 /* ------------------------------------------------------------------ in and out of the career */
-QC.enter = function () { QC.active = true; document.body.classList.add('qcareer'); HL.ui.show(false); if (HL.Q) HL.Q.pitchCam = false; };
+QC.enter = function () { QC.active = true; MG.onKey = null; document.body.classList.add('qcareer'); HL.ui.show(false); if (HL.Q) HL.Q.pitchCam = false; };
 QC.leave = function () { QC.active = false; QC.match = null; document.body.classList.remove('qcareer'); QC.eject(); QC.undress(); MG.state = 'title'; HL.ui.title(); };
 /* the title: the career's own door, beside the castle's and the Quidditch match's */
 { const t0 = HL.ui.title; HL.ui.title = function () { t0.apply(this, arguments); const S = HL.ui.el.Screen, box = S.querySelector('.hlTitle'); if (!box || box.querySelector('[data-qc]')) return; const b = document.createElement('div'); b.className = 'hlBtn'; b.dataset.qc = '1'; b.textContent = 'QUIDDITCH CAREER'; b.onclick = () => CareerUI.open(); const cr = S.querySelector('.cr'); box.insertBefore(b, cr); }; }
@@ -31,7 +39,7 @@ QC.kickoff = async function (ev) {
   S.seasonStart = S.seasonStart || Object.assign({}, S.tot);
   QC.match = { ev, o, mine, opp, mk, ok, passTo: {}, assistTo: {}, last: null, assists: 0, pm: Career.playerMods() };
   QC.gearOn(QC.match.pm);
-  MG.state = 'play'; HL.ui.show(true); IN.buf = {};
+  MG.state = 'play'; HL.ui.show(true); IN.buf = {}; MG.onKey = null;
   await HL.Q.start({ house: mk, rival: ok, diff: QC.DIFF[o.diff] !== undefined ? QC.DIFF[o.diff] : 1, len: [180, 300, 480][S.rules.length] || 300, role: S.profile.pos === 'seeker' ? 'seeker' : 'chaser', arcade: true, sn: S.rules.snitch === 'classic' ? 150 : 30, career: true });
   QC.nameFlyers();
   QHUD.ticker(`${ev.label}: ${teamName(mine)} v ${teamName(opp)}`);
@@ -40,7 +48,7 @@ QC.drill = async function (d) {
   const S = Career.S, mine = S.profile.house, mk = QC.key(mine), ok = QC.key((mine + 1) % 4);
   Scenes.leave(true); CareerUI.root.hidden = true; QC.inject([mk, ok]); QC.undress();
   QC.match = { drill: d, mine, opp: (mine + 1) % 4, mk, ok, passTo: {}, assistTo: {}, last: null, assists: 0, pm: Career.playerMods() }; QC.gearOn(QC.match.pm);
-  MG.state = 'play'; HL.ui.show(true); IN.buf = {};
+  MG.state = 'play'; HL.ui.show(true); IN.buf = {}; MG.onKey = null;
   await HL.Q.start(d.lesson ? { house: mk, rival: ok, diff: 0, len: 300, role: 'chaser', arcade: true, tut: true, career: true } : { house: mk, rival: ok, diff: 1, len: d.time || 90, role: d.seeker ? 'seeker' : 'chaser', arcade: true, sn: 30, career: true });
   QC.nameFlyers();
 };

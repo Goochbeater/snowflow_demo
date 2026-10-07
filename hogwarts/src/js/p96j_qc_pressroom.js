@@ -3,7 +3,7 @@
    pitch-side under the stand. Three reporters put up their hands; you take one; they ask; you answer in one of four
    tones (each moves fame, fans, the team and the coach); Witch Weekly's needler brings the Quick-Quotes Quill. */
 const PressRoom = {
-  ui: null, recs: [], done: null, timerT: 0, timerOn: false, cur: null,
+  ui: null, on: false, recs: [], done: null, timerT: 0, timerOn: false, cur: null,
   init() {
     const d = document.createElement('div'); d.id = 'press';
     d.innerHTML = `<div class="prTop"><b id="prTitle">PRESS CONFERENCE</b><span id="prSub"></span></div>
@@ -16,8 +16,8 @@ const PressRoom = {
   async run(kind, ev, done) {
     if (!this.ui) this.init(); const S = Career.S; HL.ui.fade(1);
     try { await Scenes.need([{ id: 'me', o: { outfit: S.phase === 'school' ? 'kit' : 'track' } }].concat(Press.reporters().map((r) => ({ id: 'rep_' + r.id, o: {} }))).concat([0, 1, 2, 3, 4].map((k) => ({ id: 'extra' + k, o: { outfit: k % 2 ? 'coat' : 'casual' } })))); } catch (e) { /* */ }
-    HL.ui.fade(0);
-    this.kind = kind; this.ev = ev; this.done = done; this.recs = []; this.asked = 0; this.total = kind === 'pre' ? 1 : 2;
+    HL.ui.fade(0); if (window.CareerUI) CareerUI.backdrop = null;
+    this.on = true; this.kind = kind; this.ev = ev; this.done = done; this.recs = []; this.asked = 0; this.total = kind === 'pre' ? 1 : 2;
     const set = Scenes.enter('press', S.phase === 'school' ? 'school' : '');
     this.set = set;
     Scenes.spawn('me', { at: set.anchors.seat, anim: 'idle', o: { outfit: S.phase === 'school' ? 'kit' : 'track' } });
@@ -84,7 +84,7 @@ const PressRoom = {
     if (this.timerT <= 0) this.answer('timeout');
   },
   finish(skipped) {
-    clearInterval(this.typ); this.timerOn = false; this.cur = null;
+    clearInterval(this.typ); this.timerOn = false; this.cur = null; this.on = false;
     this.ui.classList.remove('on');
     if (this.kind === 'post') News.addQuotes(this.recs);
     if (skipped && this.kind === 'post') { Career.S.fame = clamp(Career.S.fame - 1, 0, 100); News.pending = null; }

@@ -1,1 +1,4 @@
 dist/
+# the game's own textures are source: the build packs them
+!assets/*.png
+!assets/*.jpg

@@ -12,6 +12,26 @@ Scenes.frame = (x, y, z, yaw) => ({ x, y, z, yaw, s: Math.sin(yaw), c: Math.cos(
 /* (a rotation by the frame's heading, the engine's sense of yaw: local +z is the frame's forward, local +x its forward turned a quarter clockwise seen from above — at heading 0, the world's own axes) */
 Scenes.W = function (p, out) { const F = Scenes.F; out = out || new THREE.Vector3(); if (!F) return out.set(p[0], p[1], p[2]); return out.set(F.x + F.c * p[0] + F.s * p[2], F.y + p[1], F.z - F.s * p[0] + F.c * p[2]); };
 Scenes.WY = (yaw) => (Scenes.F ? Scenes.F.yaw : 0) + (yaw || 0);
+/* ------------------------------------------------------------------ props for the occasions the castle does not dress for itself */
+const SProps = {
+  mats: null,
+  M() { if (this.mats) return this.mats; const m = this.mats = {}; m.pump = new THREE.MeshStandardMaterial({ color: 0xd8701a, roughness: 0.6 }); m.stem = new THREE.MeshStandardMaterial({ color: 0x4a5a22, roughness: 0.8 });
+    const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'); g.fillStyle = '#000'; g.fillRect(0, 0, 128, 128); g.fillStyle = '#ffd070'; g.beginPath(); g.moveTo(30, 52); g.lineTo(50, 52); g.lineTo(40, 34); g.fill(); g.beginPath(); g.moveTo(78, 52); g.lineTo(98, 52); g.lineTo(88, 34); g.fill(); g.beginPath(); g.moveTo(22, 74); g.lineTo(106, 74); g.lineTo(92, 98); g.lineTo(78, 88); g.lineTo(64, 100); g.lineTo(50, 88); g.lineTo(36, 98); g.closePath(); g.fill();
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; m.face = new THREE.MeshBasicMaterial({ map: t, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, color: new THREE.Color(2.4, 1.6, 0.7) });
+    m.fir = new THREE.MeshStandardMaterial({ color: 0x1c3a22, roughness: 0.85 }); m.trunk = new THREE.MeshStandardMaterial({ color: 0x3a2614, roughness: 0.9 }); m.bauble = [0xc82020, 0xe8b830, 0x2a5ad0, 0xd8d8e0].map((c) => new THREE.MeshStandardMaterial({ color: c, metalness: 0.8, roughness: 0.25, emissive: c, emissiveIntensity: 0.25 }));
+    m.light = new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 2.4, 1.2) }); m.snow = new THREE.MeshStandardMaterial({ color: 0xf2f5fa, roughness: 0.7 }); return m; },
+  pumpkin(s) { const M = this.M(), g = new THREE.Group(), geo = new THREE.SphereGeometry(0.42, 18, 12), pa = geo.attributes.position; for (let i = 0; i < pa.count; i++) { const x = pa.getX(i), z = pa.getZ(i), a = Math.atan2(z, x), k = 1 + 0.06 * Math.cos(a * 8); pa.setXYZ(i, x * k, pa.getY(i) * 0.82, z * k); } geo.computeVertexNormals();
+    const b = new THREE.Mesh(geo, M.pump); b.castShadow = true; g.add(b); const st = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.05, 0.16, 6), M.stem); st.position.y = 0.38; g.add(st); const f = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.62), M.face); f.position.set(0, 0.02, 0.4); g.add(f); g.scale.setScalar(s || 1); return g; },
+  fir(h) { const M = this.M(), g = new THREE.Group(), n = 6; const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, h * 0.18, 8), M.trunk); tr.position.y = h * 0.09; g.add(tr);
+    for (let i = 0; i < n; i++) { const t = i / n, r = (1 - t) * h * 0.3 + 0.2, c = new THREE.Mesh(new THREE.ConeGeometry(r, h * 0.26, 12), M.fir); c.position.y = h * 0.16 + t * h * 0.72 + h * 0.13; c.castShadow = true; g.add(c);
+      for (let k = 0; k < 7 - i; k++) { const a = k / (7 - i) * TAU + i, bb = new THREE.Mesh(new THREE.SphereGeometry(0.07 + RNG() * 0.04, 8, 6), i % 2 ? M.bauble[(k + i) % 4] : M.light); bb.position.set(Math.cos(a) * r * 0.86, c.position.y - h * 0.1, Math.sin(a) * r * 0.86); g.add(bb); } }
+    const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.22, 0), M.light); star.position.y = h * 1.02; g.add(star); return g; },
+  snow(cx, cy, cz, w, hgt) { const N = 1400, pos = new Float32Array(N * 3); for (let i = 0; i < N; i++) { pos[i * 3] = cx + (RNG() - 0.5) * w; pos[i * 3 + 1] = cy + RNG() * hgt; pos[i * 3 + 2] = cz + (RNG() - 0.5) * w; }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); const m = new THREE.PointsMaterial({ color: 0xffffff, size: 0.07, transparent: true, opacity: 0.85, depthWrite: false }); const pts = new THREE.Points(g, m); pts.frustumCulled = false;
+    pts.userData.tick = (dt) => { for (let i = 0; i < N; i++) { let y = pos[i * 3 + 1] - dt * (0.6 + (i % 7) * 0.08); if (y < cy) y += hgt; pos[i * 3 + 1] = y; pos[i * 3] += Math.sin(MG.rt * 0.7 + i) * dt * 0.15; } g.attributes.position.needsUpdate = true; }; return pts; },
+  /* put a list of props into the stage, removed with it */
+  place(S, list) { S.props = (S.props || []).concat(list); for (const o of list) R.scene.add(o); const l0 = S.onLeave, u0 = S.update; S.onLeave = () => { for (const o of list) R.scene.remove(o); if (l0) l0(); }; S.update = (dt, t) => { for (const o of list) { if (o.userData.tick) o.userData.tick(dt, t); if (o.userData.bob) o.position.y = o.userData.bob + Math.sin(t * 1.1 + o.userData.ph) * 0.18; } if (u0) u0(dt, t); }; },
+};
 /* ------------------------------------------------------------------ the stages */
 const STAGES = {
   /* the Great Hall: the frame stands in the aisle between the middle tables, facing the dais (local −z is the dais, +z the doors) */
@@ -39,7 +59,12 @@ const STAGES = {
       danceOrbit: { orbit: { c: [0, 1.2, -L * 0.18], r: 3.6, h: 0.5, a0: 0.4, w: 0.12 }, p: [0, 2, 4], l: [0, 1.2, 0], fov: 42, dur: 20 },
       examWide: { p: [0, 6.5, 12], l: [0, 1, -12], p2: [-2, 4.5, 6], fov: 50, dur: 10 },
     };
-    return { F, anchors: A, cams: C, house: h, tables: TX, variant, extras: variant === 'yule' || variant === 'exams' ? 0 : 6 };
+    const S = { F, anchors: A, cams: C, house: h, tables: TX, variant, extras: variant === 'yule' || variant === 'exams' ? 0 : 6 };
+    const prev = Scenes.F; Scenes.F = F; const list = [];
+    if (variant === 'halloween') for (let i = 0; i < 26; i++) { const p = SProps.pumpkin(0.9 + RNG() * 0.4), w = Scenes.W([TX[i % 4] + (RNG() - 0.5) * 5, 6.5 + RNG() * 4, -L / 2 + 4 + (i / 26) * (L - 4)], new THREE.Vector3()); p.position.copy(w); p.rotation.y = F.yaw + PI + (RNG() - 0.5) * 0.8; p.userData.bob = w.y; p.userData.ph = i; list.push(p); }
+    if (variant === 'christmas' || variant === 'yule' || variant === 'gala') for (const [lx, lz] of [[-15.5, -8], [15.5, -8], [-15.5, 8], [15.5, 8]]) { const t = SProps.fir(variant === 'gala' ? 5.5 : 7), w = Scenes.W([lx, 0, lz], new THREE.Vector3()); t.position.copy(w); list.push(t); }
+    Scenes.F = prev; if (list.length) SProps.place(S, list);
+    return S;
   },
   /* a common room: by the fire, two armchairs (chairL / chairR), a friend standing (standF) */
   common(variant) {
@@ -63,7 +88,9 @@ const STAGES = {
     const V = HL.VIL; if (!V) return null; const x = V.x + 6, z = V.z, y = HL.gy(x, z); const F = Scenes.frame(x, y, z, -HALF);
     const A = { streetMe: [-0.6, 0, 6, PI * 0.9], streetF: [0.6, 0, 5.4, -PI * 0.85], streetR: [0.3, 0, 2.2, 0] };
     const C = { default: { p: [0, 2, 12], l: [0, 1.5, 0], fov: 50 }, streetWide: { p: [2.5, 4.5, 16], l: [0, 2, -8], p2: [1.5, 3.4, 11], fov: 50, dur: 10 }, streetClose: { p: [1.4, 1.65, 8.2], l: [-0.1, 1.45, 5.6], p2: [1.1, 1.6, 7.6], fov: 40, dur: 10 } };
-    return { F, anchors: A, cams: C, variant, ground: true };
+    const S = { F, anchors: A, cams: C, variant, ground: true };
+    if (variant === 'snow') { const prev = Scenes.F; Scenes.F = F; const w = Scenes.W([0, 0, 4], new THREE.Vector3()); Scenes.F = prev; SProps.place(S, [SProps.snow(w.x, w.y, w.z, 34, 14)]); }
+    return S;
   },
   /* the Black Lake: a boat on the open water below the crag, the castle lit on the cliff above (first-years cross by boat) */
   lake() {
@@ -140,7 +167,7 @@ Scenes.hidePlayer = function (h) { const P = PLAYER.a; if (!P) return; P.root.vi
 Scenes.leave = function (quiet) {
   if (!this.active) return;
   for (const id in this.cast) this.cast[id].a.dispose(); this.cast = {}; for (const a of this.extras) a.dispose(); this.extras = []; if (this.set && this.set.onLeave) this.set.onLeave();
-  this.active = false; this.set = null; this.F = null; this.mode = null; Dialogue.hide(); CAM.cine = null; CAM.snap = true; document.body.classList.remove('cine');
+  this.active = false; this.set = null; this.F = null; this.mode = null; Dialogue.hide(); CAM.cine = null; CAM.snap = true;
   const P = PLAYER.a, p = this._pl; if (P && p) { P.x = p.x; P.y = p.y; P.z = p.z; P.yaw = p.yaw; PLAYER.state = p.st === 'cine' ? 'move' : p.st || 'move'; Scenes.hidePlayer(false); CAM.reset(P.yaw); } this._pl = null;
   if (!quiet) { MG.state = this._ms === 'scene' ? 'play' : (this._ms || 'play'); }
 };
@@ -214,9 +241,9 @@ const Script = {
   async play(script, done) {
     HL.ui.fade(1); Dialogue.loading(true);
     try { await Scenes.need((script.cast || []).concat([{ id: 'me', o: {} }])); } catch (e) { console.warn('stage cast', e); }
-    Scenes.enter(script.set, script.variant, { weather: script.weather });
+    if (window.CareerUI) CareerUI.backdrop = null; Scenes.enter(script.set, script.variant, { weather: script.weather });
     for (const c of script.cast || []) Scenes.spawn(c.id, c);
-    document.body.classList.add('cine'); this.beats = script.beats.slice(); this.i = 0; this.done = done; this.waiting = null; this.waitT = 0;
+    this.beats = script.beats.slice(); this.i = 0; this.done = done; this.waiting = null; this.waitT = 0;
     // a few frames under the black so the new view is drawn (and its shaders built) before it is shown
     for (let k = 0; k < 3; k++) await new Promise((r) => requestAnimationFrame(r));
     Dialogue.loading(false); HL.ui.fade(0); Dialogue.show(true); MG.onKey = (code) => { if (code === 'Enter' || code === 'Space' || code === 'KeyE') Script.tap(); else if (code === 'Escape') Script.skip(); };
@@ -260,7 +287,7 @@ const Script = {
   skip() { if (!this.beats) return; this.beats = this.beats.filter((b, k) => k < this.i || b.choice); this.next(); },
   finish() {
     const d = this.done; this.beats = null; this.done = null; this.waiting = null; MG.onKey = null;
-    Dialogue.hide(); document.body.classList.remove('cine');
+    Dialogue.hide();
     if (d) d();
   },
 };

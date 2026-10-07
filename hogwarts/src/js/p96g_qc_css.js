@@ -17,8 +17,8 @@ QC.CSS = String.raw`#scrCareer, #press, #locker { --night: #0a0c16; --ink: #1215
 }
 #scrCareer .panel h2 { font-family: var(--f-head); font-weight: 800; letter-spacing: .12em; margin: 0 0 12px; font-size: 20px; color: var(--gold-hi); text-wrap: balance; }
 #scrCareer .panel h3 { font-family: var(--f-head); font-weight: 700; letter-spacing: .1em; font-size: 13px; margin: 0 0 6px; color: var(--mist); }
-#scrCareer .bar { height: 4px; background: rgba(255,255,255,.12); border-radius: 4px; overflow: hidden; margin: 22px 0 10px; }
-#scrCareer .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--gold), var(--gold-hi)); transition: width .2s; }
+#scrCareer .bar, #locker .bar, #press .bar { height: 4px; background: rgba(255,255,255,.12); border-radius: 4px; overflow: hidden; margin: 22px 0 10px; }
+#scrCareer .bar i, #locker .bar i, #press .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--gold), var(--gold-hi)); transition: width .2s; }
 #scrCareer .tip { font-size: 13px; opacity: .75; letter-spacing: .04em; min-height: 1.4em; }
 #scrCareer .menuGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
 #scrCareer .mbtn { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(241,228,198,.18); background: rgba(255,255,255,.04); cursor: pointer; min-height: 56px; }
@@ -47,9 +47,9 @@ QC.CSS = String.raw`#scrCareer, #press, #locker { --night: #0a0c16; --ink: #1215
 #scrCareer .teamCard.on { border-color: var(--gold); background: rgba(232,184,74,.16); }
 #scrCareer .teamCard.vs { border-color: var(--mist); background: rgba(169,188,211,.12); }
 #scrCareer .teamCard.dis { opacity: .3; }
-#scrCareer .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; flex-wrap: wrap; }
-#scrCareer .act { padding: 11px 20px; border-radius: 11px; border: 1px solid rgba(241,228,198,.25); background: rgba(255,255,255,.05); font-family: var(--f-head); font-weight: 700; letter-spacing: .14em; font-size: 13.5px; cursor: pointer; min-height: 44px; }
-#scrCareer .act.go { border-color: var(--gold); background: linear-gradient(180deg, #f0c45a, #b9832a); color: #241400; }
+#scrCareer .actions, #locker .actions, #press .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; flex-wrap: wrap; }
+#scrCareer .act, #locker .act, #press .act { padding: 11px 20px; border-radius: 11px; border: 1px solid rgba(241,228,198,.25); background: rgba(255,255,255,.05); font-family: var(--f-head); font-weight: 700; letter-spacing: .14em; font-size: 13.5px; cursor: pointer; min-height: 44px; }
+#scrCareer .act.go, #locker .act.go, #press .act.go { border-color: var(--gold); background: linear-gradient(180deg, #f0c45a, #b9832a); color: #241400; }
 #scrCareer input[type=range] { width: 100%; accent-color: var(--gold); touch-action: pan-x; height: 28px; }
 #scrCareer .twocol { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); column-gap: 22px; }
 #scrCareer .results { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; text-align: center; margin: 4px 0 14px; }
@@ -79,18 +79,18 @@ QC.CSS = String.raw`#scrCareer, #press, #locker { --night: #0a0c16; --ink: #1215
 #scrCareer { background: linear-gradient(90deg, rgba(6,7,12,.72), rgba(6,7,12,.18) 60%, rgba(6,7,12,0)); place-items: stretch; }
 #scrCareer .panel { align-self: center; justify-self: center; }
 #scrCareer .panel.wide { width: min(900px, 100%); }
-#scrCareer .note { opacity: .8; line-height: 1.45; font-size: 14.5px; margin: 0 0 8px; }
-#scrCareer .bar { position: relative; height: 6px; border-radius: 4px; background: rgba(255,255,255,.12); overflow: hidden; }
-#scrCareer .bar > i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: linear-gradient(90deg, #b9832a, #ffe39a); }
-#scrCareer .bar > u { position: absolute; top: -2px; bottom: -2px; width: 2px; background: #fff; opacity: .55; text-decoration: none; }
+#scrCareer .note, #locker .note, #press .note { opacity: .8; line-height: 1.45; font-size: 14.5px; margin: 0 0 8px; }
+#scrCareer .bar, #locker .bar, #press .bar { position: relative; height: 6px; border-radius: 4px; background: rgba(255,255,255,.12); overflow: hidden; }
+#scrCareer .bar > i, #locker .bar > i, #press .bar > i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; background: linear-gradient(90deg, #b9832a, #ffe39a); }
+#scrCareer .bar > u, #locker .bar > u, #press .bar > u { position: absolute; top: -2px; bottom: -2px; width: 2px; background: #fff; opacity: .55; text-decoration: none; }
 .tone { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font-style: normal; font-size: 13px; flex: none; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.2); }
 .tone.gr { color: #ffe39a; border-color: #e8b84a; }
 .tone.tm { color: #8ac8ff; border-color: #5ab0ff; }
 .tone.sh { color: #ffb0f0; border-color: #e070d0; }
 .tone.fi { color: #ff9a6a; border-color: #e0533a; }
 .tone.de { color: #c8ccd4; }
-#scrCareer .up { color: #7ae08a !important; }
-#scrCareer .dn { color: #ff7a6a !important; }
+#scrCareer .up, #locker .up, #press .up { color: #7ae08a !important; }
+#scrCareer .dn, #locker .dn, #press .dn { color: #ff7a6a !important; }
 #scrCareer .hub { display: grid; grid-template-columns: minmax(300px, 420px) 1fr; grid-template-rows: auto auto 1fr auto; gap: 10px 18px; height: 100%; align-content: start; }
 #scrCareer .hubTop { grid-column: 1; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line); }
 #scrCareer .hubTop img { width: 40px; height: 48px; }
@@ -141,7 +141,7 @@ QC.CSS = String.raw`#scrCareer, #press, #locker { --night: #0a0c16; --ink: #1215
 #scrCareer .resGoals .chem { display: flex; gap: 14px; flex-wrap: wrap; opacity: .9; }
 #scrCareer .resGoals .chem div { display: flex; gap: 5px; }
 #scrCareer .lvlUp { margin-top: 10px; padding: 8px 12px; border-radius: 10px; text-align: center; background: linear-gradient(90deg, rgba(232,184,74,.35), rgba(232,184,74,.1)); color: var(--gold-hi); font-family: var(--f-head); letter-spacing: .12em; font-size: 13.5px; }
-#scrCareer .actions.sticky { position: sticky; bottom: -16px; padding: 10px 0 2px; background: linear-gradient(180deg, rgba(14,16,28,0), rgba(14,16,28,.95) 40%); }
+#scrCareer .actions.sticky, #locker .actions.sticky, #press .actions.sticky { position: sticky; bottom: -16px; padding: 10px 0 2px; background: linear-gradient(180deg, rgba(14,16,28,0), rgba(14,16,28,.95) 40%); }
 #scrCareer .lvl b { font-family: var(--f-head); letter-spacing: .12em; color: var(--gold-hi); }
 #scrCareer .lvl span { display: block; font-size: 12px; opacity: .75; margin-top: 4px; }
 #scrCareer .lvl .bar { margin-top: 6px; }
@@ -360,6 +360,7 @@ QC.CSS = String.raw`#scrCareer, #press, #locker { --night: #0a0c16; --ink: #1215
 #scrCareer .creator { width: 100%; height: 100%; display: grid; grid-template-columns: minmax(300px, 46%) 1fr; align-items: center; }
 #scrCareer .crPanel { max-height: 100%; overflow-y: auto; background: linear-gradient(180deg, rgba(24,17,10,.9), rgba(10,7,5,.92)); border: 1px solid rgba(214,170,74,.5); padding: 14px 18px; }
 #scrCareer .crPanel h2 { font-family: var(--f-head); font-weight: 500; letter-spacing: .2em; font-size: 19px; margin: 0 0 6px; color: #f3dfa8; }
-#scrCareer .note { font-style: italic; opacity: .85; }
+#scrCareer .note, #locker .note, #press .note { font-style: italic; opacity: .85; }
+#locker .lkBtns { margin-right: 52px; } #locker .act { min-height: 36px; padding: 8px 14px; }
 @media (max-height: 620px) { #scrCareer .crPanel { padding: 10px 12px; } #scrCareer .row { grid-template-columns: 92px 1fr; padding: 3px 0; } #scrCareer .seg button { padding: 4px 8px; min-height: 30px; font-size: 12px; } #scrCareer .crPanel h2 { font-size: 16px; } #scrCareer .note { font-size: 12px; } }
 `;

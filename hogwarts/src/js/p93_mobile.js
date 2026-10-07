@@ -19,12 +19,14 @@ body.touch #hlHint { bottom: calc(8px + env(safe-area-inset-bottom)); left: 47%;
 body.touch #hlPrompt { top: 58%; font-size: 14px; padding: 5px 14px; }
 body.touch #hlToast { top: 13%; padding: 12px 40px 14px; max-width: 70vw; } body.touch #hlToast .a { font-size: 20px; letter-spacing: 0.16em; } body.touch #hlToast .b { font-size: 13px; } body.touch #hlToast hr { width: 200px; margin: 4px auto; }
 body.touch #hlPop { top: 30%; font-size: 15px; } body.touch #hlName { bottom: 30%; font-size: 15px; }
+body.touch[data-tm="fly"] #hlHint, body.touch[data-tm="match"] #hlHint { bottom: calc(60px + env(safe-area-inset-bottom)); }
 body.touch #hlFly { bottom: calc(8px + env(safe-area-inset-bottom)); width: 190px; } body.touch #hlFly .sp { font-size: 20px; } body.touch #hlFly .al { font-size: 9px; margin-top: 3px; }
 body.touch #hlSay { bottom: calc(10px + env(safe-area-inset-bottom)); width: min(560px, 48vw); left: 47%; padding: 8px 16px 10px; pointer-events: none; }
 body.touch #hlSay .nm { font-size: 10px; } body.touch #hlSay .tx { font-size: 14px; min-height: 38px; margin-top: 4px; } body.touch #hlSay .more { font-size: 8px; }
 body.touch #hlItem { top: 30%; left: 12px; width: 240px; transform: scale(0.82); transform-origin: 0 50%; }
 body.touch #hlQ { top: calc(4px + env(safe-area-inset-top)); } body.touch #hlQ .sb { padding: 3px 12px; gap: 9px; } body.touch #hlQ .sc { font-size: 24px; min-width: 38px; } body.touch #hlQ .cl { font-size: 11px; } body.touch #hlQ .tm { font-size: 11px; } body.touch #hlQ .st { font-size: 11px; margin-top: 3px; }
-body.touch #hlTgt span { font-size: 11px; } body.touch .hlDmg { font-size: 16px; }
+body.touch #hlTgt span { font-size: 11px; }
+body.touch #hlQtut { top: calc(4px + env(safe-area-inset-top)) !important; max-width: 62vw !important; padding: 6px 14px 8px !important; transform: translateX(-50%) scale(0.86) !important; transform-origin: 50% 0 !important; } body.touch .hlDmg { font-size: 16px; }
 /* ---------------- screens on a short display */
 @media (max-height: 620px) {
   .hlBtn { font-size: 15px; padding: 8px 24px; margin: 4px; min-width: 230px; letter-spacing: 0.26em; }
