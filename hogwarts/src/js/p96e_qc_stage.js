@@ -115,7 +115,7 @@ const STAGES = {
     const A = { lockMe: [0, 0, -1.7, 0], board: [0, 0, 2.6, PI], pitchMe: [0, 0, -12, 0], me: [0, 0, 0, PI + 0.35] };
     for (let i = 0; i < 7; i++) { const a = -1.2 + i * (2.4 / 6); A['mate' + i] = [Math.sin(a) * 2.7, 0, Math.cos(a) * 2.7 - 1.5, a + PI]; }
     const C = { default: { p: [0.4, 1.9, -6.4], l: [0, 1.2, 0.6], fov: 50 }, lockerWide: { p: [3.4, 2.4, -5.4], l: [0, 1.1, 0.4], p2: [2.4, 2.1, -4.4], fov: 52, dur: 10 }, board: { p: [0.7, 1.7, 0.9], l: [0, 1.4, 2.6], fov: 46 },
-      hub: { orbit: { c: [0, 1.4, 0.2], r: 7.5, h: 2.2, a0: PI - 0.5, w: 0.03 }, p: [0, 2, -6], l: [0, 1.2, 0], fov: 48, dur: 999 } };
+      hub: { orbit: { c: [0, 4.6, 0.2], r: 8, h: -2.8, a0: PI - 0.5, w: 0.03 }, p: [0, 2, -6], l: [0, 1.2, 0], fov: 52, dur: 999 } };   // (low, looking up at the stands and the sky)
     return { F, anchors: A, cams: C, variant, ground: true };
   },
   /* the pitch itself */

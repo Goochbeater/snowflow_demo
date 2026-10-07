@@ -28,6 +28,7 @@ const Locker = {
     const capt = S.phase === 'school' && S.capt && S.mates[S.capt] && !S.mates[S.capt].gone ? S.mates[S.capt] : null;
     this.coachName = S.phase === 'school' ? (S.captain ? `${Career.first()} (you're captain)` : capt ? capt.name : 'Madam Hooch') : S.phase === 'wc' ? 'The national coach' : 'Coach Brennan Hale';
     QC.inject([key]); HL.ui.fade(1);
+    if (S.phase !== 'school' && ev && ev.opp != null) { const ok = QC.key(ev.opp), home = ev.home !== false; QC.dress(home ? key : ok, home ? ok : key); }   // the stands already fly the two sides' colours
     const tpls = roster.map((m) => HL.student(key, m.body === 'f', (m.look && m.look.v) || 1, true)), coachT = capt ? HL.student(key, capt.body === 'f', (capt.look && capt.look.v) || 1, true) : (S.phase === 'school' ? 'prof_b' : 'prof_a'), meT = HL.student(key, S.profile.body === 'f', (S.profile.look && S.profile.look.v) || 1, true);
     await CAST.need([...tpls, coachT, meT]);
     Scenes.leave(true); CareerUI.root.hidden = true; CareerUI.backdrop = null;
