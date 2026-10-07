@@ -19,7 +19,7 @@ body.touch #hlHint { bottom: calc(8px + env(safe-area-inset-bottom)); left: 47%;
 body.touch #hlPrompt { top: 58%; font-size: 14px; padding: 5px 14px; }
 body.touch #hlToast { top: 13%; padding: 12px 40px 14px; max-width: 70vw; } body.touch #hlToast .a { font-size: 20px; letter-spacing: 0.16em; } body.touch #hlToast .b { font-size: 13px; } body.touch #hlToast hr { width: 200px; margin: 4px auto; }
 body.touch #hlPop { top: 30%; font-size: 15px; } body.touch #hlName { bottom: 30%; font-size: 15px; }
-body.touch[data-tm="fly"] #hlHint, body.touch[data-tm="match"] #hlHint { bottom: calc(60px + env(safe-area-inset-bottom)); }
+body.touch[data-tm="fly"] #hlHint, body.touch[data-tm="match"] #hlHint { bottom: calc(92px + env(safe-area-inset-bottom)); max-width: 50vw; }
 body.touch #hlFly { bottom: calc(8px + env(safe-area-inset-bottom)); width: 190px; } body.touch #hlFly .sp { font-size: 20px; } body.touch #hlFly .al { font-size: 9px; margin-top: 3px; }
 body.touch #hlSay { bottom: calc(10px + env(safe-area-inset-bottom)); width: min(560px, 48vw); left: 47%; padding: 8px 16px 10px; pointer-events: none; }
 body.touch #hlSay .nm { font-size: 10px; } body.touch #hlSay .tx { font-size: 14px; min-height: 38px; margin-top: 4px; } body.touch #hlSay .more { font-size: 8px; }

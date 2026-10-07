@@ -339,7 +339,8 @@ TOUCH.fixEl = function (el) {
   const RX = /mouse|[Cc]lick|LMB|RMB|wheel to|hold <kbd>SHIFT|PRESS ANY KEY|ESC TO CLOSE|TO SKIP|<kbd>1<\/kbd>\s*(?:–|-|&ndash;)/;
   if (el.querySelector && (el.innerHTML.indexOf('<kbd') >= 0 || RX.test(el.innerHTML)) && !el.closest('[data-tf]')) {
     if (RX.test(el.innerHTML) && el.children.length < 60 && !el.querySelector('input,canvas,.view')) { const h = TOUCH.fixText(el.innerHTML); if (h !== el.innerHTML) el.innerHTML = h; }
-    for (const k of el.querySelectorAll('kbd:not(.tk)')) { if (k.closest('.hlMap')) continue; const c = TOUCH.chip(k.textContent); if (!c) continue; if (!c.svg && !c.t) { k.style.display = 'none'; k.classList.add('tk'); continue; } k.classList.add('tk'); if (!c.t) k.classList.add('nolbl'); k.innerHTML = c.svg + (c.t ? '<span>' + c.t + '</span>' : ''); }
+    for (const k of el.querySelectorAll('kbd:not(.tk)')) { if (k.closest('.hlMap')) continue; const c = TOUCH.chip(k.textContent); if (!c) continue; if (!c.svg && !c.t) { k.style.display = 'none'; k.classList.add('tk'); continue; } k.classList.add('tk'); if (!c.t) k.classList.add('nolbl'); k.innerHTML = c.svg + (c.t ? '<span>' + c.t + '</span>' : '');
+      /* "PASS pass": the chip already says it */ const n = k.nextSibling, m = c.t && n && n.nodeType === 3 && /^[\s\u00a0]*([A-Za-z]+)/.exec(n.textContent); if (m && m[1].toLowerCase() === c.t.split(' ').pop().toLowerCase()) n.textContent = ' ' + n.textContent.slice(m[0].length).replace(/^[\s\u00a0]+/, ''); }
   }
 };
 TOUCH.observe = function () {
