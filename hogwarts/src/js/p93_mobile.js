@@ -29,37 +29,37 @@ body.touch #hlTgt span { font-size: 11px; }
 body.touch #hlQtut { top: calc(4px + env(safe-area-inset-top)) !important; max-width: 62vw !important; padding: 6px 14px 8px !important; transform: translateX(-50%) scale(0.86) !important; transform-origin: 50% 0 !important; } body.touch .hlDmg { font-size: 16px; }
 /* ---------------- screens on a short display */
 @media (max-height: 620px) {
-  .hlBtn { font-size: 15px; padding: 8px 24px; margin: 4px; min-width: 230px; letter-spacing: 0.26em; }
-  .hlBtn:hover, .hlBtn.sel { letter-spacing: 0.3em; }
-  .hlTitle { padding-bottom: 5vh; } .hlTitle h1 { font-size: min(8vw, 17vh); top: 2.5vh; } .hlTitle h2 { font-size: min(1.7vw, 3.2vh); top: calc(2.5vh + min(9vw, 19vh)); }
-  .hlTitle .hlBtn { min-width: 272px; box-sizing: border-box; }
-  .hlTitle .cr { font-size: 9px; max-width: 40vw; bottom: 6px; } .hlTitle .v { font-size: 9px; bottom: 6px; }
-  .hlSort { overflow-y: auto; justify-content: safe center; padding: 8px 0 12px; } .hlSort p { max-width: 86vw; text-align: center; }
-  .hlSort h3 { font-size: 19px; } .hlSort p { font-size: 13px; margin: 0 0 10px; }
-  .hlHouses { gap: 10px; } .hlH { height: min(50vh, 300px); width: min(19vw, 190px); } .hlH .tr { font-size: 10px; margin-top: 4px; padding: 0 4px; line-height: 1.25; } .hlH svg { width: 54%; margin-top: 9%; } .hlH .nm { font-size: min(1.8vw, 16px); }
-  .hlRow { margin-top: 10px; gap: 6px; flex-wrap: wrap; justify-content: center; } .hlRow .hlBtn { min-width: 110px; font-size: 12px; padding: 7px 14px; }
-  .hlPause { flex-flow: row wrap; justify-content: center; align-content: safe center; overflow-y: auto; padding: 10px 4vw 14px; gap: 0 6px;  background: rgba(4,3,6,0.88); backdrop-filter: blur(3px); } .hlPause h3 { font-size: 20px; margin: 0 0 6px; }
-  .hlPause > :not(.hlBtn) { flex-basis: 100%; text-align: center; } .hlPause > .hlKeys { display: grid; justify-content: center; text-align: left; } .hlPause > .hlRow { display: flex; }
-  .hlPause > .hlBtn { min-width: 0; flex: 0 1 40vw; max-width: 340px; font-size: 13px; padding: 8px 10px; }
-  .hlKeys { font-size: 12.5px; gap: 3px 18px; margin: 2px 0 10px; }
-  .hlJ .book { height: 92vh; width: 96vw; } .hlJ .pg { padding: 14px 18px 26px; } .hlJ h1 { font-size: 20px; } .hlJ .rule { margin: 3px 20px 6px; }
-  .hlJ .list { height: calc(100% - 58px); } .hlJ .it { font-size: 14px; padding: 4px 6px; } .hlJ .sec { font-size: 10px; margin: 8px 0 4px; }
-  .hlJ h2 { font-size: 19px; } .hlJ .by { font-size: 12.5px; } .hlJ .desc { font-size: 13.5px; line-height: 1.36; margin: 6px 2px; } .hlJ .desc:first-letter { font-size: 30px; }
-  .hlJ .ob { font-size: 13px; padding: 2px 0 2px 22px; } .hlJ .rw { font-size: 12.5px; margin-top: 6px; } .hlJ .foot { font-size: 9px; bottom: 6px; } .hlJ .pg.r { overflow-y: auto; }
-  .hlJ .letter { max-height: 94vh; overflow-y: auto; padding: 18px 26px 30px; font-size: 14.5px; line-height: 1.4; width: min(620px, 80vw); }
-  .hlJ .letter .crest { font-size: 18px; } .hlJ .letter .crest span { font-size: 12px; } .hlJ .letter p { margin: 0 0 8px; } .hlJ .letter p.sig i { font-size: 20px; } .hlJ .letter .seal { width: 52px; height: 52px; font-size: 21px; right: 26px; bottom: 30px; }
+  body .hlBtn { font-size: 15px; padding: 8px 24px; margin: 4px; min-width: 230px; letter-spacing: 0.26em; }
+  body .hlBtn:hover, body .hlBtn.sel { letter-spacing: 0.3em; }
+  body .hlTitle { padding-bottom: 5vh; } body .hlTitle h1 { font-size: min(8vw, 17vh); top: 2.5vh; } body .hlTitle h2 { font-size: min(1.7vw, 3.2vh); top: calc(2.5vh + min(9vw, 19vh)); }
+  body .hlTitle .hlBtn { min-width: 272px; box-sizing: border-box; }
+  body .hlTitle .cr { font-size: 9px; max-width: 40vw; bottom: 6px; } body .hlTitle .v { font-size: 9px; bottom: 6px; }
+  body .hlSort { overflow-y: auto; justify-content: safe center; padding: 8px 0 12px; } body .hlSort p { max-width: 86vw; text-align: center; }
+  body .hlSort h3 { font-size: 19px; } body .hlSort p { font-size: 13px; margin: 0 0 10px; }
+  body .hlHouses { gap: 10px; } body .hlH { height: min(50vh, 300px); width: min(19vw, 190px); } body .hlH .tr { font-size: 10px; margin-top: 4px; padding: 0 4px; line-height: 1.25; } body .hlH svg { width: 54%; margin-top: 9%; } body .hlH .nm { font-size: min(1.8vw, 16px); }
+  body .hlRow { margin-top: 10px; gap: 6px; flex-wrap: wrap; justify-content: center; } body .hlRow .hlBtn { min-width: 110px; font-size: 12px; padding: 7px 14px; }
+  body .hlPause { flex-flow: row wrap; justify-content: center; align-content: safe center; overflow-y: auto; padding: 10px 4vw 14px; gap: 0 6px;  background: rgba(4,3,6,0.88); backdrop-filter: blur(3px); } body .hlPause h3 { font-size: 20px; margin: 0 0 6px; }
+  body .hlPause > :not(.hlBtn) { flex-basis: 100%; text-align: center; } body .hlPause > .hlKeys { display: grid; justify-content: center; text-align: left; } body .hlPause > .hlRow { display: flex; }
+  body .hlPause > .hlBtn { min-width: 0; flex: 0 1 40vw; max-width: 340px; font-size: 13px; padding: 8px 10px; }
+  body .hlKeys { font-size: 12.5px; gap: 3px 18px; margin: 2px 0 10px; }
+  body .hlJ .book { height: 92vh; width: 96vw; } body .hlJ .pg { padding: 14px 18px 26px; } body .hlJ h1 { font-size: 20px; } body .hlJ .rule { margin: 3px 20px 6px; }
+  body .hlJ .list { height: calc(100% - 58px); } body .hlJ .it { font-size: 14px; padding: 4px 6px; } body .hlJ .sec { font-size: 10px; margin: 8px 0 4px; }
+  body .hlJ h2 { font-size: 19px; } body .hlJ .by { font-size: 12.5px; } body .hlJ .desc { font-size: 13.5px; line-height: 1.36; margin: 6px 2px; } body .hlJ .desc:first-letter { font-size: 30px; }
+  body .hlJ .ob { font-size: 13px; padding: 2px 0 2px 22px; } body .hlJ .rw { font-size: 12.5px; margin-top: 6px; } body .hlJ .foot { font-size: 9px; bottom: 6px; } body .hlJ .pg.r { overflow-y: auto; }
+  body .hlJ .letter { max-height: 94vh; overflow-y: auto; padding: 18px 26px 30px; font-size: 14.5px; line-height: 1.4; width: min(620px, 80vw); }
+  body .hlJ .letter .crest { font-size: 18px; } body .hlJ .letter .crest span { font-size: 12px; } body .hlJ .letter p { margin: 0 0 8px; } body .hlJ .letter p.sig i { font-size: 20px; } body .hlJ .letter .seal { width: 52px; height: 52px; font-size: 21px; right: 26px; bottom: 30px; }
   /* the pack: the whole screen, three columns sized to it, the bag scrolling if it must */
-  .hlInv .box { zoom: 1 !important; width: 100vw; height: 100vh; grid-template-columns: minmax(150px, 24%) auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 0 12px; padding: calc(8px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 8px calc(14px + env(safe-area-inset-left)); animation: none; box-shadow: none; border: 0; }
-  .hlInv .cn, .hlInv .box:before { display: none; } .hlInv .hd { padding: 0 0 4px; } .hlInv .hd h2 { font-size: 15px; } .hlInv .hd .fl { flex-basis: 90px; } #invClose { top: 6px; right: 60px; font-size: 10px; padding: 3px 8px; }
-  .hlInv .sh { font-size: 8.5px; letter-spacing: .22em; padding-bottom: 3px; margin-bottom: 5px; } .hlInv .ccol, .hlInv .dcol, .hlInv .rcol { min-height: 0; overflow-y: auto; }
-  #invWho { padding: 0 0 4px; } #invWho .lv { font-size: 9px; } #invWho .lv b { font-size: 17px; } #invWho .xp { height: 5px; margin: 4px 6px 2px; } #invWho .xpn { font-size: 10px; }
-  #invStats .st { font-size: 11px; padding: 1.5px 1px; } #invStats .st b { font-size: 11px; } #invStats .gap { height: 4px; } #invGold { font-size: 14px; padding-top: 6px; } #invGold:before { width: 14px; height: 14px; }
-  #invDoll { grid-template-columns: min(48px, 11vh) min(118px, 27vh) min(48px, 11vh); grid-template-rows: repeat(5, min(48px, 11vh)); gap: 6px 8px; } #invDoll .stage:after { font-size: 9px; }
-  #invBag { grid-template-columns: repeat(6, minmax(0, 52px)); gap: 4px; } .islot .lab { font-size: 7px; } .hlInv .hint { font-size: 10px; padding-top: 6px; line-height: 1.35; }
+  body .hlInv .box { zoom: 1 !important; width: 100vw; height: 100vh; grid-template-columns: minmax(150px, 24%) auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 0 12px; padding: calc(8px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 8px calc(14px + env(safe-area-inset-left)); animation: none; box-shadow: none; border: 0; }
+  body .hlInv .cn, body .hlInv .box:before { display: none; } body .hlInv .hd { padding: 0 0 4px; } body .hlInv .hd h2 { font-size: 15px; } body .hlInv .hd .fl { flex-basis: 90px; } body #invClose { top: 6px; right: 60px; font-size: 10px; padding: 3px 8px; }
+  body .hlInv .sh { font-size: 8.5px; letter-spacing: .22em; padding-bottom: 3px; margin-bottom: 5px; } body .hlInv .ccol, body .hlInv .dcol, body .hlInv .rcol { min-height: 0; overflow-y: auto; }
+  body #invWho { padding: 0 0 4px; } body #invWho .lv { font-size: 9px; } body #invWho .lv b { font-size: 17px; } body #invWho .xp { height: 5px; margin: 4px 6px 2px; } body #invWho .xpn { font-size: 10px; }
+  body #invStats .st { font-size: 11px; padding: 1.5px 1px; } body #invStats .st b { font-size: 11px; } body #invStats .gap { height: 4px; } body #invGold { font-size: 14px; padding-top: 6px; } body #invGold:before { width: 14px; height: 14px; }
+  body #invDoll { grid-template-columns: min(48px, 11vh) min(118px, 27vh) min(48px, 11vh); grid-template-rows: repeat(5, min(48px, 11vh)); gap: 6px 8px; } body #invDoll .stage:after { font-size: 9px; }
+  body #invBag { grid-template-columns: repeat(6, minmax(0, 52px)); gap: 4px; } body .islot .lab { font-size: 7px; } body .hlInv .hint { font-size: 10px; padding-top: 6px; line-height: 1.35; }
   /* the map: the sheet as tall as the screen, the storeys and the card beside it smaller */
-  .hlMap.mm .view { height: 96vh; max-width: 58vw; } .hlMap.mm .tabs3 { gap: 4px; margin-right: 10px; } .hlMap.mm .tab3 { font-size: 12.5px !important; padding: 4px 18px 4px 8px !important; } .hlMap.mm .tab3 small { font-size: 9.5px !important; }
-  .hlMap.mm .card { width: 190px; margin-left: 10px; padding: 10px 12px; max-height: 94vh; overflow-y: auto; box-sizing: border-box; } .hlMap.mm .card h3 { font-size: 21px !important; margin: 0 0 4px; } .hlMap.mm .card b { font-size: 11px !important; } .hlMap.mm .card p { font-size: 12px; } .hlMap.mm .card .lg { font-size: 11.5px; margin: 3px 0; gap: 6px; }
-  #hlTip { width: 250px; font-size: 12.5px; } #hlTip .th { padding: 8px 64px 8px 11px; min-height: 52px; } #hlTip .ti { width: 54px; height: 54px; } #hlTip .tn { font-size: 15px; } #hlTip .tt { font-size: 11.5px; } #hlTip .tbd { padding: 6px 11px 8px; }
+  body .hlMap.mm .view { height: 96vh; max-width: 58vw; } body .hlMap.mm .tabs3 { gap: 4px; margin-right: 10px; } body .hlMap.mm .tab3 { font-size: 12.5px !important; padding: 4px 18px 4px 8px !important; } body .hlMap.mm .tab3 small { font-size: 9.5px !important; }
+  body .hlMap.mm .card { width: 190px; margin-left: 10px; padding: 10px 12px; max-height: 94vh; overflow-y: auto; box-sizing: border-box; } body .hlMap.mm .card h3 { font-size: 21px !important; margin: 0 0 4px; } body .hlMap.mm .card b { font-size: 11px !important; } body .hlMap.mm .card p { font-size: 12px; } body .hlMap.mm .card .lg { font-size: 11.5px; margin: 3px 0; gap: 6px; }
+  body #hlTip { width: 250px; font-size: 12.5px; } body #hlTip .th { padding: 8px 64px 8px 11px; min-height: 52px; } body #hlTip .ti { width: 54px; height: 54px; } body #hlTip .tn { font-size: 15px; } body #hlTip .tt { font-size: 11.5px; } body #hlTip .tbd { padding: 6px 11px 8px; }
 }
 /* ---------------- the touch layer's own adjustments */
 body.touch .hlJ .foot:last-child, body.touch .hlTitle .v { opacity: 0.6; }
