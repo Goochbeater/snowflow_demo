@@ -121,7 +121,7 @@ QC.CSS = String.raw`#scrCareer, #press, #locker { --night: #0a0c16; --ink: #1215
 #scrCareer .hubTabs { grid-column: 2; grid-row: 1 / span 4; justify-self: end; align-self: start; display: grid; gap: 7px; width: min(190px, 100%); }
 #scrCareer .htab { position: relative; display: flex; align-items: center; gap: 8px; padding: 9px 13px; width: 100%; text-align: left; border-radius: 11px; background: var(--glass); border: 1px solid rgba(241,228,198,.18); font-family: var(--f-head); letter-spacing: .1em; font-size: 12.5px; cursor: pointer; min-height: 42px; }
 #scrCareer .htab i { font-style: normal; }
-#scrCareer .htab em { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--ember); font-style: normal; font-size: 11px; display: grid; place-items: center; font-family: var(--f-ui); }
+#scrCareer .htab em { position: absolute; top: 50%; right: 8px; transform: translateY(-50%); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--ember); font-style: normal; font-size: 11px; display: grid; place-items: center; font-family: var(--f-ui); }
 #scrCareer .htab[disabled] { opacity: .35; }
 #scrCareer .creator { display: grid; grid-template-columns: minmax(320px, 470px) 1fr; height: 100%; }
 #scrCareer .crPanel { padding: 14px 16px; border-radius: 16px; background: var(--glass-hi); border: 1px solid var(--line); overflow-y: auto; max-height: 100%; touch-action: pan-y; }
