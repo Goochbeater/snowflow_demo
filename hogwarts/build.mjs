@@ -23,8 +23,8 @@ if (mode === 'single') {
   fs.writeFileSync(out, page('', data)); console.log('built', out, (fs.statSync(out).size / 1048576).toFixed(1) + ' MB,', mods.length, 'modules');
 } else {
   const out = process.argv[3] || R('dist/web'), A = path.join(out, 'a'); fs.rmSync(A, { recursive: true, force: true }); fs.mkdirSync(A, { recursive: true });
-  // music streams from its own file; the rig / mesh buffers stay whole; sounds go in one pack, textures in four
-  const M = {}, packs = {}, kind = (id) => /^snd_mus_/.test(id) ? 'file' : /^snd_/.test(id) ? 'sfx' : /^tex_/.test(id) ? 'tex' : 'file';
+  // music streams from its own file (the short win sting is decoded, so it rides in the sound pack); the rig / mesh buffers stay whole; sounds go in one pack, textures in four
+  const M = {}, packs = {}, kind = (id) => /^snd_mus_(?!win$)/.test(id) ? 'file' : /^snd_/.test(id) ? 'sfx' : /^tex_/.test(id) ? 'tex' : 'file';
   const tex = bins.filter((id) => kind(id) === 'tex').sort(), TP = 4, texTotal = tex.reduce((s, id) => s + manifest[id].n, 0);
   let acc = 0; for (const id of tex) { const k = Math.min(TP - 1, Math.floor(acc / (texTotal / TP))); acc += manifest[id].n; (packs['tex' + k] = packs['tex' + k] || []).push(id); }
   packs.sfx = bins.filter((id) => kind(id) === 'sfx').sort();

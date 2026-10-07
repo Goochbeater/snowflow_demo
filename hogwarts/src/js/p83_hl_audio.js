@@ -30,8 +30,8 @@ HL.AU = { on: true, ctx: null, buf: {}, pend: {}, played: {}, last: {}, beds: {}
     AU.queue = AU.names().filter((n) => !/^mus_|^say_/.test(n)); if (AU.has('mus_win')) AU.queue.push('mus_win'); AU.pump();   // the effects are decoded behind the scenes at once; a voice when it is first wanted; the themes are streamed
   };
   AU.load = function (n) {
-    if (AU.buf[n]) return Promise.resolve(AU.buf[n]); if (AU.pend[n]) return AU.pend[n]; if (!ASSETS.has('snd_' + n) || !AU.ctx) return Promise.resolve(null);
-    const u = ASSETS.get('snd_' + n).slice();   /* (decodeAudioData takes the buffer it is given: a copy, so the pack stays whole) */
+    if (AU.buf[n]) return Promise.resolve(AU.buf[n]); if (AU.pend[n]) return AU.pend[n]; const u0 = AU.ctx && ASSETS.has('snd_' + n) ? ASSETS.get('snd_' + n) : null; if (!u0) return Promise.resolve(null);
+    const u = u0.slice();   /* (decodeAudioData takes the buffer it is given: a copy, so the pack stays whole) */
     /* each take is measured as it is decoded: where its sound actually starts (a cast must answer the click, not 150 ms of silence later) and how loud it peaks (the takes come at very different levels: each is brought to the same) */
     const measure = (b) => { const d = b.getChannelData(0), N = d.length; let pk = 0, first = -1; for (let i = 0; i < N; i += 2) { const v = d[i] < 0 ? -d[i] : d[i]; if (v > pk) pk = v; if (first < 0 && v > 0.03) first = i; } b._off = /_loop$|^amb_|^snitch$|^mus_/.test(n) ? 0 : Math.max(0, (first < 0 ? 0 : first) / b.sampleRate - 0.006); b._norm = pk > 0.02 ? Math.min(4, 0.89 / pk) : 1; };
     /* a recorded walk is cut into its single footfalls: each peak of the envelope that stands clear of its neighbours is one step, kept with its own start, length and level */
