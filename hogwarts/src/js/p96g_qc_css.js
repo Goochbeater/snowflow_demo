@@ -363,4 +363,12 @@ QC.CSS = String.raw`#scrCareer, #press, #locker { --night: #0a0c16; --ink: #1215
 #scrCareer .note, #locker .note, #press .note { font-style: italic; opacity: .85; }
 #locker .lkBtns { margin-right: 52px; } #locker .act { min-height: 36px; padding: 8px 14px; }
 @media (max-height: 620px) { #scrCareer .crPanel { padding: 10px 12px; } #scrCareer .row { grid-template-columns: 92px 1fr; padding: 3px 0; } #scrCareer .seg button { padding: 4px 8px; min-height: 30px; font-size: 12px; } #scrCareer .crPanel h2 { font-size: 16px; } #scrCareer .note { font-size: 12px; } }
+/* (outside review) the meters' bars had inherited the loading bar's 22 px margins: the hub ran off the Fold's cover screen */
+#scrCareer .meter .bar, #scrCareer .attr .bar, #scrCareer .mate .bar, #scrCareer .bstat .bar, #locker .lkWho .bar, #locker .lkStats .bar { margin: 0; }
+#scrCareer .hub { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; }
+#scrCareer .evCard .actions { flex-wrap: nowrap; } #scrCareer .evCard .act { padding: 9px 14px; font-size: 12px; letter-spacing: .1em; white-space: nowrap; }
+@media (max-height: 380px) { #scrCareer .hubMeters { grid-template-columns: repeat(4, 1fr); padding: 6px 10px; } #scrCareer .meter { grid-template-columns: 1fr auto; gap: 2px 4px; } #scrCareer .meter .bar { grid-column: 1 / -1; grid-row: 2; }
+  #scrCareer .evCard .vs { display: none; } #scrCareer .evCard { padding: 10px 12px; } #scrCareer .hubTop { padding: 6px 10px; } }
+/* the NEEDLER's card is red-edged; the hardest question is not the safe one */
+#press .prRep.hard { border-color: rgba(255,122,106,.55) !important; }
 `;

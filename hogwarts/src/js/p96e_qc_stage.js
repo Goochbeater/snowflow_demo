@@ -31,6 +31,15 @@ const SProps = {
   snow(cx, cy, cz, w, hgt) { const N = 2600, pos = new Float32Array(N * 3); for (let i = 0; i < N; i++) { pos[i * 3] = cx + (RNG() - 0.5) * w; pos[i * 3 + 1] = cy + RNG() * hgt; pos[i * 3 + 2] = cz + (RNG() - 0.5) * w; }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); const m = new THREE.PointsMaterial({ color: 0xffffff, map: this.M().flake, size: 0.12, transparent: true, opacity: 0.9, depthWrite: false }); const pts = new THREE.Points(g, m); pts.frustumCulled = false;
     pts.userData.tick = (dt) => { for (let i = 0; i < N; i++) { let y = pos[i * 3 + 1] - dt * (0.6 + (i % 7) * 0.08); if (y < cy) y += hgt; pos[i * 3 + 1] = y; pos[i * 3] += Math.sin(MG.rt * 0.7 + i) * dt * 0.15; } g.attributes.position.needsUpdate = true; }; return pts; },
+  /* the Sorting Hat: a patched, crumpled cone with a slumped tip and a brim gone soft; its mouth is the crease above the brim */
+  hat() { const pts = [[0.0, 0.0], [0.25, 0.0], [0.27, 0.012], [0.22, 0.03], [0.13, 0.045], [0.12, 0.1], [0.105, 0.18], [0.085, 0.26], [0.06, 0.33], [0.035, 0.39], [0.012, 0.44], [0, 0.46]].map((q) => new THREE.Vector2(q[0], q[1]));
+    const geo = new THREE.LatheGeometry(pts, 28), pa = geo.attributes.position;
+    for (let i = 0; i < pa.count; i++) { let x = pa.getX(i), y = pa.getY(i), z = pa.getZ(i); const a = Math.atan2(z, x), k = 1 + 0.07 * Math.sin(a * 3 + y * 19) + 0.05 * Math.sin(a * 7 - y * 31); x *= k; z *= k; y += 0.012 * Math.sin(a * 5) * (y < 0.05 ? 1.6 : 0.5);
+      if (y > 0.2) { const b = (y - 0.2) / 0.26; x += b * b * 0.16; y -= b * b * 0.06; } pa.setXYZ(i, x, y, z); }
+    geo.computeVertexNormals(); const g = new THREE.Group(), m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0x4f3d29, roughness: 0.95, side: THREE.DoubleSide })); m.castShadow = true; g.add(m);
+    const mouth = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 6), new THREE.MeshBasicMaterial({ color: 0x120b06 })); mouth.scale.set(0.07, 0.008, 0.02); mouth.position.set(0, 0.125, 0.11); g.add(mouth);
+    for (const [y, r] of [[0.16, 0.1], [0.07, 0.12]]) { const brow = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 6), new THREE.MeshBasicMaterial({ color: 0x1e140b })); brow.scale.set(0.035, 0.006, 0.012); brow.position.set(y > 0.1 ? -0.035 : 0.035, y + 0.02, r - 0.005); if (y > 0.1) g.add(brow); }
+    g.userData.mouth = mouth; return g; },
   /* put a list of props into the stage, removed with it */
   place(S, list) { S.props = (S.props || []).concat(list); for (const o of list) R.scene.add(o); const l0 = S.onLeave, u0 = S.update; S.onLeave = () => { for (const o of list) R.scene.remove(o); if (l0) l0(); }; S.update = (dt, t) => { for (const o of list) { if (o.userData.tick) o.userData.tick(dt, t); if (o.userData.bob) o.position.y = o.userData.bob + Math.sin(t * 1.1 + o.userData.ph) * 0.18; } if (u0) u0(dt, t); }; },
 };
@@ -55,14 +64,16 @@ const STAGES = {
       stool: { p: [2.4, 1.7, A.stool[2] + 3.6], l: [0, 1.45, A.stool[2]], p2: [1.7, 1.6, A.stool[2] + 2.8], fov: 36, dur: 8 },
       houseTable: { p: [hx + 3.6, 2.1, -2 + 5.4], l: [hx, 0.95, -2], p2: [hx + 2.8, 1.7, -2 + 3.8], fov: 44, dur: 8 },
       tableClose: { p: [hx - 0.15, 1.3, 0.9], l: [hx + 0.1, 1.05, -1.8], p2: [hx + 0.2, 1.25, 0.4], fov: 40, dur: 9 },
-      pumpkins: { p: [hx + 2, 1.5, 2], l: [hx, 10, -10], p2: [hx + 1, 1.7, 0], fov: 58, dur: 8 },
+      pumpkins: { p: [hx + 2, 1.5, 2], l: [hx, 9, -10], l2: [hx, 2.2, -4], p2: [hx + 1.4, 1.6, 0.6], fov: 54, dur: 6 },   // (tilts down from the lanterns to the table)
       trees: { p: [6, 2, 4], l: [12, 5, -6], p2: [5, 2.4, 0], fov: 50, dur: 8 },
       yuleWide: { p: [0, 7, L * 0.3], l: [0, 1.5, -L * 0.18], p2: [3, 5, L * 0.12], fov: 48, dur: 10 },
-      danceOrbit: { orbit: { c: [0, 1.2, -L * 0.18], r: 3.6, h: 0.5, a0: 0.4, w: 0.12 }, p: [0, 2, 4], l: [0, 1.2, 0], fov: 42, dur: 20 },
+      danceOrbit: { orbit: { c: [0, 1.5, -L * 0.18], r: 2.3, h: 0.05, a0: 0.4, w: 0.18 }, p: [0, 2, 4], l: [0, 1.2, 0], fov: 36, dur: 20 },
       examWide: { p: [0, 6.5, 12], l: [0, 1, -12], p2: [-2, 4.5, 6], fov: 50, dur: 10 },
     };
     const S = { F, anchors: A, cams: C, house: h, tables: TX, variant, extras: variant === 'yule' || variant === 'exams' ? 0 : 6 };
     const prev = Scenes.F; Scenes.F = F; const list = [];
+    if (variant === 'sorting') { const hat = SProps.hat(); hat.userData.tick = (dt, t) => { const c = Scenes.cast.me; if (!c || !c.a.head) return; c.a.head(hat.position); hat.position.y += 0.13; hat.rotation.y = c.a.yaw + Math.sin(t * 1.3) * 0.08; hat.rotation.z = Math.sin(t * 0.9) * 0.05;
+        const talk = Dialogue.who === 'hat'; hat.userData.mouth.scale.y = talk ? 0.008 + Math.abs(Math.sin(t * 11)) * 0.02 : 0.008; hat.children[0].rotation.x = talk ? Math.sin(t * 3) * 0.05 : 0; }; list.push(hat); }
     if (variant === 'halloween') for (let i = 0; i < 26; i++) { const p = SProps.pumpkin(0.9 + RNG() * 0.4), w = Scenes.W([TX[i % 4] + (RNG() - 0.5) * 5, 6.5 + RNG() * 4, -L / 2 + 4 + (i / 26) * (L - 4)], new THREE.Vector3()); p.position.copy(w); p.rotation.y = F.yaw + PI + (RNG() - 0.5) * 0.8; p.userData.bob = w.y; p.userData.ph = i; list.push(p); }
     if (variant === 'christmas' || variant === 'yule' || variant === 'gala') for (const [lx, lz] of [[-15.5, -8], [15.5, -8], [-15.5, 8], [15.5, 8]]) { const t = SProps.fir(variant === 'gala' ? 5.5 : 7), w = Scenes.W([lx, 0, lz], new THREE.Vector3()); t.position.copy(w); list.push(t); }
     Scenes.F = prev; if (list.length) SProps.place(S, list);
@@ -118,8 +129,14 @@ const STAGES = {
     for (const zz of [0.35, -0.55]) { const th = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.05, 0.24), wood); th.position.set(0, 0.0, zz); g.add(th); }
     { const crook = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.025, 1.1, 6), dark); crook.position.set(0, 0.5, 1.45); g.add(crook); const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 2.1, 0.9) })); lamp.position.set(0, 1.02, 1.5); g.add(lamp); g.userData.lamp = lamp; }
     const w = (Scenes.F = F, Scenes.W([0, 0, 0], new THREE.Vector3())); g.position.set(w.x, wy, w.z); g.rotation.y = Y; R.scene.add(g);
+    /* the castle beat: from the boat if the crag allows, else craned up until the towers clear it (it used to stare into the rock) */
+    { const T = new THREE.Vector3(30, HL.Y0 + 28, 112), clear = (P) => { const d = T.clone().sub(P), L = d.length(); d.multiplyScalar(1 / L); for (let k = 8; k < L - 30; k += 4) { const q = P.clone().addScaledVector(d, k); if (HL.gy(q.x, q.z) > q.y - 2) return false; } const hit = PHY.ray(P.x, P.y, P.z, d.x, d.y, d.z, L - 30, 'los'); return !(hit && hit.t < L - 30); };
+      const at = (h, b) => Scenes.W([1.4, h, b], new THREE.Vector3()); let h = 1.4; while (h < 80 && !clear(at(h, -3))) h += 3;
+      const P1 = at(h, -3), P2 = at(h + 2.5, 2), T2 = T.clone(); T2.y -= 4;
+      C.castle = { world: true, p: P1.toArray(), l: T.toArray(), p2: P2.toArray(), l2: T2.toArray(), fov: h > 8 ? 42 : 36, dur: 8 };
+      if (!clear(Scenes.W([6, 6.5, -12], new THREE.Vector3()))) C.lakeWide = Object.assign({}, C.castle, { p: at(h + 4, -12).toArray(), p2: at(h + 1, -7).toArray(), fov: 46, dur: 11 }); }
     const lt = R.addLight ? R.addLight({ pos: Scenes.W([0, 1.05, 1.5], new THREE.Vector3()), col: new THREE.Color(1, 0.72, 0.4), i: 6, range: 7, prio: 6, on: true, persist: true }) : null;
-    return { F, anchors: A, cams: C, boat: g, update(dt, t) { g.position.y = wy + Math.sin(t * 1.3) * 0.03; g.rotation.z = Math.sin(t * 0.9) * 0.025; g.rotation.x = Math.sin(t * 1.1) * 0.015; for (const id in Scenes.cast) { const c = Scenes.cast[id]; c.a.sitY = wy - 0.12 + Math.sin(t * 1.3) * 0.03; } }, onLeave() { R.scene.remove(g); if (lt) lt.i = 0; } };
+    return { F, anchors: A, cams: C, boat: g, clampY: true, water: wy, update(dt, t) { g.position.y = wy + Math.sin(t * 1.3) * 0.03; g.rotation.z = Math.sin(t * 0.9) * 0.025; g.rotation.x = Math.sin(t * 1.1) * 0.015; for (const id in Scenes.cast) { const c = Scenes.cast[id]; c.a.sitY = wy - 0.12 + Math.sin(t * 1.3) * 0.03; } }, onLeave() { R.scene.remove(g); if (lt) lt.i = 0; } };
   },
   /* the players' gate of the pitch: the huddle before a match (the career's locker room), and the walk out */
   locker(variant) {
@@ -217,7 +234,7 @@ Scenes.anim = function (c, name) {
 };
 /* ------------------------------------------------------------------ the camera */
 Scenes.shot = function (s, snap) {
-  if (!s) return; const res = (v) => typeof v === 'function' ? v() : v, Wv = (v) => Scenes.W(res(v), new THREE.Vector3());
+  if (!s) return; const res = (v) => typeof v === 'function' ? v() : v, Wv = (v) => s.world ? new THREE.Vector3().fromArray(res(v)) : Scenes.W(res(v), new THREE.Vector3());
   const p = Wv(s.p), l = Wv(s.l);
   this.cam = { p0: snap ? p.clone() : this.cp.clone(), l0: snap ? l.clone() : this.cl.clone(), f0: snap ? (s.fov || 45) : this.cfov, p1: p, l1: l, f1: s.fov || 45, p2: s.p2 ? Wv(s.p2) : null, l2: s.l2 ? Wv(s.l2) : null, t: 0, blend: snap ? 0 : (s.blend !== undefined ? s.blend : 0.9), dur: s.dur || 6, orbit: s.orbit || null };
   if (snap) { this.cp.copy(p); this.cl.copy(l); this.cfov = s.fov || 45; }
@@ -230,9 +247,43 @@ Scenes.camNow = function () {
   if (b < 1) { P.lerpVectors(c.p0, P, b); L.lerpVectors(c.l0, L, b); }
   // keep the eye out of walls: pulled in along its line to what it looks at
   { const d = _v5.copy(P).sub(L), dl = d.length(); if (dl > 0.3 && dl < 14 && !Scenes.noLos) { d.multiplyScalar(1 / dl); const hit = PHY.ray(L.x, L.y, L.z, d.x, d.y, d.z, dl, 'los'); if (hit && hit.t < dl) P.copy(L).addScaledVector(d, Math.max(0.4, hit.t - 0.25)); } }
+  if (this.set && this.set.clampY) P.y = Math.max(P.y, HL.gy(P.x, P.z) + 0.6, this.set.water != null ? this.set.water + 0.45 : -1e9);   // (never under the loch or inside the hill)
   const t = MG.rt, k = 0.012; P.x += Math.sin(t * 0.7) * k; P.y += Math.sin(t * 0.9 + 1) * k; P.z += Math.cos(t * 0.6) * k;
   this.cp.copy(P); this.cl.copy(L); this.cfov = lerp(c.f0, c.f1, b); if (CAM.cine) CAM.cine.fov = this.cfov;
   return { pos: this.cp, look: this.cl };
+};
+/* ------------------------------------------------------------------ who speaks is seen speaking
+   A line is never played over the ceiling or the back of a head: if the speaker's face is not well inside the shot (or
+   is far off), the camera cuts to a medium close-up over the shoulder of whoever they are talking to — always from the
+   same side of the line between the two, so the cuts reverse as they should. */
+Scenes.head = (c) => new THREE.Vector3(c.a.x, c.a.y + (c.sit ? 1.18 : 1.58), c.a.z);
+Scenes.sees = function (P) {
+  // judged against where the shot is going (a cam beat just before the line has not been drawn yet)
+  const c = this.cam, cp = new THREE.Vector3(), cl = new THREE.Vector3(); let fov = this.cfov || 45;
+  if (c) { fov = c.f1; if (c.orbit) { const o = c.orbit, a2 = o.a0 + c.t * o.w; Scenes.W([o.c[0] + Math.sin(a2) * o.r, o.c[1] + o.h, o.c[2] + Math.cos(a2) * o.r], cp); Scenes.W(o.c, cl); } else { cp.copy(c.p1); cl.copy(c.l1); } } else { cp.copy(this.cp); cl.copy(this.cl); }
+  const d = _v5.copy(cl).sub(cp).normalize(), v = _v1.copy(P).sub(cp), dist = v.length(); if (dist > 8.5 || dist < 0.6) return false;
+  v.multiplyScalar(1 / dist); const half = fov * D2R / 2, asp = window.innerWidth / Math.max(1, window.innerHeight), right = _v2.crossVectors(d, UP_).normalize(), up = _v3.crossVectors(right, d);
+  const fz = v.dot(d); if (fz <= 0) return false; const tx = v.dot(right) / fz / (Math.tan(half) * asp), ty = v.dot(up) / fz / Math.tan(half);
+  if (Math.abs(tx) > 0.62 || ty < -0.5 || ty > 0.75) return false;
+  const hit = PHY.ray(cp.x, cp.y, cp.z, v.x, v.y, v.z, dist, 'los'); return !(hit && hit.t < dist - 0.4);
+};
+const UP_ = new THREE.Vector3(0, 1, 0);
+Scenes.ots = function (who) {
+  const sp = this.cast[who]; if (!sp) return null; let ls = null, best = 1e9;
+  for (const id in this.cast) { const c = this.cast[id]; if (c === sp) continue; const d = Math.hypot(c.a.x - sp.a.x, c.a.z - sp.a.z) - (id === 'me' ? 0.8 : 0); if (d < best && d < 6) { best = d; ls = c; } }
+  const S = this.head(sp);
+  if (!ls) { const f = new THREE.Vector3(Math.sin(sp.a.yaw), 0, Math.cos(sp.a.yaw)), P = S.clone().addScaledVector(f, 2.0); P.y += 0.05; return { world: true, p: P.toArray(), l: S.toArray(), fov: 36, dur: 30, blend: 0 }; }
+  const L = this.head(ls), d = S.clone().sub(L); d.y = 0; const len = d.length() || 1; d.multiplyScalar(1 / len);
+  // the side of the line: fixed for the pair whichever of them speaks
+  const ids = [who, Object.keys(this.cast).find((k) => this.cast[k] === ls)].sort(), sign = ids[0] === who ? 1 : -1, n = new THREE.Vector3(-d.z, 0, d.x).multiplyScalar(sign);
+  const P = L.clone().addScaledVector(d, -0.75).addScaledVector(n, 0.42); P.y = Math.max(L.y, S.y) + 0.1;
+  return { world: true, p: P.toArray(), l: S.clone().addScaledVector(n, -0.12).toArray(), fov: len > 3 ? 30 : 36, dur: 30, blend: 0 };
+};
+Scenes.frameSpeaker = function (who) {
+  if (Scenes.noAuto || !this.cast) return; const sp = this.cast[who === 'hat' ? 'me' : who]; if (!sp) return;
+  if (this.lastAuto === who && this.cam && this.cam.auto) return;   // the same voice goes on in the same shot
+  if (this.sees(this.head(sp))) return;
+  const s = this.ots(who === 'hat' ? 'me' : who); if (!s) return; this.shot(s); this.cam.auto = true; this.lastAuto = who;
 };
 /* ------------------------------------------------------------------ the frame while a scene plays (MG.state 'scene': the world lives, nobody plays) */
 Scenes.update = function (dt) {
@@ -271,13 +322,13 @@ const Script = {
   next() {
     while (this.beats && this.i < this.beats.length) {
       const b = this.beats[this.i++];
-      if (b.cam) { const s = typeof b.cam === 'string' ? Scenes.set.cams[b.cam] : b.cam; if (s) Scenes.shot(s, !!b.snap); continue; }
+      if (b.cam) { const s = typeof b.cam === 'string' ? Scenes.set.cams[b.cam] : b.cam; if (s) Scenes.shot(s, !!b.snap); Scenes.lastAuto = null; continue; }
       if (b.anim) { for (const id in b.anim) if (Scenes.cast[id]) Scenes.anim(Scenes.cast[id], b.anim[id]); continue; }
       if (b.walk) { for (const id in b.walk) { const c = Scenes.cast[id]; if (!c) continue; const [x, z, dur, then, face] = b.walk[id], to = Scenes.W([x, 0, z]); c.sit = false; c.a.sitY = undefined; c.walk = { from: new THREE.Vector3(c.a.x, c.a.y, c.a.z), to, t: 0, dur: dur || 2, then, face, v: Math.hypot(to.x - c.a.x, to.z - c.a.z) / (dur || 2) }; c.a.setBase('calm', 0.2); } continue; }
       if (b.fx) continue;
       if (b.title) { Dialogue.card(b.title, b.sub); this.waiting = 'wait'; this.waitT = 2.6; return; }
       if (b.wait) { this.waiting = 'wait'; this.waitT = b.wait; Dialogue.line(null); return; }
-      if (b.say) { const [who, text] = b.say; this.speaker(who); Dialogue.line(Story.names(who), text, who); this.waiting = 'tap'; return; }
+      if (b.say) { const [who, text] = b.say; this.speaker(who); Scenes.frameSpeaker(who); Dialogue.line(Story.names(who), text, who); this.waiting = 'tap'; return; }
       if (b.choice) { this.waiting = 'choice'; Dialogue.choices(b.choice, (ch) => this.choose(ch)); return; }
     }
     this.finish();
@@ -351,7 +402,7 @@ const Dialogue = {
   hide() { if (!this.el) return; this.show(false); this.line(null); this.card(null); this.el.querySelector('#dlgChoices').innerHTML = ''; },
   card(t, s) { this.init(); const c = this.el.querySelector('#dlgCard'); if (!t) { c.classList.remove('on'); return; } c.querySelector('b').textContent = t; c.querySelector('span').textContent = s || ''; c.classList.remove('on'); void c.offsetWidth; c.classList.add('on'); },
   line(who, text, id) {
-    this.init(); const box = this.el.querySelector('#dlgBox');
+    this.init(); this.who = text ? id : null; const box = this.el.querySelector('#dlgBox');
     if (!text) { box.classList.remove('on'); return; }
     box.classList.add('on');
     const w = this.el.querySelector('#dlgWho'); w.textContent = who || ''; w.style.display = who ? '' : 'none'; w.style.color = id === 'me' ? '#ffe39a' : id === 'rival' ? '#ff9a7a' : '#e2b84e';
