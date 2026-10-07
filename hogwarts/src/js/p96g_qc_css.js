@@ -374,4 +374,6 @@ QC.CSS = String.raw`#scrCareer, #press, #locker { --night: #0a0c16; --ink: #1215
 svg.qi { width: 1.2em; height: 1.2em; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; vertical-align: -0.24em; flex: none; }
 .tone svg.qi { width: 15px; height: 15px; vertical-align: 0; } #scrCareer .pbar .tone svg.qi { width: 13px; height: 13px; }
 @media (max-height: 620px) and (min-aspect-ratio: 16/10) { #scrCareer .resPanel { justify-self: end; width: min(540px, 57vw); } }
+/* the creator's BEGIN stays in reach while the form scrolls */
+#scrCareer .crPanel > .actions { position: sticky; bottom: -14px; margin: 10px -16px -14px; padding: 10px 16px 12px; background: linear-gradient(180deg, rgba(24,17,10,0), rgba(24,17,10,.96) 30%); z-index: 2; }
 `;
