@@ -35,7 +35,7 @@ const Locker = {
     const set = STAGES.locker(variant), F = set.F; this.set = set; const W = (p) => { const s0 = Scenes.F; Scenes.F = F; const v = Scenes.W(p, new THREE.Vector3()); Scenes.F = s0; return v; };
     const put = (tpl, at) => { const w = W(at), y = HL.gy(w.x, w.z) + 0.05, a = new Actor(CHAR.T[tpl], { x: w.x, y, z: w.z, yaw: F.yaw + at[3], hp: 100, team: 'npc', moves: MOV.wizard, r: 0.3, h: 1.8 }); a.noTarget = true; a.base = 'calm'; a.x = w.x; a.y = y; a.z = w.z; a.animate(0.016 + RNG()); a.pose3D(0.016); return a; };
     this.mates = []; this.uses = [];
-    roster.forEach((m, i) => { const at = set.anchors['mate' + i]; if (!at) return; m.pers = m.pers || PERSONALITY[(m.name.length + i) % 4]; const a = put(tpls[i], at), mt = { m, a };
+    roster.forEach((m, i) => { const at = set.anchors['mate' + i]; if (!at) return; m.pers = m.pers || PERSONALITY[(m.name.length + i) % 4]; const a = put(tpls[i], at), mt = { m, a, base: ['calm', 'fold', 'calm', 'talk', 'fold', 'calm', 'talk'][i] }; a.base = mt.base;
       this.mates.push(mt); this.uses.push(HL.interact(V3(a.x, a.y + 1, a.z), 2.4, `Talk · ${m.name.split(' ')[0]}`, () => this.talk(mt))); });
     const bd = set.anchors.board; this.coach = put(coachT, [bd[0] + 0.3, 0, bd[2] + 0.2, PI]); this.coach.base = 'talk';
     this.uses.push(HL.interact(V3(this.coach.x, this.coach.y + 1, this.coach.z), 2.4, 'The game plan', () => this.tactics()));
@@ -43,7 +43,7 @@ const Locker = {
     { const w = W([1.8, 0, 0.8]); this.uses.push(HL.interact(V3(w.x, HL.gy(w.x, w.z) + 1, w.z), 1.8, 'Look yourself over', () => this.mirror())); }
     { const w = W(set.anchors.pitchMe); this.gate = w; this.uses.push(HL.interact(V3(w.x, HL.gy(w.x, w.z) + 1, w.z), 3.2, 'Take the pitch', () => this.play())); }
     // you, in kit, at your place in the huddle
-    this._hero = CHAR.T.maul; CHAR.T.maul = CHAR.T[meT]; const me = W(set.anchors.lockMe); PLAYER.spawn(me.x, HL.gy(me.x, me.z) + 0.05, me.z, F.yaw + set.anchors.lockMe[3]); CAM.reset(F.yaw + set.anchors.lockMe[3]); CAM.pitch = -0.12; CAM.snap = true;
+    this._hero = CHAR.T.maul; CHAR.T.maul = CHAR.T[meT]; const me = W(set.anchors.lockMe); PLAYER.spawn(me.x, HL.gy(me.x, me.z) + 0.05, me.z, F.yaw + set.anchors.lockMe[3]); CAM.reset(F.yaw + set.anchors.lockMe[3]); CAM.pitch = -0.24; CAM.snap = true;
     this.on = true; this.ui.classList.add('on'); this.panel = false; MG.state = 'play'; HL.ui.show(true); document.body.classList.add('qclocker'); if (TOUCH.on) TOUCH.layout(); IN.buf = {};
     this.ui.querySelector('#lkTitle').innerHTML = `<b>${ev.label}</b><span>${teamName(team)} v ${teamName(ev.opp)}${ev.home === false ? ' (away)' : ''}</span>`;
     this.ui.querySelector('#lkHint').textContent = TOUCH.on ? 'Walk up to a team-mate and TALK appears under your thumb · TAKE THE PITCH when you are ready' : 'Walk up to a team-mate and press E to talk · walk out through the gate to start';
@@ -62,14 +62,18 @@ const Locker = {
   },
   update(dt) {
     if (!this.on) return; const P = PLAYER.a;
-    for (const mt of this.mates) { const a = mt.a; if (P) { const d = Math.hypot(P.x - a.x, P.z - a.z); if (d < 3) { a.lookYaw = clamp(wrapA(Math.atan2(P.x - a.x, P.z - a.z) - a.yaw), -1, 1) * 0.8; if (a.base !== 'talk' && !this.talked[mt.m.id]) a.setBase('talk', 0.3); } else { a.lookYaw = damp(a.lookYaw || 0, 0, 3, dt); if (a.base === 'talk' && !this.panel) a.setBase('calm', 0.4); } } a.animate(dt); a.pose3D(dt); }
+    for (const mt of this.mates) { const a = mt.a; if (P) { const d = Math.hypot(P.x - a.x, P.z - a.z); if (d < 3) { a.lookYaw = clamp(wrapA(Math.atan2(P.x - a.x, P.z - a.z) - a.yaw), -1, 1) * 0.8; if (a.base !== 'talk' && !this.talked[mt.m.id]) a.setBase('talk', 0.3); } else { a.lookYaw = damp(a.lookYaw || 0, 0, 3, dt); if (a.base === 'talk' && mt.base !== 'talk' && !this.panel) a.setBase(mt.base, 0.4); } } a.animate(dt); a.pose3D(dt); }
     if (this.coach) { this.coach.animate(dt); this.coach.pose3D(dt); }
     if (this.panel && MG.state === 'play') { PLAYER.a.vx = PLAYER.a.vz = 0; }
     // out through the gate
     if (P && this.gate && Math.hypot(P.x - this.gate.x, P.z - this.gate.z) < 1.2) this.play();
   },
   openPanel(html) { const p = this.ui.querySelector('#lkPanel'); p.innerHTML = html; p.classList.add('on'); this.panel = true; PLAYER.state = 'cine'; p.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => this.closePanel())); return p; },
-  closePanel() { const p = this.ui && this.ui.querySelector('#lkPanel'); if (!p) return; p.classList.remove('on'); if (this.panel && PLAYER.state === 'cine') PLAYER.state = 'move'; this.panel = false; IN.buf = {}; },
+  /* face to face: over your shoulder onto the team-mate, who sits in the left of the frame (the panel docks right) */
+  ots(a) { const P = PLAYER.a; if (!P || !a) return; const H = a.head ? a.head(new THREE.Vector3()) : new THREE.Vector3(a.x, a.y + 1.6, a.z), M = P.head ? P.head(new THREE.Vector3()) : new THREE.Vector3(P.x, P.y + 1.6, P.z);
+    const d = H.clone().sub(M); d.y = 0; d.normalize(); const r = new THREE.Vector3(-d.z, 0, d.x), pos = M.clone().addScaledVector(d, -0.85).addScaledVector(r, -0.5); pos.y += 0.12; const look = H.clone().addScaledVector(r, -0.55); look.y -= 0.05;
+    CAM.cine = { t: 0, dur: 1e9, hold: true, fov: 38, fn: () => ({ pos, look }) }; },
+  closePanel() { const p = this.ui && this.ui.querySelector('#lkPanel'); if (!p) return; p.classList.remove('on'); if (CAM.cine && CAM.cine.hold && this.panel) CAM.cine = null; if (this.panel && PLAYER.state === 'cine') PLAYER.state = 'move'; this.panel = false; IN.buf = {}; },
   moodLine(m) {
     const c = m.chem, first = Career.first();
     if (m.grudge) return pick([`Saw what the Quill printed. "Passengers", was it?`, `Read Witch Weekly this morning. Interesting stuff, ${first}.`]);
@@ -86,6 +90,7 @@ const Locker = {
       <div class="lkOpts">${done ? `<div class="lkDone">You've already talked.</div>` : TALK_OPTS.map(o => `<button class="lkOpt" data-k="${o.k}"><i class="tone ${o.tone}">${TONE_ICON[o.tone]}</i>${o.t}</button>`).join('')}</div>
       <div class="actions"><button class="act" data-close>BACK</button></div></div>`);
     if (mt.a) { mt.a.setBase('talk', 0.2); mt.a.yaw = Math.atan2(PLAYER.a.x - mt.a.x, PLAYER.a.z - mt.a.z); }
+    this.ots(mt.a);
     p.querySelectorAll('.lkOpt').forEach(b => b.addEventListener('click', () => {
       const o = TALK_OPTS.find(x => x.k === b.dataset.k), d = (o.like[m.pers] || 0) + (Math.random() < 0.3 ? 1 : 0);
       m.chem = clamp(m.chem + d, 0, 100); if (d > 2) m.grudge = false;
@@ -137,7 +142,7 @@ const Locker = {
   body.qclocker #tc .tcB:not([data-id="use"]):not([data-id="pause"]) { display: none !important; }
   #locker .lkHint { pointer-events: none; } #locker .lkTop { pointer-events: none; } #locker .lkTop > * { pointer-events: auto; }
   @media (max-height: 620px) { #locker .lkTop { top: calc(6px + env(safe-area-inset-top)); left: 10px; right: 60px; } #locker .lkTitle b { font-size: 12px; } #locker .lkTitle span { font-size: 10.5px; } #locker .lkGoals { font-size: 11px; padding: 5px 9px; max-width: 220px; } #locker .act { padding: 7px 12px; font-size: 11px; } #locker .lkHint { bottom: calc(8px + env(safe-area-inset-bottom)); font-size: 11px; }
-    #locker .lkPanel { top: calc(50% + 16px); max-height: calc(100% - 70px); width: min(620px, 74vw); } #locker .lkCard { padding: 10px 14px; } #locker .lkWho b { font-size: 15px; } #locker .lkWho span { margin-bottom: 2px; } #locker .lkLine { font-size: 14px; margin: 6px 0; }
-    #locker .lkOpts { grid-template-columns: 1fr 1fr; } #locker .lkOpt { padding: 7px 10px; font-size: 13px; } #locker .lkGoalOffer, #locker .lkDone, #locker .lkOpts > .actions { grid-column: 1 / -1; } #locker .lkCard .actions { margin-top: 8px; } }
+    #locker .lkPanel { top: calc(50% + 16px); max-height: calc(100% - 70px); width: min(440px, 48vw); left: auto; right: calc(12px + env(safe-area-inset-right)); transform: translateY(-50%); } #locker .lkCard { padding: 10px 14px; } #locker .lkWho b { font-size: 15px; } #locker .lkWho span { margin-bottom: 2px; } #locker .lkLine { font-size: 14px; margin: 6px 0; }
+    #locker .lkOpts { grid-template-columns: 1fr; } #locker .lkOpt { padding: 7px 10px; font-size: 13px; } #locker .lkGoalOffer, #locker .lkDone, #locker .lkOpts > .actions { grid-column: 1 / -1; } #locker .lkCard .actions { margin-top: 8px; } }
   #locker:has(.lkPanel.on) .lkHint { opacity: 0; }`;
   HL.START.push(() => document.head.appendChild(st)); }
