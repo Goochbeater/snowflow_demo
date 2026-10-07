@@ -32,6 +32,7 @@ body.touch #hlQtut { top: calc(4px + env(safe-area-inset-top)) !important; max-w
   .hlBtn { font-size: 15px; padding: 8px 24px; margin: 4px; min-width: 230px; letter-spacing: 0.26em; }
   .hlBtn:hover, .hlBtn.sel { letter-spacing: 0.3em; }
   .hlTitle { padding-bottom: 5vh; } .hlTitle h1 { font-size: min(8vw, 17vh); top: 2.5vh; } .hlTitle h2 { font-size: min(1.7vw, 3.2vh); top: calc(2.5vh + min(9vw, 19vh)); }
+  .hlTitle .hlBtn { min-width: 272px; box-sizing: border-box; }
   .hlTitle .cr { font-size: 9px; max-width: 40vw; bottom: 6px; } .hlTitle .v { font-size: 9px; bottom: 6px; }
   .hlSort { overflow-y: auto; justify-content: safe center; padding: 8px 0 12px; } .hlSort p { max-width: 86vw; text-align: center; }
   .hlSort h3 { font-size: 19px; } .hlSort p { font-size: 13px; margin: 0 0 10px; }
