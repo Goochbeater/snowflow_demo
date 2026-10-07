@@ -61,6 +61,13 @@ body.touch #hlQtut { top: calc(4px + env(safe-area-inset-top)) !important; max-w
   body .hlMap.mm .card { width: 190px; margin-left: 10px; padding: 10px 12px; max-height: 94vh; overflow-y: auto; box-sizing: border-box; } body .hlMap.mm .card h3 { font-size: 21px !important; margin: 0 0 4px; } body .hlMap.mm .card b { font-size: 11px !important; } body .hlMap.mm .card p { font-size: 12px; } body .hlMap.mm .card .lg { font-size: 11.5px; margin: 3px 0; gap: 6px; }
   body #hlTip { width: 250px; font-size: 12.5px; } body #hlTip .th { padding: 8px 64px 8px 11px; min-height: 52px; } body #hlTip .ti { width: 54px; height: 54px; } body #hlTip .tn { font-size: 15px; } body #hlTip .tt { font-size: 11.5px; } body #hlTip .tbd { padding: 6px 11px 8px; }
 }
+/* ---------------- the Fold's cover screen (344 px tall): the hint wider and smaller so it takes fewer lines of the view */
+@media (max-height: 380px) {
+  body.touch #hlHint { font-size: 11px; max-width: 58vw; padding: 4px 12px; line-height: 1.3; }
+  body.touch[data-tm="fly"] #hlHint, body.touch[data-tm="match"] #hlHint { bottom: calc(80px + env(safe-area-inset-bottom)); max-width: 58vw; }
+  body.touch #hlQuest { width: min(38vw, 340px); } body.touch #hlQuest .o { font-size: 11.5px; } body.touch #hlQuest .n { font-size: 14px; }
+  body.touch #hlToast { top: 9%; padding: 8px 30px 10px; } body.touch #hlToast .a { font-size: 17px; } body.touch #hlToast .b { font-size: 12px; }
+}
 /* ---------------- the touch layer's own adjustments */
 body.touch .hlJ .foot:last-child, body.touch .hlTitle .v { opacity: 0.6; }
 body.touch .hlSlot.tcSel { border-color: #fff3c4; box-shadow: 0 0 12px rgba(255,230,160,0.6); }
