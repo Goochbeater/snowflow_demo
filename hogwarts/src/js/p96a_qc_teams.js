@@ -109,6 +109,8 @@ for (const T of CONFIG.teams) {
   const c1 = hexN(T.c1), c2 = hexN(T.c2);
   HL.TEAMS[T.key] = { name: T.name, col: c1, col2: c2, cloth: [darkerN(T.c1, 0.82), darkerN(T.c2, 0.9)], trait: T.city || T.home || '', beast: T.emblem, css: T.ui || T.c1, css2: T.c2, kind: T.kind, team: T };
 }
+/* dress robes for the balls and galas: midnight velvet with a silver lining, no crest */
+HL.TEAMS.ball = { name: 'Dress robes', col: 0x1c2448, col2: 0xd8dce8, cloth: [0x151a33, 0xc4c8d8], trait: '', beast: 0, css: '#1c2448', css2: '#d8dce8', kind: 'formal' };
 QC.key = (i) => (CONFIG.teams[i] || CONFIG.teams[0]).key;
 QC.idx = (key) => CONFIG.teams.findIndex((t) => t.key === key);
 /* for the length of a match the two sides stand among the houses (the match code names and colours its sides through HL.HOUSES) */
@@ -120,6 +122,10 @@ QC.eject = function () { for (const k of QC.injected) delete HL.HOUSES[k]; QC.in
   HL.HOUSES[house] = HL.TEAMS[house]; try { return s0.apply(this, arguments); } finally { if (!QC.injected.includes(house)) delete HL.HOUSES[house]; } }; }
 { const m0 = CLOTH.mat; CLOTH.mat = function (key) {
   if (/^hl_/.test(key) && !CLOTH.mats[key]) { const k = key.slice(3), T = HL.TEAMS[k]; if (T && T.kind && T.kind !== 'house') { const b = m0('cape'), m = b.clone(); m.onBeforeCompile = b.onBeforeCompile; m.customProgramCacheKey = b.customProgramCacheKey; m.color.set(T.cloth[0]); m.sheenColor.set(T.cloth[1]); m.roughness = 0.8; m.sheen = 0.9; m.envMapIntensity = 0.5; CLOTH.mats[key] = m; return m; } }
+  if (/^hlCape_/.test(key) && !CLOTH.mats[key]) { const k = key.slice(7), T = HL.TEAMS[k];
+    if (T && T.kind === 'formal') { const b = m0('cape'), m = b.clone(); m.onBeforeCompile = b.onBeforeCompile; m.customProgramCacheKey = b.customProgramCacheKey; m.color.set(T.cloth[0]); m.sheenColor.set(T.cloth[1]); m.roughness = 0.72; m.sheen = 1; m.envMapIntensity = 0.6; CLOTH.mats[key] = m; return m; }
+    // a club's or a country's cape is drawn from its colours, which the castle looks up among the houses
+    if (T && !HL.HOUSES[k]) { HL.HOUSES[k] = T; try { return m0(key); } finally { if (!QC.injected.includes(k)) delete HL.HOUSES[k]; } } }
   return m0(key); }; }
 /* ------------------------------------------------------------------ the stadium, dressed for whoever is playing */
 { const Q = HL.Q; QC.cloth = []; QC.banners = [];

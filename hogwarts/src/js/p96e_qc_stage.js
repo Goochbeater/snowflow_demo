@@ -144,11 +144,13 @@ const STAGES = {
 Scenes.tpl = function (id, spec) {
   const S = Career.S, o = (spec && spec.o) || {}, kit = o.outfit === 'kit' || o.outfit === 'track';
   const pro = S && S.phase !== 'school' && kit, myKey = pro ? QC.key(Career.myTeam()) : QC.key(S ? S.profile.house : 0);
-  if (id === 'me') { const P = S.profile; return HL.student(myKey, P.body === 'f', (P.look && P.look.v) || 0, kit); }
+  const formal = o.outfit === 'formal', staff = /^(prof|head|hooch|scout|rep|press|coach|agent|minister|extra)/.test(id), dress = formal && !staff ? 'ball' : null;   // dress robes at the balls
+  if (id === 'me') { const P = S.profile; return HL.student(dress || myKey, P.body === 'f', (P.look && P.look.v) || 0, kit); }
   const mate = id === 'friend' ? S && S.mates[S.friend] : id === 'capt' ? S && S.mates[S.capt] : /^mate_/.test(id) ? S && S.mates[id.slice(5)] : null;
-  if (mate) return HL.student(myKey, mate.body === 'f', (mate.look && mate.look.v) || 1, kit);
-  if (id === 'rival' && S && S.rival) return HL.student(QC.key(S.rival.house), S.rival.body === 'f', (S.rival.look && S.rival.look.v) || 2, kit);
-  if (o.outfit === 'staff' || /^(prof|head|hooch|scout|rep|press|coach|agent|minister|extra)/.test(id) || o.outfit === 'formal' || o.outfit === 'coat') { const h = [...id].reduce((s, ch) => s + ch.charCodeAt(0), 0); return h % 2 ? 'prof_a' : 'prof_b'; }
+  if (mate) return HL.student(dress || myKey, mate.body === 'f', (mate.look && mate.look.v) || 1, kit);
+  if (id === 'rival' && S && S.rival) return HL.student(dress || QC.key(S.rival.house), S.rival.body === 'f', (S.rival.look && S.rival.look.v) || 2, kit);
+  if (dress) { const h = [...id].reduce((s, ch) => s + ch.charCodeAt(0), 0); return HL.student('ball', h % 2 === 1, 1 + (h % 6), false); }
+  if (o.outfit === 'staff' || staff || formal || o.outfit === 'coat') { const h = [...id].reduce((s, ch) => s + ch.charCodeAt(0), 0); return h % 2 ? 'prof_a' : 'prof_b'; }
   const h = [...id].reduce((s, ch) => s + ch.charCodeAt(0), 0), team = o.team != null ? o.team : S ? (S.phase === 'school' ? S.profile.house : Career.myTeam()) : 0;
   return HL.student(QC.key(team), h % 2 === 1, 1 + (h % 6), kit);
 };
