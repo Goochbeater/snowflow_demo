@@ -58,7 +58,7 @@ const Locker = {
   renderGoals() {
     const S = Career.S, el = this.ui.querySelector('#lkGoals');
     el.innerHTML = S.goals.length ? S.goals.map(g => `<div class="lkGoal"><i>◆</i>${g.text}</div>`).join('') : `<div class="lkGoal dim">Talk to team-mates for match goals</div>`;
-    el.innerHTML += `<div class="lkGoal tac"><i>✎</i>${TACTICS[S.tactic].name}</div>`;
+    el.innerHTML += `<div class="lkGoal tac"><i>${QC.svg('pencil')}</i>${TACTICS[S.tactic].name}</div>`;
   },
   update(dt) {
     if (!this.on) return; const P = PLAYER.a;

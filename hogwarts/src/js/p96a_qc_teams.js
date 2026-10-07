@@ -101,6 +101,19 @@ function drawEmblem(g, kind, cx, cy, s, col, col2) {
 
 /* ------------------------------------------------------------------ the engine's side: every team as a "house" it can dress and name */
 const QC = { active: false, injected: [] };
+/* the career's icons: one stroke set, drawn in the text's colour (colour emoji differ by phone maker and ignore the gold) */
+QC.ICON = {
+  profile: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6', team: 'M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z',
+  prophet: 'M4 5h13v14H6a2 2 0 0 1-2-2z M17 8h3v9a2 2 0 0 1-2 2 M7 8h7 M7 11h7 M7 14h4', owl: 'M7 9a5 5 0 0 1 10 0v6a5 5 0 0 1-10 0z M9.5 10.5h.01 M14.5 10.5h.01 M12 12.5l-1 1.5h2z M7 9L5.5 6 M17 9l1.5-3',
+  train: 'M13 2L5 14h6l-1 8 8-12h-6z', brooms: 'M3 21l11-11 M14 10l3-3 M14 10c2 3 5 5 7 5-.5-3-2.5-6-5-7z', quit: 'M14 4h5v16h-5 M10 8l-4 4 4 4 M6 12h10',
+  scene: 'M4 9h16v10H4z M4 9l2-4h14l-2 4 M10 5L8 9 M15 5l-2 4', match: 'M6 21V4 M6 4h11l-2 4 2 4H6', drill: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M12 12h.01',
+  cup: 'M8 4h8v5a4 4 0 0 1-8 0z M8 6H5a3 3 0 0 0 3 4 M16 6h3a3 3 0 0 1-3 4 M12 13v4 M8 20h8 M10 17h4', quill: 'M19 4c-6 1-10 5-12 12l-2 4 4-2c7-2 11-6 12-12z M7 16l5-5',
+  tea: 'M5 9h12v4a6 6 0 0 1-12 0z M17 10h2a2 2 0 0 1 0 4h-2 M8 4c0 1 1 1 1 2 M12 4c0 1 1 1 1 2', globe: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M3 12h18 M12 3c3 3 3 15 0 18 M12 3c-3 3-3 15 0 18',
+  star: 'M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z', spark: 'M12 3v5 M12 16v5 M3 12h5 M16 12h5 M6.5 6.5l2.5 2.5 M15 15l2.5 2.5 M17.5 6.5L15 9 M9 15l-2.5 2.5',
+  flame: 'M12 21c-4 0-6-3-6-6 0-4 4-6 3-11 3 2 4 4 4 7 1-1 2-2 2-4 2 2 3 5 3 8 0 3-2 6-6 6z', dots: 'M6 12h.01 M12 12h.01 M18 12h.01', pencil: 'M4 20l4-1 11-11-3-3L5 16z M14 7l3 3',
+  next: 'M9 6l6 6-6 6',
+};
+QC.svg = (k) => `<svg class="qi" viewBox="0 0 24 24" aria-hidden="true"><path d="${QC.ICON[k] || QC.ICON.next}"/></svg>`;
 const hexN = (css) => parseInt(String(css).replace('#', ''), 16);
 const darkerN = (css, k) => { const c = new THREE.Color(css); c.multiplyScalar(k); return c.getHex(); };
 HL.TEAMS = {};

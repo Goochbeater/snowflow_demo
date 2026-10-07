@@ -99,18 +99,18 @@ const CareerUI = {
       <div class="hubMeters">${meter('FAME', S.fame, '#e8b84a')}${meter('FANS', S.fans, '#e0533a')}${meter('TEAM', Career.chemAvg(), '#5ab0ff')}${meter('COACH', S.trust, '#7ad87a')}</div>
       <div class="hubMain">${evCard}</div>
       <div class="hubTabs">
-        <button class="htab" data-cgo="profile"><i>◈</i>PROFILE${S.sp ? `<em>${S.sp}</em>` : ''}</button>
-        <button class="htab" data-cgo="team"><i>⛨</i>TEAM</button>
-        <button class="htab" data-cgo="press"><i>✉</i>PROPHET${fresh ? `<em>${fresh}</em>` : ''}</button>
-        <button class="htab" data-cgo="owl"><i>🦉</i>OWL POST${unread ? `<em>${unread}</em>` : ''}</button>
-        <button class="htab" data-cgo="train" ${Career.canTrain() ? '' : 'disabled'}><i>⚡</i>TRAIN</button>
-        <button class="htab" data-cgo="shop"><i>✦</i>BROOMS</button>
-        <button class="htab" data-cgo="quit"><i>⏏</i>SAVE & QUIT</button>
+        <button class="htab" data-cgo="profile"><i>${QC.svg('profile')}</i>PROFILE${S.sp ? `<em>${S.sp}</em>` : ''}</button>
+        <button class="htab" data-cgo="team"><i>${QC.svg('team')}</i>TEAM</button>
+        <button class="htab" data-cgo="press"><i>${QC.svg('prophet')}</i>PROPHET${fresh ? `<em>${fresh}</em>` : ''}</button>
+        <button class="htab" data-cgo="owl"><i>${QC.svg('owl')}</i>OWL POST${unread ? `<em>${unread}</em>` : ''}</button>
+        <button class="htab" data-cgo="train" ${Career.canTrain() ? '' : 'disabled'}><i>${QC.svg('train')}</i>TRAIN</button>
+        <button class="htab" data-cgo="shop"><i>${QC.svg('brooms')}</i>BROOMS</button>
+        <button class="htab" data-cgo="quit"><i>${QC.svg('quit')}</i>SAVE & QUIT</button>
       </div></div>`);
   },
   eventCard(ev) {
     const S = Career.S, my = Career.myTeam();
-    const icon = { scene: '🎬', match: '⚑', drill: '✪', cup: '🏆', offers: '✍', awards: '🏆', bye: '☕', wcKO: '🌍', legacy: '★' }[ev.t] || '▸';
+    const icon = QC.svg({ scene: 'scene', match: 'match', drill: 'drill', cup: 'cup', offers: 'quill', awards: 'cup', bye: 'tea', wcKO: 'globe', legacy: 'star' }[ev.t] || 'next');
     let detail = '';
     if (ev.t === 'match') { const st = Career.str(ev.opp); detail = `<div class="vs"><img src="${Tex.crestURL[my]}"><b>v</b><img src="${Tex.crestURL[ev.opp]}"></div><div class="evSub">${teamName(my)} v ${teamName(ev.opp)}${ev.home === false ? ' · away' : ''} · rating ${Math.round(st)}</div>`; }
     const tab = S.phase === 'school' && S.cup ? Career.sorted(S.cup.t) : S.phase === 'pro' && S.league ? Career.sorted(S.league.t) : null;

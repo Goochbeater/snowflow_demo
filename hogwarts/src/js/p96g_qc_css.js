@@ -371,4 +371,6 @@ QC.CSS = String.raw`#scrCareer, #press, #locker { --night: #0a0c16; --ink: #1215
   #scrCareer .evCard .vs { display: none; } #scrCareer .evCard { padding: 10px 12px; } #scrCareer .hubTop { padding: 6px 10px; } }
 /* the NEEDLER's card is red-edged; the hardest question is not the safe one */
 #press .prRep.hard { border-color: rgba(255,122,106,.55) !important; }
+svg.qi { width: 1.2em; height: 1.2em; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; vertical-align: -0.24em; flex: none; }
+.tone svg.qi { width: 15px; height: 15px; vertical-align: 0; } #scrCareer .pbar .tone svg.qi { width: 13px; height: 13px; }
 `;

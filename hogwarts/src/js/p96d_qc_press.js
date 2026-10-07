@@ -13,7 +13,7 @@ const SCHOOL_REPORTERS = [
   { id: 'fang', name: 'Cressida Fang', outlet: 'Witch Weekly', diff: 'hard', mult: 1.3, look: REPORTERS[2].look, c1: '#3a1a40', blurb: 'Sniffing for a scandal, even at school.', quill: true },
 ];
 const TONE_LABEL = { gr: 'GRACIOUS', tm: 'TEAM-FIRST', sh: 'SHOWBOAT', fi: 'FIERY', de: 'DEFLECT' };
-const TONE_ICON = { gr: '✦', tm: '⛨', sh: '★', fi: '🔥', de: '…' };
+const TONE_ICON = { gr: QC.svg('spark'), tm: QC.svg('team'), sh: QC.svg('star'), fi: QC.svg('flame'), de: QC.svg('dots') };
 
 // question bank: when(c) decides if it fits; q(c) the question; a(c) answers by tone
 const QUESTIONS = [
