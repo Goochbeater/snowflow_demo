@@ -324,7 +324,7 @@ QC.CSS = String.raw`#scrCareer, #press, #locker { --night: #0a0c16; --ink: #1215
 #press .prA span { font-size: 12.5px; }
 #press .prA { padding: 7px 9px; }
 #press .prText { font-size: 15px; }
-#press .prQ { top: calc(10px + var(--st)); left: auto; right: calc(14px + var(--sr)); transform: none; width: min(560px, 60vw); }
+#press .prQ { top: calc(58px + var(--st)); left: 50%; right: auto; transform: translateX(-50%); width: min(640px, 72vw); padding: 8px 14px; }   /* (under the title and SKIP, not over them) */
 #scrCareer .paper h1 { font-size: 20px; }
 #scrCareer .paper .mast { font-size: 24px; }
 #scrCareer .paper p { font-size: 14px; }
