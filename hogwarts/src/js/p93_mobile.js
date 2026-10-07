@@ -66,6 +66,9 @@ body.touch #hlQtut { top: calc(4px + env(safe-area-inset-top)) !important; max-w
   body.touch #hlHint { font-size: 11px; max-width: 58vw; padding: 4px 12px; line-height: 1.3; }
   body.touch[data-tm="fly"] #hlHint, body.touch[data-tm="match"] #hlHint { bottom: calc(80px + env(safe-area-inset-bottom)); max-width: 58vw; }
   body.touch #hlQuest { width: min(38vw, 340px); } body.touch #hlQuest .o { font-size: 11.5px; } body.touch #hlQuest .n { font-size: 14px; }
+  body .hlPause { padding: 4px 3vw 6px; } body .hlPause h3 { font-size: 16px; margin: 0 0 2px; }
+  body .hlPause .hlKeys { font-size: 10.5px; gap: 0 14px; margin: 0 0 3px; line-height: 1.22; }
+  body .hlPause > .hlBtn { padding: 5px 8px; font-size: 12px; margin: 3px; } body .hlPause .hlRow { margin-top: 1px; } body .hlPause .hlRow .hlBtn { padding: 4px 10px; font-size: 11px; margin: 2px; }
   body.touch #hlToast { top: 9%; padding: 8px 30px 10px; } body.touch #hlToast .a { font-size: 17px; } body.touch #hlToast .b { font-size: 12px; }
 }
 /* ---------------- the touch layer's own adjustments */
