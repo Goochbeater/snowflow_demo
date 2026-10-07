@@ -81,7 +81,13 @@ const CareerUI = {
   hubBackdrop(kind) {
     if (this.backdrop === kind && Scenes.active) return; this.backdrop = kind; this._pv = (this._pv || 0) + 1;
     if (kind === 'creator') { Scenes.enter('locker', 'school', { mode: 'view' }); Scenes.shot({ p: [-0.35, 1.42, -2.7], l: [0.85, 1.08, 0], fov: 32, dur: 999 }, true); return; }
-    const set = kind === 'school' ? Scenes.enter('common', '', { mode: 'view' }) : Scenes.enter('locker', 'pro', { mode: 'view' }); Scenes.shot(set.cams.hub || { orbit: { c: [0, 1.4, -1], r: 7, h: 1.6, a0: 0.3, w: 0.035 }, p: [0, 2, 6], l: [0, 1.2, 0], fov: 48, dur: 999 }, true);
+    const set = kind === 'school' ? Scenes.enter('common', '', { mode: 'view' }) : Scenes.enter('locker', 'pro', { mode: 'view' });
+    if (kind !== 'school' || !Career.S) { Scenes.shot(set.cams.hub || { orbit: { c: [0, 1.4, -1], r: 7, h: 1.6, a0: 0.3, w: 0.035 }, p: [0, 2, 6], l: [0, 1.2, 0], fov: 48, dur: 999 }, true); return; }
+    /* at school the hub is you and your friend by your own common-room fire, framed in the right of the screen (the panels have the left) */
+    const L = set.anchors.chairL, Rr = set.anchors.chairR, mx = (L[0] + Rr[0]) / 2, mz = (L[2] + Rr[2]) / 2;
+    Scenes.shot({ p: [mx + 2.2, 1.55, mz + 3.6], l: [mx - 1.4, 1.1, mz + 0.2], p2: [mx + 1.7, 1.48, mz + 3.1], fov: 44, dur: 40 }, true);
+    const pv = this._pv, S = Career.S, cast = [{ id: 'me', at: 'chairL', anim: 'sit', o: {} }].concat(S.friend && S.mates[S.friend] ? [{ id: 'friend', at: 'chairR', anim: 'sit', o: {} }] : []);
+    Scenes.need(cast).then(() => { if (this._pv !== pv || !Scenes.active || Scenes.set !== set) return; for (const c of cast) Scenes.spawn(c.id, c); }).catch(() => {});
   },
   exit() { Career.save(); this.backdrop = null; Scenes.leave(); this.root.hidden = true; QC.leave(); },
   // ---------- hub ----------
@@ -159,7 +165,7 @@ const CareerUI = {
     const verdict = r.win === 0 ? 'Victory' : r.win === 1 ? 'Defeat' : 'Draw';
     const goals = S.goals;
     const chemLines = Object.entries(out.chem).filter(([, v]) => Math.abs(v) >= 1).slice(0, 4).map(([id, v]) => { const m = Career.mate(id); return m ? `<div><span>${m.name.split(' ')[0]}</span><b class="${v > 0 ? 'up' : 'dn'}">${v > 0 ? '+' : ''}${Math.round(v)}</b></div>` : ''; }).join('');
-    this.hubScene();
+    if (r.sim) this.hubScene(); else this.resultScene(r.win === 0);
     this.show(`<div class="panel resPanel"><div class="verdict">${verdict}</div>
       <div class="results"><div><img src="${Tex.crestURL[my]}"><div class="big">${r.score[0]}</div><div class="nm">${CONFIG.teams[my].short}</div></div><div style="opacity:.6;font-family:var(--f-head)">VS</div><div><img src="${Tex.crestURL[op]}"><div class="big">${r.score[1]}</div><div class="nm">${CONFIG.teams[op].short}</div></div></div>
       <div class="rating"><b>${out.rating.toFixed(1)}</b><span>MATCH RATING${S.last.potm ? ' · PLAYER OF THE MATCH' : ''}</span></div>
@@ -170,6 +176,14 @@ const CareerUI = {
     const after = () => this.press(true);
     this.root.querySelector('#rPress').addEventListener('click', () => { Sound.play('ui'); this.root.hidden = true; PressRoom.run('post', null, () => { Career.advance(); after(); }); });
     this.root.querySelector('#rSkip').addEventListener('click', () => { Sound.play('ui'); News.pending = null; Career.advance(); after(); });
+  },
+  /* the result is read on the pitch: you and two team-mates on the grass, cheering or not, framed in the left of the screen beside the card */
+  resultScene(won) {
+    this.backdrop = 'result'; this._pv = (this._pv || 0) + 1; const pv = this._pv, set = Scenes.enter('world', '', { mode: 'view' }), S = Career.S, kit = { outfit: 'kit' };
+    Scenes.shot({ p: [3.2, 1.45, -8.2], l: [2.0, 1.3, -14], p2: [2.7, 1.5, -8.9], fov: 42, dur: 40 }, true);
+    const cast = [{ id: 'me', at: 'pitchMe', anim: won ? 'cheer' : 'idle', o: kit }];
+    if (S.phase === 'school') Career.squad().slice(0, 2).forEach((m, k) => cast.push({ id: 'mate_' + m.id, at: k ? 'pitchCapt' : 'pitchF', anim: won ? 'cheer' : 'idle', o: kit }));
+    Scenes.need(cast).then(() => { if (this._pv !== pv || Scenes.set !== set) return; for (const c of cast) Scenes.spawn(c.id, c); }).catch(() => {});
   },
   // ---------- drills (flying lesson, trials, training) ----------
   drill(ev, done) {

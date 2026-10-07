@@ -99,10 +99,10 @@ QC.CSS = String.raw`#scrCareer, #press, #locker { --night: #0a0c16; --ink: #1215
 #scrCareer .hubWho span { font-size: 12.5px; opacity: .78; }
 #scrCareer .hubOvr, #scrCareer .hubGal { text-align: center; padding: 0 6px; }
 #scrCareer .hubOvr b, #scrCareer .hubGal b { display: block; font-family: var(--f-head); font-size: 22px; line-height: 1; }
-#scrCareer .hubOvr span, #scrCareer .hubGal span { font-size: 9.5px; letter-spacing: .14em; opacity: .7; }
+#scrCareer .hubOvr span, #scrCareer .hubGal span { font-size: 11px; letter-spacing: .1em; opacity: .7; }
 #scrCareer .hubMeters { grid-column: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; padding: 10px 12px; border-radius: 14px; background: var(--glass); }
 #scrCareer .meter { display: grid; grid-template-columns: 52px 1fr 28px; align-items: center; gap: 6px; }
-#scrCareer .meter span { font-size: 10.5px; letter-spacing: .14em; opacity: .75; }
+#scrCareer .meter span { font-size: 11px; letter-spacing: .1em; opacity: .75; }
 #scrCareer .meter b { font-size: 13px; text-align: right; font-variant-numeric: tabular-nums; }
 #scrCareer .hubMain { grid-column: 1; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
 #scrCareer .evCard { padding: 14px 16px; border-radius: 16px; background: linear-gradient(160deg, rgba(40,30,12,.82), rgba(10,10,18,.8)); border: 1px solid var(--gold); box-shadow: 0 14px 40px rgba(0,0,0,.45); }
@@ -168,7 +168,7 @@ QC.CSS = String.raw`#scrCareer, #press, #locker { --night: #0a0c16; --ink: #1215
 #scrCareer .broomCard.on { border-color: var(--gold); }
 #scrCareer .broomCard b { font-family: var(--f-head); letter-spacing: .06em; color: var(--gold-hi); }
 #scrCareer .broomCard small { opacity: .7; font-size: 12px; line-height: 1.3; }
-#scrCareer .bstat { display: grid; grid-template-columns: 70px 1fr; align-items: center; gap: 6px; font-size: 10.5px; letter-spacing: .12em; opacity: .85; }
+#scrCareer .bstat { display: grid; grid-template-columns: 70px 1fr; align-items: center; gap: 6px; font-size: 11px; letter-spacing: .1em; opacity: .85; }
 #scrCareer .offers { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
 #scrCareer .offer { padding: 12px; border-radius: 14px; background: rgba(255,255,255,.05); border: 1px solid rgba(241,228,198,.2); display: grid; justify-items: center; gap: 4px; text-align: center; cursor: pointer; }
 #scrCareer .offer img { width: 54px; height: 66px; }
@@ -287,7 +287,7 @@ QC.CSS = String.raw`#scrCareer, #press, #locker { --night: #0a0c16; --ink: #1215
 #press .prRep { display: grid; gap: 2px; text-align: left; padding: 10px 12px; border-radius: 12px; background: rgba(10,11,20,.86); border: 1px solid rgba(241,228,198,.22); cursor: pointer; }
 #press .prRep b { font-family: var(--f-head); font-size: 14px; letter-spacing: .04em; }
 #press .prRep span { font-size: 12px; opacity: .75; }
-#press .prRep em { font-style: normal; font-size: 10.5px; letter-spacing: .14em; }
+#press .prRep em { font-style: normal; font-size: 11px; letter-spacing: .1em; }
 #press .prRep small { font-size: 11.5px; opacity: .65; line-height: 1.25; }
 #press .prRep.easy em { color: #7ae08a; }
 #press .prRep.mid em { color: #e8b84a; }
@@ -305,7 +305,7 @@ QC.CSS = String.raw`#scrCareer, #press, #locker { --night: #0a0c16; --ink: #1215
 #press .prA b { display: block; font-family: var(--f-head); font-size: 11.5px; letter-spacing: .14em; }
 #press .prA span { display: block; font-size: 13.5px; line-height: 1.3; margin: 2px 0; }
 #press .prA .fx { display: flex; gap: 7px; flex-wrap: wrap; }
-#press .prA .fx i { font-style: normal; font-size: 10px; letter-spacing: .1em; opacity: .8; }
+#press .prA .fx i { font-style: normal; font-size: 11px; letter-spacing: .08em; opacity: .8; }
 #press .prToast { position: absolute; left: 50%; top: 46%; transform: translateX(-50%); display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; opacity: 0; pointer-events: none; }
 #press .prToast.on { animation: card 2.4s ease both; }
 #press .prToast i { font-style: normal; font-family: var(--f-head); letter-spacing: .12em; font-size: 15px; text-shadow: 0 2px 8px #000; }
@@ -373,4 +373,5 @@ QC.CSS = String.raw`#scrCareer, #press, #locker { --night: #0a0c16; --ink: #1215
 #press .prRep.hard { border-color: rgba(255,122,106,.55) !important; }
 svg.qi { width: 1.2em; height: 1.2em; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; vertical-align: -0.24em; flex: none; }
 .tone svg.qi { width: 15px; height: 15px; vertical-align: 0; } #scrCareer .pbar .tone svg.qi { width: 13px; height: 13px; }
+@media (max-height: 620px) and (min-aspect-ratio: 16/10) { #scrCareer .resPanel { justify-self: end; width: min(540px, 57vw); } }
 `;

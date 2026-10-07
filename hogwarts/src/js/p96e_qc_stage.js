@@ -75,6 +75,11 @@ const STAGES = {
     if (variant === 'sorting') { const hat = SProps.hat(); hat.userData.tick = (dt, t) => { const c = Scenes.cast.me; if (!c || !c.a.head) return; c.a.head(hat.position); hat.position.y += 0.13; hat.rotation.y = c.a.yaw + Math.sin(t * 1.3) * 0.08; hat.rotation.z = Math.sin(t * 0.9) * 0.05;
         const talk = Dialogue.who === 'hat'; hat.userData.mouth.scale.y = talk ? 0.008 + Math.abs(Math.sin(t * 11)) * 0.02 : 0.008; hat.children[0].rotation.x = talk ? Math.sin(t * 3) * 0.05 : 0; }; list.push(hat); }
     if (variant === 'halloween') for (let i = 0; i < 26; i++) { const p = SProps.pumpkin(0.9 + RNG() * 0.4), w = Scenes.W([TX[i % 4] + (RNG() - 0.5) * 5, 6.5 + RNG() * 4, -L / 2 + 4 + (i / 26) * (L - 4)], new THREE.Vector3()); p.position.copy(w); p.rotation.y = F.yaw + PI + (RNG() - 0.5) * 0.8; p.userData.bob = w.y; p.userData.ph = i; list.push(p); }
+    /* the holidays and the balls empty the hall of its everyday diners (the script says "half empty"; a ball has no one eating) */
+    if (variant === 'christmas' || variant === 'yule' || variant === 'gala') { const out = HL.npcs.filter((a) => a.x > G.x0 && a.x < G.x1 && a.z > G.z0 && a.z < G.z1 && Math.abs(a.y - Y) < 3); for (const a of out) a.sceneOut = true; HL._nearN = null;
+      const l0 = S.onLeave; S.onLeave = () => { for (const a of out) a.sceneOut = false; HL._nearN = null; if (l0) l0(); };
+      // and two firs at the head of your own table, where its cameras look
+      for (const sx of [-2.6, 2.6]) { const t = SProps.fir(3.4), w = Scenes.W([hx + sx, 0, -L / 2 - 1.4], new THREE.Vector3()); t.position.copy(w); list.push(t); } }
     if (variant === 'christmas' || variant === 'yule' || variant === 'gala') for (const [lx, lz] of [[-15.5, -8], [15.5, -8], [-15.5, 8], [15.5, 8]]) { const t = SProps.fir(variant === 'gala' ? 5.5 : 7), w = Scenes.W([lx, 0, lz], new THREE.Vector3()); t.position.copy(w); list.push(t); }
     Scenes.F = prev; if (list.length) SProps.place(S, list);
     return S;
@@ -388,7 +393,7 @@ const Dialogue = {
 .dlgCard span { font-family: 'HLA', Georgia, serif; letter-spacing: .4em; font-size: 13px; color: #e6d6ae; text-shadow: 0 2px 6px #000; }
 .dlgSkip { position: absolute; top: calc(9vh + 10px); right: 18px; padding: 6px 14px; background: rgba(0,0,0,.45); border: 1px solid rgba(214,170,74,.45); color: #e6d6ae; font-family: 'HLA', Georgia, serif; letter-spacing: .2em; font-size: 11px; cursor: pointer; }
 .dlgLoad { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-family: 'HLA', Georgia, serif; letter-spacing: .4em; font-size: 12px; color: #a8987a; display: none; } #dlg.ld .dlgLoad { display: block; }
-@media (max-height: 620px) { #dlg .lb { height: 6vh; } .dlgBox { bottom: calc(6vh + 6px); padding: 8px 16px 10px; width: min(640px, 80vw); } .dlgWho { font-size: 10px; } .dlgText { font-size: 14.5px; min-height: 2.7em; margin-top: 3px; } .dlgChoices { bottom: calc(6vh + 6px); gap: 5px; width: min(620px, 80vw); } .dlgChoice { padding: 7px 12px; font-size: 13.5px; } .dlgSkip { top: calc(6vh + 6px); } }`,
+@media (max-height: 620px) { #dlg .lb { height: 6vh; } .dlgBox { bottom: calc(6vh + 6px); padding: 8px 16px 10px; width: min(640px, 80vw); } .dlgWho { font-size: 11.5px; letter-spacing: .16em; } .dlgText { font-size: 14.5px; min-height: 2.7em; margin-top: 3px; } .dlgChoices { bottom: calc(6vh + 6px); gap: 5px; width: min(620px, 80vw); } .dlgChoice { padding: 7px 12px; font-size: 13.5px; } .dlgSkip { top: calc(6vh + 6px); } }`,
   init() {
     if (this.el) return; const st = document.createElement('style'); st.textContent = this.css; document.head.appendChild(st);
     const d = document.createElement('div'); d.id = 'dlg';

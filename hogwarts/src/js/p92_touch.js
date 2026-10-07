@@ -113,7 +113,7 @@ TOUCH.css = `
   background: radial-gradient(circle at 50% 38%, rgba(46,38,24,0.62), rgba(8,7,10,0.66) 70%); border: 1.5px solid rgba(217,184,106,0.55); box-shadow: 0 2px 10px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(0,0,0,0.5);
   color: #f1e3bd; align-items: center; justify-content: center; flex-direction: column; transition: transform 0.08s, background 0.12s, opacity 0.2s; user-select: none; -webkit-user-select: none; }
 .tcB svg { width: 52%; height: 52%; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8)); pointer-events: none; }
-.tcB b { position: absolute; bottom: calc(var(--r) * -0.62); left: 50%; transform: translateX(-50%); font-weight: 400; font-size: calc(9px * var(--u)); letter-spacing: 0.16em; color: rgba(241,227,189,0.82); text-shadow: 0 1px 3px #000; white-space: nowrap; pointer-events: none; }
+.tcB b { position: absolute; bottom: calc(var(--r) * -0.62); left: 50%; transform: translateX(-50%); font-weight: 400; font-size: max(10px, calc(9.5px * var(--u))); letter-spacing: 0.1em; color: rgba(241,227,189,0.9); text-shadow: 0 1px 3px #000; white-space: nowrap; pointer-events: none; }
 .tcB.big b { bottom: calc(var(--r) * -0.42); }
 .tcB.on { display: flex; }
 .tcB.dn { transform: scale(0.9); background: radial-gradient(circle at 50% 38%, rgba(140,112,52,0.75), rgba(40,30,12,0.75) 70%); border-color: #fff1c4; }

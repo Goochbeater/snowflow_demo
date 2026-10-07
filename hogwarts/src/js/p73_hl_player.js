@@ -191,7 +191,7 @@ CAM.update = function (dt) {
   const cp = Math.cos(CAM.pitch), fwd = _v2.set(Math.sin(CAM.yaw) * cp, Math.sin(CAM.pitch), Math.cos(CAM.yaw) * cp);
   CAM.shoulder = damp(CAM.shoulder, fly ? 0 : 0.62, 4, dt);
   const right = _v3.set(-Math.cos(CAM.yaw), 0, Math.sin(CAM.yaw));
-  const look = _v4.copy(CAM.pivot).addScaledVector(right, CAM.shoulder); if (fly) look.y += qm ? 1.0 : 0.5;
+  const look = _v4.copy(CAM.pivot).addScaledVector(right, CAM.shoulder); if (fly) look.y += qm ? (innerHeight < 380 ? 0.7 : 1.0) : (innerHeight < 380 ? 0.15 : 0.5);   // (on the Fold's cover screen the rider sat at the bottom edge, behind the gauge)
   const back = _v5.copy(fwd).negate();
   let d = CAM.dist; const hit = PHY.ray(look.x, look.y, look.z, back.x, back.y, back.z, d + 0.3, 'los'); if (hit) d = Math.max(0.5, Math.min(d, hit.t - 0.25));
   CAM.curD = CAM.curD === undefined || CAM.snap ? d : (d < CAM.curD ? d : damp(CAM.curD, d, 3, dt));

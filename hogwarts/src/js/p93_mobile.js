@@ -8,11 +8,11 @@ HL.START.push(function () {
   const st = document.createElement('style'); st.id = 'hlMobCss'; st.textContent = `
 /* ---------------- the HUD, with buttons under both thumbs */
 body.touch #hlQuest { padding: calc(8px + env(safe-area-inset-top)) 18px 14px calc(12px + env(safe-area-inset-left)); width: min(42vw, 380px); background: radial-gradient(ellipse at 0% 0%, rgba(8,6,10,0.6), rgba(8,6,10,0.25) 50%, rgba(8,6,10,0) 75%); }
-body.touch #hlQuest .t { font-size: 9px; letter-spacing: 0.26em; } body.touch #hlQuest .n { font-size: 15px; margin: 1px 0 2px; } body.touch #hlQuest .o { font-size: 12.5px; line-height: 1.25; padding-left: 13px; } body.touch #hlQuest .o:before { top: 5px; width: 5px; height: 5px; }
+body.touch #hlQuest .t { font-size: 10.5px; letter-spacing: 0.16em; } body.touch #hlQuest .n { font-size: 15px; margin: 1px 0 2px; } body.touch #hlQuest .o { font-size: 12.5px; line-height: 1.25; padding-left: 13px; } body.touch #hlQuest .o:before { top: 5px; width: 5px; height: 5px; }
 body.touch #hlVit { left: 50%; bottom: auto; top: calc(6px + env(safe-area-inset-top)); width: 230px; transform: translateX(-50%); }
-body.touch #hlVit .crest { width: 26px; height: 30px; bottom: auto; top: 0; } body.touch #hlVit .bars { margin-left: 34px; } body.touch #hlVit .nm { font-size: 9px; margin-bottom: 3px; letter-spacing: 0.2em; }
+body.touch #hlVit .crest { width: 26px; height: 30px; bottom: auto; top: 0; } body.touch #hlVit .bars { margin-left: 34px; } body.touch #hlVit .nm { font-size: 10.5px; margin-bottom: 3px; letter-spacing: 0.12em; }
 body.touch #hlHp { height: 8px; } body.touch #hlAm { height: 4px; margin-top: 4px; } body.touch #hlVit .am { display: none; }
-body.touch #hlPts { right: max(226px, calc(230px * var(--tu, 1))); top: calc(6px + env(safe-area-inset-top)); } body.touch #hlPts .t { font-size: 8px; letter-spacing: 0.22em; } body.touch #hlPts .n { font-size: 17px; }
+body.touch #hlPts { right: max(226px, calc(230px * var(--tu, 1))); top: calc(6px + env(safe-area-inset-top)); } body.touch #hlPts .t { font-size: 10px; letter-spacing: 0.12em; } body.touch #hlPts .n { font-size: 17px; }
 body.touch #hlGold { right: max(226px, calc(230px * var(--tu, 1))); top: calc(40px + env(safe-area-inset-top)); font-size: 12px; }
 body.touch #hlPot { display: none; }
 body.touch #hlHint { bottom: calc(8px + env(safe-area-inset-bottom)); left: 47%; font-size: 12.5px; padding: 6px 14px; max-width: 44vw; width: max-content; line-height: 1.35; }
@@ -22,9 +22,9 @@ body.touch #hlPop { top: 30%; font-size: 15px; } body.touch #hlName { bottom: 30
 body.touch[data-tm="fly"] #hlHint { bottom: calc(92px + env(safe-area-inset-bottom)); max-width: 50vw; }
 /* in a match the hint reads under the scoreboard, clear of your rider; the knots readout gives way to the House Spirit bar */
 body.touch.tq #hlHint { top: calc(66px + env(safe-area-inset-top)); bottom: auto; max-width: 54vw; } body.touch.tq #hlFly { display: none; }
-body.touch #hlFly { bottom: calc(8px + env(safe-area-inset-bottom)); width: 190px; } body.touch #hlFly .sp { font-size: 20px; } body.touch #hlFly .al { font-size: 9px; margin-top: 3px; }
+body.touch #hlFly { bottom: calc(8px + env(safe-area-inset-bottom)); width: 190px; } body.touch #hlFly .sp { font-size: 20px; } body.touch #hlFly .al { font-size: 10px; margin-top: 3px; letter-spacing: .1em; }
 body.touch #hlSay { bottom: calc(10px + env(safe-area-inset-bottom)); width: min(560px, 48vw); left: 47%; padding: 8px 16px 10px; pointer-events: none; }
-body.touch #hlSay .nm { font-size: 10px; } body.touch #hlSay .tx { font-size: 14px; min-height: 38px; margin-top: 4px; } body.touch #hlSay .more { font-size: 8px; }
+body.touch #hlSay .nm { font-size: 10px; } body.touch #hlSay .tx { font-size: 14px; min-height: 38px; margin-top: 4px; } body.touch #hlSay .more { font-size: 10px; }
 body.touch #hlItem { top: 30%; left: 12px; width: 240px; transform: scale(0.82); transform-origin: 0 50%; }
 body.touch #hlQ { top: calc(4px + env(safe-area-inset-top)); } body.touch #hlQ .sb { padding: 3px 12px; gap: 9px; } body.touch #hlQ .sc { font-size: 24px; min-width: 38px; } body.touch #hlQ .cl { font-size: 11px; } body.touch #hlQ .tm { font-size: 11px; } body.touch #hlQ .st { font-size: 11px; margin-top: 3px; }
 body.touch #hlTgt span { font-size: 11px; }
@@ -53,11 +53,11 @@ body.touch #hlQtut { top: calc(4px + env(safe-area-inset-top)) !important; max-w
   /* the pack: the whole screen, three columns sized to it, the bag scrolling if it must */
   body .hlInv .box { zoom: 1 !important; width: 100vw; height: 100vh; grid-template-columns: minmax(150px, 24%) auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 0 12px; padding: calc(8px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 8px calc(14px + env(safe-area-inset-left)); animation: none; box-shadow: none; border: 0; }
   body .hlInv .cn, body .hlInv .box:before { display: none; } body .hlInv .hd { padding: 0 0 4px; } body .hlInv .hd h2 { font-size: 15px; } body .hlInv .hd .fl { flex-basis: 90px; } body #invClose { top: 6px; right: 60px; font-size: 10px; padding: 3px 8px; }
-  body .hlInv .sh { font-size: 8.5px; letter-spacing: .22em; padding-bottom: 3px; margin-bottom: 5px; } body .hlInv .ccol, body .hlInv .dcol, body .hlInv .rcol { min-height: 0; overflow-y: auto; }
+  body .hlInv .sh { font-size: 10px; letter-spacing: .14em; padding-bottom: 3px; margin-bottom: 5px; } body .hlInv .ccol, body .hlInv .dcol, body .hlInv .rcol { min-height: 0; overflow-y: auto; }
   body #invWho { padding: 0 0 4px; } body #invWho .lv { font-size: 9px; } body #invWho .lv b { font-size: 17px; } body #invWho .xp { height: 5px; margin: 4px 6px 2px; } body #invWho .xpn { font-size: 10px; }
   body #invStats .st { font-size: 11px; padding: 1.5px 1px; } body #invStats .st b { font-size: 11px; } body #invStats .gap { height: 4px; } body #invGold { font-size: 14px; padding-top: 6px; } body #invGold:before { width: 14px; height: 14px; }
   body #invDoll { grid-template-columns: min(48px, 11vh) min(118px, 27vh) min(48px, 11vh); grid-template-rows: repeat(5, min(48px, 11vh)); gap: 6px 8px; } body #invDoll .stage:after { font-size: 9px; }
-  body #invBag { grid-template-columns: repeat(6, minmax(0, 52px)); gap: 4px; } body .islot .lab { font-size: 7px; } body .hlInv .hint { font-size: 10px; padding-top: 6px; line-height: 1.35; }
+  body #invBag { grid-template-columns: repeat(6, minmax(0, 52px)); gap: 4px; } body .islot .lab { font-size: 9px; } body .hlInv .hint { font-size: 10px; padding-top: 6px; line-height: 1.35; }
   /* the map: the sheet as tall as the screen, the storeys and the card beside it smaller */
   body .hlMap.mm .view { height: 96vh; max-width: 58vw; } body .hlMap.mm .tabs3 { gap: 4px; margin-right: 10px; } body .hlMap.mm .tab3 { font-size: 12.5px !important; padding: 4px 18px 4px 8px !important; } body .hlMap.mm .tab3 small { font-size: 9.5px !important; }
   body .hlMap.mm .card { width: 190px; margin-left: 10px; padding: 10px 12px; max-height: 94vh; overflow-y: auto; box-sizing: border-box; } body .hlMap.mm .card h3 { font-size: 21px !important; margin: 0 0 4px; } body .hlMap.mm .card b { font-size: 11px !important; } body .hlMap.mm .card p { font-size: 12px; } body .hlMap.mm .card .lg { font-size: 11.5px; margin: 3px 0; gap: 6px; }
@@ -75,6 +75,14 @@ body.touch #hlQtut { top: calc(4px + env(safe-area-inset-top)) !important; max-w
   body.touch #hlToast { top: 9%; padding: 8px 30px 10px; } body.touch #hlToast .a { font-size: 17px; } body.touch #hlToast .b { font-size: 12px; }
 }
 /* ---------------- the touch layer's own adjustments */
+/* full-screen screens (map, journal, pack) hide the HUD behind them; the storey tabs keep to one line */
+body:has(#hlScreen .hlMap, #hlScreen .hlJ, #hlScreen .hlInv) :is(#hlQuest, #hlVit, #hlPts, #hlGold, #hlHint, #hlSay) { visibility: hidden; }
+body .hlMap.mm .tab3 { white-space: nowrap; }
+/* career scenes on a phone: subtitles, not a dialogue box over the speakers' chests (the box stays for choices) */
+@media (max-height: 620px) { body.touch #dlg .lb { height: 4vh; }
+  body.touch .dlgBox { left: 6vw; right: auto; width: 58vw; bottom: calc(4vh + 4px); transform: translateY(6px); padding: 18px 14px 8px; background: linear-gradient(rgba(0,0,0,0), rgba(0,0,0,.66) 34%); border: 0; box-shadow: none; }
+  body.touch .dlgBox.on { transform: none; } body.touch .dlgBox .dlgWho { font-size: 12px; } body.touch .dlgBox .dlgText { font-size: 15px; min-height: 0; text-shadow: 0 1px 4px #000, 0 0 2px #000; }
+  body.touch .dlgChoices { bottom: calc(4vh + 6px); } }
 body.touch .dlgSkip, body.touch[data-tm="cine"] #skip { display: none !important; }   /* one SKIP on glass: the round one */
 body.touch .tcSet .tcVal { display: inline-flex; align-items: center; justify-content: center; min-width: 96px; padding: 0 6px; font: 13px 'HLA', Georgia, serif; letter-spacing: .12em; color: #e8d7a8; }
 body.touch .hlBtn.tcSure { border-color: #e06a4e; color: #ffb4a0; }
