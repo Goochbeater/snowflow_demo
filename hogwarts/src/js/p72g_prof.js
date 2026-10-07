@@ -1,0 +1,5 @@
+/* ==== p72g_prof.js ==== */
+/* build profiler (only with ?prof): triangles added by each kind of piece */
+if (/[?&]prof/.test(location.search)) (function () { let n = 0; const g0 = KIT.geo, q0 = KIT.quad; KIT.geo = function (geo, m, mx, o) { n += (geo.index ? geo.index.count : geo.attributes.position.count) / 3; return g0(geo, m, mx, o); }; KIT.quad = function () { n += 2; return q0.apply(this, arguments); };
+  HL.PROF = {}; const wrap = (obj, k, name) => { const f = obj[k]; obj[k] = function () { const a = n, r = f.apply(this, arguments); HL.PROF[name] = (HL.PROF[name] || 0) + (n - a); HL.PROF[name + '#'] = (HL.PROF[name + '#'] || 0) + 1; return r; }; };
+  for (const k of ['vault', 'pier', 'respond', 'arch', 'string', 'blind', 'hearth', 'hammer']) wrap(HL.GK, k, 'GK.' + k); for (const k of ['win', 'chandelier', 'sconce', 'bookcase', 'banner', 'round', 'square', 'gable', 'wainscot', 'candlestick', 'armchair', 'viaduct', 'lantern']) wrap(HL, k, 'HL.' + k); for (const k of ['desk', 'board', 'master', 'bed', 'case']) wrap(HL.F, k, 'F.' + k); wrap(KIT, 'box', 'KIT.box'); HL.PROFN = () => n; })();
