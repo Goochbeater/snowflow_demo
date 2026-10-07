@@ -330,13 +330,13 @@ TOUCH.PHRASES = [
   [/steer with the (<b>)?mouse(<\/b>)?/g, 'steer by dragging the right side of the screen'], [/(<b>)?mouse(<\/b>)? steer/g, 'drag to steer'], [/the mouse/g, 'a drag of the right side'],
   [/hold (<kbd>SHIFT<\/kbd>) to run/g, 'push the stick all the way to run'], [/wheel to look closer, drag to move/g, 'pinch to look closer, drag to move'], [/double-click/gi, 'double-tap'],
   [/wheel to look closer, drag to move[\s\S]*?fold it away/g, 'pinch to look closer, drag to move · tap a storey · ✕ folds it away'],
-  [/(?:,? ?on )?<kbd>1<\/kbd>\s*(?:–|-|&ndash;)\s*<kbd>8<\/kbd>( spells)?/g, (m, sp) => sp ? ' the spell buttons' : ' with the spell buttons'], [/PRESS ANY KEY/g, 'TAP TO CONTINUE'], [/\b(J|M|I) OR ESC TO CLOSE/g, 'TAP ✕ TO CLOSE'], [/\bESC TO CLOSE/g, 'TAP ✕ TO CLOSE'], [/HOLD <kbd>ENTER<\/kbd> TO SKIP/g, 'TAP SKIP'], [/Right-tap/g, 'Long-press'], [/Right-click/g, 'Long-press'],
+  [/(?:,? ?on )?<kbd>1<\/kbd>\s*(?:–|-|&ndash;)\s*<kbd>8<\/kbd>( spells)?/g, (m, sp) => sp ? ' the spell buttons' : ' with the spell buttons'], [/PRESS ANY KEY/g, 'TAP TO CONTINUE'], [/press J to open your journal/g, 'tap JOURNAL to read it'], [/\b([Pp])ress E again/g, '$1ress USE again'], [/\b(J|M|I) OR ESC TO CLOSE/g, 'TAP ✕ TO CLOSE'], [/\bESC TO CLOSE/g, 'TAP ✕ TO CLOSE'], [/HOLD <kbd>ENTER<\/kbd> TO SKIP/g, 'TAP SKIP'], [/Right-tap/g, 'Long-press'], [/Right-click/g, 'Long-press'],
   [/\bclick(s|ed|ing)?\b/g, 'tap$1'], [/\bClick(s|ed|ing)?\b/g, 'Tap$1'], [/<b>(LMB|RMB)<\/b>/g, '<kbd>$1</kbd>'], [/\b(LMB|RMB)\b(?![^<]*<\/kbd>)/g, '<kbd>$1</kbd>'],
 ];
 TOUCH.fixText = function (html) { let s = html; for (const [re, to] of TOUCH.PHRASES) s = s.split(/(<[^>]+>)/).length > 1 && /\bclick|\bClick/.test(re.source) ? s.split(/(<[^>]+>)/).map((p) => p.startsWith('<') ? p : p.replace(re, to)).join('') : s.replace(re, to); return s; };
 TOUCH.fixEl = function (el) {
   if (!TOUCH.on || !el || el.nodeType !== 1 || el.closest('#tc')) return;
-  const RX = /mouse|[Cc]lick|LMB|RMB|wheel to|hold <kbd>SHIFT|PRESS ANY KEY|ESC TO CLOSE|TO SKIP|<kbd>1<\/kbd>\s*(?:–|-|&ndash;)/;
+  const RX = /press J to|ress E again|mouse|[Cc]lick|LMB|RMB|wheel to|hold <kbd>SHIFT|PRESS ANY KEY|ESC TO CLOSE|TO SKIP|<kbd>1<\/kbd>\s*(?:–|-|&ndash;)/;
   if (el.querySelector && (el.innerHTML.indexOf('<kbd') >= 0 || RX.test(el.innerHTML)) && !el.closest('[data-tf]')) {
     const fix = (e) => { const h = TOUCH.fixText(e.innerHTML); if (h !== e.innerHTML) e.innerHTML = h; }, live = 'input,canvas,.view';
     if (RX.test(el.innerHTML)) { if (el.children.length < 60 && !el.querySelector(live)) fix(el);
