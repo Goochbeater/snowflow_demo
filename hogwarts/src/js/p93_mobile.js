@@ -38,7 +38,7 @@ body.touch #hlQtut { top: calc(4px + env(safe-area-inset-top)) !important; max-w
   .hlSort h3 { font-size: 19px; } .hlSort p { font-size: 13px; margin: 0 0 10px; }
   .hlHouses { gap: 10px; } .hlH { height: min(50vh, 300px); width: min(19vw, 190px); } .hlH .tr { font-size: 10px; margin-top: 4px; padding: 0 4px; line-height: 1.25; } .hlH svg { width: 54%; margin-top: 9%; } .hlH .nm { font-size: min(1.8vw, 16px); }
   .hlRow { margin-top: 10px; gap: 6px; flex-wrap: wrap; justify-content: center; } .hlRow .hlBtn { min-width: 110px; font-size: 12px; padding: 7px 14px; }
-  .hlPause { flex-flow: row wrap; justify-content: center; align-content: safe center; overflow-y: auto; padding: 10px 4vw 14px; gap: 0 6px; } .hlPause h3 { font-size: 20px; margin: 0 0 6px; }
+  .hlPause { flex-flow: row wrap; justify-content: center; align-content: safe center; overflow-y: auto; padding: 10px 4vw 14px; gap: 0 6px;  background: rgba(4,3,6,0.88); backdrop-filter: blur(3px); } .hlPause h3 { font-size: 20px; margin: 0 0 6px; }
   .hlPause > :not(.hlBtn) { flex-basis: 100%; text-align: center; } .hlPause > .hlKeys { display: grid; justify-content: center; text-align: left; } .hlPause > .hlRow { display: flex; }
   .hlPause > .hlBtn { min-width: 0; flex: 0 1 40vw; max-width: 340px; font-size: 13px; padding: 8px 10px; }
   .hlKeys { font-size: 12.5px; gap: 3px 18px; margin: 2px 0 10px; }
