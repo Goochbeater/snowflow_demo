@@ -53,7 +53,7 @@ const STAGES = {
     const h = Career.S ? Career.S.profile.house : 0, hx = TX[h], dz = (G.z1 - G.z0) / 2;
     const seat = (x, z, yaw) => [x, 0, z, yaw, 'sit'];
     const A = {
-      seatMe: seat(hx - 1.15, -2.0, PI / 2), seatF: seat(hx + 1.15, -1.3, -PI / 2), firstYears: [-1.6, 0, -(zm - za) + 3.5, 0], stool: [0, 0, -(zm - za) - 3.2, PI], high: [0, 0.45, -(zm - G.z0) + 7.2 - 1.5, 0],
+      seatMe: seat(hx - 1.15, -2.0, PI / 2), seatF: seat(hx + 1.15, -1.3, -PI / 2), firstYears: [-1.6, 0, -(zm - za) + 3.5, 0], stool: [0, 0, -(zm - za) - 3.2, 0], high: [0, 0.45, -(zm - G.z0) + 7.2 - 1.5, 0],
       danceMe: [-0.6, 0, -L * 0.18, 0.4], danceP: [0.6, 0, -L * 0.18 + 0.7, PI + 0.4], dance1: [-3, 0, -L * 0.22, 0.2], dance2: [3.2, 0, -L * 0.15, -0.6], dance3: [-2.4, 0, -L * 0.05, 2.6], dance4: [2.6, 0, -L * 0.3, 3.4],
       examMe: [hx - 1.15, 0, 0, PI / 2, 'sit'], examF: [hx + 1.15, 0, 1.6, -PI / 2, 'sit'],
     };
@@ -284,10 +284,12 @@ Scenes.ots = function (who) {
   const P = L.clone().addScaledVector(d, -0.75).addScaledVector(n, 0.42); P.y = Math.max(L.y, S.y) + 0.1;
   return { world: true, p: P.toArray(), l: S.clone().addScaledVector(n, -0.12).toArray(), fov: len > 3 ? 30 : 36, dur: 30, blend: 0 };
 };
+/* the shot sees the back of their head (a line spoken away from the lens) */
+Scenes.backOn = function (sp) { const c = this.cam, cp = c ? (c.orbit ? this.cp : c.p1) : this.cp, f = new THREE.Vector3(Math.sin(sp.a.yaw + (sp.a.lookYaw || 0)), 0, Math.cos(sp.a.yaw + (sp.a.lookYaw || 0))), v = new THREE.Vector3(cp.x - sp.a.x, 0, cp.z - sp.a.z).normalize(); return f.dot(v) < -0.25; };
 Scenes.frameSpeaker = function (who) {
   if (Scenes.noAuto || !this.cast) return; const sp = this.cast[who === 'hat' ? 'me' : who]; if (!sp) return;
   if (this.lastAuto === who && this.cam && this.cam.auto) return;   // the same voice goes on in the same shot
-  if (this.sees(this.head(sp))) return;
+  if (this.sees(this.head(sp)) && !this.backOn(sp)) return;
   const s = this.ots(who === 'hat' ? 'me' : who); if (!s) return; this.shot(s); this.cam.auto = true; this.lastAuto = who;
 };
 /* ------------------------------------------------------------------ the frame while a scene plays (MG.state 'scene': the world lives, nobody plays) */
