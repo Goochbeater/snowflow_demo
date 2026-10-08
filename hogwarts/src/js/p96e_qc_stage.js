@@ -76,8 +76,8 @@ const STAGES = {
         const talk = Dialogue.who === 'hat'; hat.userData.mouth.scale.y = talk ? 0.008 + Math.abs(Math.sin(t * 11)) * 0.02 : 0.008; hat.children[0].rotation.x = talk ? Math.sin(t * 3) * 0.05 : 0; }; list.push(hat); }
     if (variant === 'halloween') for (let i = 0; i < 26; i++) { const p = SProps.pumpkin(0.9 + RNG() * 0.4), w = Scenes.W([TX[i % 4] + (RNG() - 0.5) * 5, 6.5 + RNG() * 4, -L / 2 + 4 + (i / 26) * (L - 4)], new THREE.Vector3()); p.position.copy(w); p.rotation.y = F.yaw + PI + (RNG() - 0.5) * 0.8; p.userData.bob = w.y; p.userData.ph = i; list.push(p); }
     /* the holidays and the balls empty the hall of its everyday diners (the script says "half empty"; a ball has no one eating) */
-    if (variant === 'christmas' || variant === 'yule' || variant === 'gala') { const out = HL.npcs.filter((a) => a.x > G.x0 && a.x < G.x1 && a.z > G.z0 && a.z < G.z1 && Math.abs(a.y - Y) < 3); for (const a of out) a.sceneOut = true; HL._nearN = null;
-      const l0 = S.onLeave; S.onLeave = () => { for (const a of out) a.sceneOut = false; HL._nearN = null; if (l0) l0(); };
+    if (variant === 'christmas' || variant === 'yule' || variant === 'gala') { const out = HL.npcs.filter((a) => a.x > G.x0 && a.x < G.x1 && a.z > G.z0 && a.z < G.z1 && Math.abs(a.y - Y) < 3); for (const a of out) a.sceneOut = true; HL._nearN = null; HL.stillOut = { x0: G.x0, x1: G.x1, z0: G.z0, z1: G.z1, y: Y };
+      const l0 = S.onLeave; S.onLeave = () => { for (const a of out) a.sceneOut = false; HL._nearN = null; HL.stillOut = null; if (l0) l0(); };
       // and two firs at the head of your own table, where its cameras look
       for (const sx of [-2.6, 2.6]) { const t = SProps.fir(3.4), w = Scenes.W([hx + sx, 0, -L / 2 - 1.4], new THREE.Vector3()); t.position.copy(w); list.push(t); } }
     if (variant === 'christmas' || variant === 'yule' || variant === 'gala') for (const [lx, lz] of [[-15.5, -8], [15.5, -8], [-15.5, 8], [15.5, 8]]) { const t = SProps.fir(variant === 'gala' ? 5.5 : 7), w = Scenes.W([lx, 0, lz], new THREE.Vector3()); t.position.copy(w); list.push(t); }
