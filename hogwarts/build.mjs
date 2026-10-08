@@ -28,12 +28,14 @@ if (mode === 'single') {
   const tex = bins.filter((id) => kind(id) === 'tex').sort(), TP = 4, texTotal = tex.reduce((s, id) => s + manifest[id].n, 0);
   let acc = 0; for (const id of tex) { const k = Math.min(TP - 1, Math.floor(acc / (texTotal / TP))); acc += manifest[id].n; (packs['tex' + k] = packs['tex' + k] || []).push(id); }
   packs.sfx = bins.filter((id) => kind(id) === 'sfx').sort();
-  for (const id of bins.filter((id) => kind(id) === 'file')) { const v = manifest[id]; fs.copyFileSync(R('assets', v.f), path.join(A, v.f)); M[id] = { f: v.f, m: v.m || '', n: v.n }; }
+  // BINEXT=wasm names the binary files for hosts that only serve web types (the bytes are fetched as an ArrayBuffer either way)
+  const BX = process.env.BINEXT || '', bx = (f) => BX ? f.replace(/\.(bin|pack)$/, '.' + BX) : f;
+  for (const id of bins.filter((id) => kind(id) === 'file')) { const v = manifest[id], f = bx(v.f); fs.copyFileSync(R('assets', v.f), path.join(A, f)); M[id] = { f, m: v.m || '', n: v.n }; }
   const P = {};
   for (const [name, ids] of Object.entries(packs)) {
     const parts = []; let o = 0;
     for (const id of ids) { const v = manifest[id], b = fs.readFileSync(R('assets', v.f)); parts.push(b); M[id] = { p: name, o, n: b.length, m: v.m || '', x: v.f.split('.').pop() }; o += b.length; const pad = (8 - (o % 8)) % 8; if (pad) { parts.push(Buffer.alloc(pad)); o += pad; } }
-    fs.writeFileSync(path.join(A, name + '.pack'), Buffer.concat(parts)); P[name] = { f: name + '.pack', n: o };
+    const pf = bx(name + '.pack'); fs.writeFileSync(path.join(A, pf), Buffer.concat(parts)); P[name] = { f: pf, n: o };
   }
   const head = `<script>window.__HL_ASSETS=${JSON.stringify({ base: 'a/', packs: P, items: M })};</script>\n`;
   fs.writeFileSync(path.join(out, 'index.html'), page(head, ''));
