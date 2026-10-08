@@ -34,7 +34,7 @@ QC.leave = function () { QC.active = false; QC.match = null; document.body.class
 QC.DIFF = { rookie: 0, pro: 1, legend: 2 };
 QC.kickoff = async function (ev) {
   const S = Career.S, o = Career.matchOpts(ev), mine = Career.myTeam(), opp = ev.opp, home = ev.home !== false, mk = QC.key(mine), ok = QC.key(opp);
-  if (window.Locker && Locker.on) Locker.exit(); Scenes.leave(true); CareerUI.root.hidden = true;
+  if (typeof Locker !== 'undefined' && Locker.on) Locker.exit(); Scenes.leave(true); CareerUI.root.hidden = true;
   QC.inject([mk, ok]); if (S.phase === 'school') QC.undress(); else QC.dress(home ? mk : ok, home ? ok : mk);
   S.seasonStart = S.seasonStart || Object.assign({}, S.tot);
   QC.match = { ev, o, mine, opp, mk, ok, passTo: {}, assistTo: {}, last: null, assists: 0, pm: Career.playerMods() };

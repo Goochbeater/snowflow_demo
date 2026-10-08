@@ -155,7 +155,7 @@ const CareerUI = {
   },
   kickoff(ev) { this.backdrop = null; QC.kickoff(ev); },
   simMatch(ev) {
-    if (window.Locker && Locker.on) Locker.exit(); this.backdrop = null; Scenes.leave(true);
+    if (typeof Locker !== 'undefined' && Locker.on) Locker.exit(); this.backdrop = null; Scenes.leave(true);
     const res = Career.simMine(ev);
     Career.onMatchEnd(res);
   },

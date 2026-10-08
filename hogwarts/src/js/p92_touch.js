@@ -231,7 +231,7 @@ TOUCH.release = function (id, pid) {
 };
 TOUCH.releaseAll = function () { for (const id in Object.assign({}, TOUCH.held)) TOUCH.release(id); TOUCH.stickUp(); for (const k in TOUCH.look) delete TOUCH.look[k]; };
 TOUCH.skip = function () {
-  if (MG.state === 'scene' && window.Script && Script.beats) { Script.skip(); return; }
+  if (MG.state === 'scene' && typeof Script !== 'undefined' && Script.beats) { Script.skip(); return; }
   if (CAM.cine) { TOUCH.key('Enter', true); setTimeout(() => TOUCH.key('Enter', false), 60); if (CAM.cine && CAM.cine.skip !== false && MG.state !== 'title') { /* a scene that listens for no key is skipped all the same */ CAM.cine.t = Math.max(CAM.cine.t, CAM.cine.dur || 0); } }
   else { TOUCH.key('Enter', true); setTimeout(() => TOUCH.key('Enter', false), 60); }
 };
@@ -291,7 +291,7 @@ TOUCH.tap = function (x, y) {   // taps on things the game draws under the contr
   TOUCH.frame();
 }; }
 TOUCH.modeNow = function () {
-  if (!TOUCH.on) return ''; if (MG.state === 'scene') return window.Script && Script.beats ? 'cine' : '';   // (a career scene: the one round SKIP; the creator and hubs have none)
+  if (!TOUCH.on) return ''; if (MG.state === 'scene') return typeof Script !== 'undefined' && Script.beats ? 'cine' : '';   // (a career scene: the one round SKIP; the creator and hubs have none)
   if (CAM.cine && (MG.state === 'play' || PLAYER.state === 'cine')) return 'cine';
   if (MG.state === 'play') { if (PLAYER.state === 'cine' || PLAYER.state === 'dead') return 'wait'; return HL.Q && HL.Q.on ? 'match' : PLAYER.state === 'fly' ? 'fly' : 'foot'; }
   if (MG.state === 'journal' || MG.state === 'inv' || MG.state === 'map' || (MG.state === 'house' && HL._floo)) return 'menu';
@@ -307,7 +307,7 @@ TOUCH.frame = function () {
     const full = P.ancient >= 100; TOUCH.btn.ancient.classList.toggle('on', full); TOUCH.btn.ancient.classList.toggle('glow', full);
     const near = HL.nearInteract ? HL.nearInteract() : null; TOUCH.btn.use.classList.toggle('on', !!near); TOUCH.btn.use.classList.toggle('use', !!near);
     if (near) { const lb = TOUCH.btn.use.querySelector('b'); const t = String(near.label || 'USE').toUpperCase().replace(/<[^>]+>/g, ''); if (lb.textContent !== t) lb.textContent = t.length > 18 ? t.slice(0, 17) + '…' : t; }
-    const pots = window.LOOTH && LOOTH.pots ? LOOTH.pots.wiggen || 0 : 0; TOUCH.btn.potion.classList.toggle('dim', pots <= 0);
+    const pots = typeof LOOTH !== 'undefined' && LOOTH.pots ? LOOTH.pots.wiggen || 0 : 0; TOUCH.btn.potion.classList.toggle('dim', pots <= 0);
     TOUCH.btn.lumos.classList.toggle('dn', !!(PLAYER.a && PLAYER.a.lumos) && TOUCH.held.lumos === undefined);
   } else if (m === 'fly') {
     const near = HL.nearInteract ? HL.nearInteract() : null; TOUCH.btn.use.classList.toggle('on', !!near);

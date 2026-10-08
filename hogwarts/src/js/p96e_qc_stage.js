@@ -305,7 +305,7 @@ Scenes.update = function (dt) {
 { const u0 = HL.update; HL.update = function (rdt) {
   if (MG.state !== 'scene') return u0(rdt);
   const dt = Math.min(rdt, 0.05); MG.dt = dt; MG.t += dt; HL.t += dt;
-  Scenes.update(dt); if (window.Locker && Locker.on) Locker.update(rdt); if (window.PressRoom) PressRoom.update(rdt);
+  Scenes.update(dt); if (typeof Locker !== 'undefined' && Locker.on) Locker.update(rdt); if (typeof PressRoom !== 'undefined') PressRoom.update(rdt);
   LEVEL.update(dt); if (HL.worldUpdate) HL.worldUpdate(dt); FX.update(dt); CAM.update(rdt);
   R.updateShadow(_v1.copy(R.camera.position).addScaledVector(R.camera.getWorldDirection(_v2), 12)); if (HL.ui) HL.ui.update(rdt);
 }; if (MG.gameUpdate === u0) MG.gameUpdate = HL.update; }   // (the engine holds the frame function by reference)
@@ -316,7 +316,7 @@ const Script = {
   async play(script, done) {
     HL.ui.fade(1); Dialogue.loading(true);
     try { await Scenes.need((script.cast || []).concat([{ id: 'me', o: {} }])); } catch (e) { console.warn('stage cast', e); }
-    if (window.CareerUI) CareerUI.backdrop = null; Scenes.enter(script.set, script.variant, { weather: script.weather });
+    if (typeof CareerUI !== 'undefined') CareerUI.backdrop = null; Scenes.enter(script.set, script.variant, { weather: script.weather });
     for (const c of script.cast || []) Scenes.spawn(c.id, c);
     this.beats = script.beats.slice(); this.i = 0; this.done = done; this.waiting = null; this.waitT = 0;
     // a few frames under the black so the new view is drawn (and its shaders built) before it is shown

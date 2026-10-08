@@ -7,7 +7,7 @@
   const end0 = Q.end; Q.end = function () { const was = Q.phase; const r = end0.apply(this, arguments); if (was !== 'over' && Q.phase === 'over') { const U = HL.ui; U.el.Hint.classList.remove('on'); U.hintT = 0; } return r; };
 }
 /* on glass the controls go away at the whistle */
-{ const m0 = TOUCH.modeNow; TOUCH.modeNow = function () { if (window.Locker && Locker.on && Locker.panel) return 'wait';   /* (a team talk is a conversation, not a cut-scene to skip) */
+{ const m0 = TOUCH.modeNow; TOUCH.modeNow = function () { if (typeof Locker !== 'undefined' && Locker.on && Locker.panel) return 'wait';   /* (a team talk is a conversation, not a cut-scene to skip) */
   const m = m0.apply(this, arguments); return m === 'match' && HL.Q.phase === 'over' ? 'wait' : m; }; }
 /* the flight controls hint goes when you land (it used to linger over the castle for its full ten seconds) */
 { const h0 = HL.ui.hint; HL.ui.hint = function () { delete HL.ui.el.Hint.dataset.fly; return h0.apply(this, arguments); };
