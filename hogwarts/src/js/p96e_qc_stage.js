@@ -267,7 +267,11 @@ Scenes.tpl = function (id, spec) {
   if (id === 'rival' && S && S.rival) return HL.student(dress || QC.key(S.rival.house), S.rival.body === 'f', (S.rival.look && S.rival.look.v) || 2, kit);
   if (dress) { const h = [...id].reduce((s, ch) => s + ch.charCodeAt(0), 0); return HL.student(dress, h % 2 === 1, 1 + (h % 6), false); }
   if (S && S.phase === 'school' && /^(rep|extra)/.test(id) && (o.outfit === 'casual' || o.outfit === 'coat')) { const h = [...id].reduce((s2, ch) => s2 + ch.charCodeAt(0), 0); return HL.student(QC.key(h % 4), h % 2 === 1, 1 + (h % 6), false); }   // at school the press pack is half pupils (the commentator, the school paper)
-  if (o.outfit === 'staff' || staff || formal || o.outfit === 'coat') { const h = [...id].reduce((s, ch) => s + ch.charCodeAt(0), 0); return h % 2 ? 'prof_a' : 'prof_b'; }
+  if (o.outfit === 'staff' || staff || formal || o.outfit === 'coat') {
+    // a named member of staff is played by the model that fits the name (Professor Ilsa Moorcroft was the bearded one)
+    let nm = ''; try { nm = typeof Story !== 'undefined' && Story.names ? String(Story.names(id) || '') : ''; } catch (e) { /* no career yet */ }
+    if (/\b(Ilsa|Cordelia|Cressida|Madam|Mrs|Miss|Headmistress)\b/.test(nm)) return 'prof_b'; if (/\b(Aldous|Bertram|Brennan|Declan|Mr|Headmaster)\b/.test(nm)) return 'prof_a';
+    const h = [...id].reduce((s, ch) => s + ch.charCodeAt(0), 0); return h % 2 ? 'prof_a' : 'prof_b'; }
   const h = [...id].reduce((s, ch) => s + ch.charCodeAt(0), 0), team = o.team != null ? o.team : S ? (S.phase === 'school' ? S.profile.house : Career.myTeam()) : 0;
   return HL.student(QC.key(team), h % 2 === 1, 1 + (h % 6), kit);
 };

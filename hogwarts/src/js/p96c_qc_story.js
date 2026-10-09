@@ -70,7 +70,7 @@ const Story = {
         { say: ['hat', `And a broom-shaped hole in your heart, I see. Well then, better be... ${c.house.toUpperCase()}!`] },
         { fx: 'cheer' }, { wait: 1.6 }, { swap: { [ME]: { at: 'seatMe', anim: 'sitTalk', o: school } } }, { cam: 'houseTable', snap: true },
         { say: [F, `${c.house}! Same as me! Budge up, everyone, we've got a flyer.`] },
-        { say: ['head', `Welcome to ${c.house}. Your Head of House is ${c.head}. The common room is in ${c.common}.`] },
+        { say: ['head', `Welcome to ${c.house}. I am your Head of House. Your common room is in ${c.common}; your prefects will show you the way.`] },
       ] }),
       spotted: () => ({ set: 'world', weather: 'golden', cast: [{ id: ME, at: 'pitchMe', anim: 'idle', o: school }, { id: 'capt', at: 'pitchCapt', anim: 'talk', o: { outfit: 'kit' } }, { id: F, at: 'pitchF', anim: 'idle', o: school }], beats: [
         { cam: 'pitchLow' },
