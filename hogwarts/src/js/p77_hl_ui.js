@@ -142,6 +142,7 @@ HL.ui.update = function (dt) {
   // waypoint
   const q = HL.quest && HL.quest.way ? HL.quest.way() : null;
   if (q) { HL.proj(_v4.set(q[0], q[1], q[2]), pr); const behind = pr.z > 1, m = 46; let x = pr.x, y = pr.y; if (behind) { x = R.cw - x; y = R.ch - m; } x = clamp(x, m, R.cw - m); y = clamp(y, m + 30, R.ch - m - 60);
+    if (document.body.classList.contains('touch')) { y = clamp(y, 96, R.ch * 0.6); if (y > 130) x = Math.min(x, R.cw - 300); x = Math.max(x, 60); }   // (on a phone it stays in the open middle of the view: off the stick, the spell buttons and the quest)
     E.Way.style.transform = `translate(${x.toFixed(0)}px, ${y.toFixed(0)}px)`; E.Way.classList.add('on'); const dist = Math.hypot(q[0] - a.x, q[1] - a.y, q[2] - a.z); U.setText('wd', E.Way.querySelector('span'), dist > 4 ? Math.round(dist) + ' m' : ''); } else E.Way.classList.remove('on');
   // flight gauges
   if (PLAYER.state === 'fly') { const F = HL.fly; U.setText('fs', E.Fly.querySelector('.sp span'), Math.round(F.speed * 1.94)); E.Fly.querySelector('u i').style.width = (F.boost * 100).toFixed(0) + '%'; U.setText('fa', E.Fly.querySelector('.al'), HL.Q && HL.Q.on ? '\u00a0' : 'ALTITUDE ' + Math.round(a.y) + ' M'); }

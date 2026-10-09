@@ -62,12 +62,13 @@ const Story = {
         { say: [F, `${c.friend}. Everyone calls me ${c.f1}. Look, there it is...`] },
         { cam: 'castle' }, { wait: 3.5 },
       ] }),
-      sorting: () => ({ set: 'hall', variant: 'sorting', cast: [{ id: ME, at: 'stool', anim: 'sit', o: school }, { id: 'head', at: 'high', anim: 'idle', o: { outfit: 'staff' } }, { id: F, at: 'firstYears', anim: 'idle', o: school }], beats: [
+      // (you go up in a first-year's plain black, the others still to be sorted watching beside the stool; your friend was sorted before you and is at the table)
+      sorting: () => ({ set: 'hall', variant: 'sorting', cast: [{ id: ME, at: 'stool', anim: 'sit', o: { outfit: 'first' } }, { id: 'head', at: 'high', anim: 'idle', o: { outfit: 'staff' } }, { id: F, at: 'seatF', anim: 'sitTalk', o: school }].concat([1, 2, 3, 4, 5, 6].map((i) => ({ id: 'fy' + i, at: 'fy' + i, anim: 'idle', o: { outfit: 'first' } }))), beats: [
         { cam: 'hallDoor' }, { wait: 2.5 },
         { cam: 'stool' },
         { say: ['hat', `Hmm. Difficult. Very difficult. Plenty of nerve, a good mind, a little hunger to prove yourself...`] },
         { say: ['hat', `And a broom-shaped hole in your heart, I see. Well then, better be... ${c.house.toUpperCase()}!`] },
-        { fx: 'cheer' }, { cam: 'houseTable' },
+        { fx: 'cheer' }, { wait: 1.6 }, { swap: { [ME]: { at: 'seatMe', anim: 'sitTalk', o: school } } }, { cam: 'houseTable', snap: true },
         { say: [F, `${c.house}! Same as me! Budge up, everyone, we've got a flyer.`] },
         { say: ['head', `Welcome to ${c.house}. Your Head of House is ${c.head}. The common room is in ${c.common}.`] },
       ] }),
@@ -80,7 +81,7 @@ const Story = {
       ] }),
       feast: () => ({ set: 'hall', variant: 'feast', cast: [{ id: ME, at: 'seatMe', anim: 'sitTalk', o: school }, { id: F, at: 'seatF', anim: 'sitTalk', o: school }, { id: 'head', at: 'high', anim: 'idle', o: { outfit: 'staff' } }], beats: [
         { title: `Year ${S.year === 7 ? 'Seven' : ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six'][S.year]}`, sub: 'Start-of-term feast' },
-        { cam: 'hallWide' }, { wait: 2.2 }, { cam: 'tableClose' },
+        { cam: 'hallWide' }, { wait: 2.2 }, { cam: 'tableClose' }, { wait: 1.8 },
         { say: [F, S.year === 2 ? `Trials are on Saturday. ${c.c1} says there's one ${c.pos} spot. One.` : S.year === 7 ? `Last year. Last feast. Do you think they'll miss us?` : `Another year. ${c.r1} has been bragging about ${CONFIG.teams[S.rival ? S.rival.house : 1].name}'s new brooms all summer.`] },
         { choice: S.year === 7 ? [{ t: '"They\'ll have to. We\'re winning the Cup on the way out."', tone: 'sh', fx: { chem: 2 } }, { t: '"I\'ll miss this. All of it."', tone: 'gr', fx: { chem: 3 } }] : [{ t: '"Brooms don\'t catch the Snitch. Flyers do."', tone: 'fi', fx: { chem: 2 } }, { t: '"Good for them. We\'ll talk on the pitch."', tone: 'gr', fx: { chem: 2, trust: 1 } }, { t: '"Pass the treacle tart and stop worrying."', tone: 'de', fx: { chem: 1 } }] },
         { say: ['head', `Welcome, welcome! A reminder that the Forbidden Forest is forbidden. Quidditch trials will be held on the second weekend. Tuck in!`] },
@@ -92,7 +93,7 @@ const Story = {
         { choice: [{ t: '"Rain\'s good. The other lot will hate it more."', tone: 'tm', fx: { chem: 3 } }, { t: '"I could fly this one with my eyes shut."', tone: 'sh', fx: { chem: -1, fame: 1 } }] },
       ] }),
       christmas: () => ({ set: 'hall', variant: 'christmas', cast: [{ id: ME, at: 'seatMe', anim: 'sitTalk', o: school }, { id: F, at: 'seatF', anim: 'sitTalk', o: school }], beats: [
-        { cam: 'hallWide' }, { wait: 2.5 }, { cam: 'trees' }, { wait: 1.5 }, { cam: 'tableClose' },
+        { cam: 'hallWide' }, { wait: 2.5 }, { cam: 'trees' }, { wait: 1.5 }, { cam: 'tableClose' }, { wait: 1.6 },
         { say: [F, `You're staying for Christmas too? Brilliant. The castle's half empty. We can practise on the frozen pitch.`] },
         { say: [F, `Also, someone left a package with your name on it. It looks... broom-shaped?`] },
         { choice: [{ t: 'Open it now.', tone: 'gr', fx: { gal: 10 }, reply: [F, `New broom-servicing kit AND a tin of Fizzing Whizzbees. Somebody loves you.`] }, { t: 'Save it for Christmas morning.', tone: 'de', fx: { trust: 1 } }] },

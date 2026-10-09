@@ -148,6 +148,8 @@ for (const T of CONFIG.teams) {
 }
 /* dress robes for the balls and galas: midnight velvet with a silver lining, no crest */
 HL.TEAMS.ball = { name: 'Dress robes', col: 0x1c2448, col2: 0xd8dce8, cloth: [0x151a33, 0xc4c8d8], trait: '', beast: 0, css: '#1c2448', css2: '#d8dce8', kind: 'formal' };
+/* and the first-years' plain black, before the Hat has given them a house */
+HL.TEAMS.first = { name: 'First-years', col: 0x1d1d22, col2: 0x3c3c44, cloth: [0x121216, 0x36363e], trait: '', beast: 0, css: '#1d1d22', css2: '#3c3c44', kind: 'formal' };
 QC.key = (i) => (CONFIG.teams[i] || CONFIG.teams[0]).key;
 QC.idx = (key) => CONFIG.teams.findIndex((t) => t.key === key);
 /* for the length of a match the two sides stand among the houses (the match code names and colours its sides through HL.HOUSES) */

@@ -40,6 +40,11 @@ const SProps = {
     const mouth = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 6), new THREE.MeshBasicMaterial({ color: 0x120b06 })); mouth.scale.set(0.07, 0.008, 0.02); mouth.position.set(0, 0.125, 0.11); g.add(mouth);
     for (const [y, r] of [[0.16, 0.1], [0.07, 0.12]]) { const brow = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 6), new THREE.MeshBasicMaterial({ color: 0x1e140b })); brow.scale.set(0.035, 0.006, 0.012); brow.position.set(y > 0.1 ? -0.035 : 0.035, y + 0.02, r - 0.005); if (y > 0.1) g.add(brow); }
     g.userData.mouth = mouth; return g; },
+  /* the Sorting stool: three splayed legs and a rung, a worn round seat at the benches' height */
+  stool() { const M = this.M(), wood = M.stool || (M.stool = new THREE.MeshStandardMaterial({ color: 0x5c3e24, roughness: 0.74 })), g = new THREE.Group();
+    const seat = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.185, 0.05, 20), wood); seat.position.y = 0.475; seat.castShadow = seat.receiveShadow = true; g.add(seat);
+    for (let i = 0; i < 3; i++) { const a = i / 3 * TAU + 0.5, leg = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.027, 0.47, 7), wood); leg.position.set(Math.cos(a) * 0.15, 0.225, Math.sin(a) * 0.15); leg.rotation.set(-Math.sin(a) * 0.17, 0, Math.cos(a) * 0.17); leg.castShadow = true; g.add(leg); }
+    const rung = new THREE.Mesh(new THREE.TorusGeometry(0.152, 0.011, 5, 18), wood); rung.rotation.x = HALF; rung.position.y = 0.17; g.add(rung); return g; },
   /* snow lying on everything that faces the sky within r of a point: each nearby surface's material is lent a copy that
      whitens and roughens what faces up (the flakes fell on dry summer cobbles); the bunting comes down; the light goes cold */
   snowCover(S, cx, cz, r) { const cache = new Map(), swaps = [], hid = [], v = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0), G = R.G, g0 = [G.gHigh.clone(), G.gShadow.clone(), G.sat];
@@ -66,17 +71,20 @@ const STAGES = {
     const h = Career.S ? Career.S.profile.house : 0, hx = TX[h], dz = (G.z1 - G.z0) / 2;
     const seat = (x, z, yaw) => [x, 0, z, yaw, 'sit'];
     const A = {
-      seatMe: seat(hx - 1.15, -2.0, PI / 2), seatF: seat(hx + 1.15, -1.3, -PI / 2), firstYears: [-1.6, 0, -(zm - za) + 3.5, 0], stool: [0, 0, -(zm - za) - 3.2, 0], high: [0, 0.45, -(zm - G.z0) + 7.2 - 1.5, 0],
+      seatMe: seat(hx - 1.15, -2.0, PI / 2), seatF: seat(hx + 1.15, -1.3, -PI / 2), firstYears: [-1.6, 0, -(zm - za) + 3.5, 0], stool: [0, 0, -(zm - za) - 2.2, 0], high: [0, 0.45, -(zm - G.z0) + 7.2 - 1.5, 0],
       danceMe: [-0.45, 0, -L * 0.18, 0.4], danceP: [0.45, 0, -L * 0.18 + 0.2, PI + 0.4], dance1: [-3.2, 0, -L * 0.24, 0.2], dance2: [-2.4, 0, -L * 0.24 + 0.3, PI + 0.2], dance3: [2.6, 0, -L * 0.1, 2.6], dance4: [3.4, 0, -L * 0.1 + 0.3, 2.6 - PI], dance5: [-1.2, 0, -L * 0.34, 0], dance6: [-0.4, 0, -L * 0.34 + 0.3, PI], dance7: [4.6, 0, -L * 0.28, 0.8], dance8: [5.4, 0, -L * 0.28 + 0.3, 0.8 - PI], dance9: [-5, 0, -L * 0.06, -0.4], dance10: [-4.2, 0, -L * 0.06 + 0.3, PI - 0.4],
       examMe: [hx - 1.15, 0, 0, PI / 2, 'sit'], examF: [hx + 1.15, 0, 1.6, -PI / 2, 'sit'],
     };
+    // (the stool in front of the dais steps, where the floor is level; the first-years still to be sorted in a knot beside it, watching)
+    { const sz = A.stool[2]; [[-1.5, 0.7], [-2.1, 1.3], [-1.3, 1.6], [-2.7, 0.6], [-2.9, 1.7], [-1.9, 2.3]].forEach(([x, dz], i) => { A['fy' + (i + 1)] = [x, 0, sz + dz, Math.atan2(0 - x, sz - (sz + dz)) + (i % 2 ? 0.2 : -0.15)]; }); }
     const C = {
       default: { p: [0, 5.5, dz - 2], l: [0, 3.5, -10], fov: 50 },
       hallWide: { p: [0, 8.5, L / 2 + 3], l: [0, 4.2, -L / 2], p2: [0, 6.2, L / 2 - 6], l2: [0, 3.2, -L / 2 - 2], fov: 56, dur: 9 },
       hallDoor: { p: [0.4, 1.7, L / 2 + 4], l: [0, 7, 0], p2: [0.2, 2.2, L / 2 - 2], fov: 60, dur: 7 },
       stool: { p: [2.4, 1.7, A.stool[2] + 3.6], l: [0, 1.45, A.stool[2]], p2: [1.7, 1.6, A.stool[2] + 2.8], fov: 36, dur: 8 },
-      houseTable: { p: [hx + 3.6, 2.1, -2 + 5.4], l: [hx, 0.95, -2], p2: [hx + 2.8, 1.7, -2 + 3.8], fov: 44, dur: 8 },
-      tableClose: { p: [hx - 0.15, 1.3, 0.9], l: [hx + 0.1, 1.05, -1.8], p2: [hx + 0.2, 1.25, 0.4], fov: 40, dur: 9 },
+      houseTable: { p: [hx + 3.6, 2.1, -2 + 5.4], l: [hx, 0.95, -2], p2: [hx + 2.8, 1.7, -2 + 3.8], fov: 44, dur: 8, wide: true },
+      // (from the end of the pair's stretch of table, eye height, easing in: it sat 40 cm over the plates, a gold dish filling the foreground; the lines cut in over the shoulder)
+      tableClose: { p: [hx + 0.25, 1.72, 2.6], l: [hx, 1.05, -1.7], p2: [hx + 0.2, 1.62, 1.6], fov: 38, dur: 9, wide: true },
       pumpkins: { p: [hx + 2, 1.5, 2], l: [hx, 9, -10], l2: [hx, 2.2, -4], p2: [hx + 1.4, 1.6, 0.6], fov: 54, dur: 6 },   // (tilts down from the lanterns to the table)
       trees: { p: [6, 2, 4], l: [12, 5, -6], p2: [5, 2.4, 0], fov: 50, dur: 8 },
       yuleWide: { p: [0, 7, L * 0.3], l: [0, 1.5, -L * 0.18], p2: [3, 5, L * 0.12], fov: 48, dur: 10 },
@@ -85,7 +93,9 @@ const STAGES = {
     };
     const S = { F, anchors: A, cams: C, house: h, tables: TX, variant, extras: variant === 'yule' || variant === 'exams' ? 0 : 6 };
     const prev = Scenes.F; Scenes.F = F; const list = [];
-    if (variant === 'sorting') { const hat = SProps.hat(); hat.userData.tick = (dt, t) => { const c = Scenes.cast.me; if (!c || !c.a.head) return; c.a.head(hat.position); hat.position.y += 0.13; hat.rotation.y = c.a.yaw + Math.sin(t * 1.3) * 0.08; hat.rotation.z = Math.sin(t * 0.9) * 0.05;
+    if (variant === 'sorting') { const hat = SProps.hat(), stool = SProps.stool(), sw = Scenes.W(A.stool, new THREE.Vector3()); stool.position.copy(sw); stool.rotation.y = F.yaw; list.push(stool);
+      hat.userData.tick = (dt, t) => { const c = Scenes.cast.me; if (c && c.spec.at !== 'stool') { hat.position.set(sw.x, sw.y + 0.5, sw.z); hat.rotation.set(0, F.yaw + 0.6, 0.12); hat.userData.mouth.scale.y = 0.008; return; }   // (once you have gone to your table it is left on the stool for the next)
+        if (!c || !c.a.head) return; c.a.head(hat.position); hat.position.y += 0.13; hat.rotation.y = c.a.yaw + Math.sin(t * 1.3) * 0.08; hat.rotation.z = Math.sin(t * 0.9) * 0.05;
         const talk = Dialogue.who === 'hat'; hat.userData.mouth.scale.y = talk ? 0.008 + Math.abs(Math.sin(t * 11)) * 0.02 : 0.008; hat.children[0].rotation.x = talk ? Math.sin(t * 3) * 0.05 : 0; }; list.push(hat); }
     if (variant === 'yule' || variant === 'gala') {
       /* the couples turn about each other, stepping, faces to each other (they stood still and cheered) */
@@ -139,6 +149,21 @@ const STAGES = {
   potions(variant) {
     const P = HL.plan(0), name = variant === 'charms' ? 'THE CHARMS CLASSROOM' : 'THE POTIONS CLASSROOM'; let c = P.comps.find((q) => q.name === name) || P.comps.find((q) => /POTIONS|ALCHEMY/.test(q.name || ''));
     if (!c) return null; const x = (P.X(c.R.i0) + P.X(c.R.i1 + 1)) / 2, z = (P.Z(c.R.j0) + P.Z(c.R.j1 + 1)) / 2, w = Math.abs(P.X(c.R.i0) - P.X(c.R.i1 + 1)), d = Math.abs(P.Z(c.R.j0) - P.Z(c.R.j1 + 1)), along = d >= w;
+    /* Potions at the room's own benches: you and your friend behind the front bench nearest the master's desk, its
+       cauldron glowing between you and the lens; the rival at the bench across the aisle; the professor where the castle
+       stands its own, between the desk and the class. (The stage's own marks stood you in the aisle with no cauldron, and
+       a cut to the professor looked through a bookcase.) */
+    { const xa = Math.min(P.X(c.R.i0), P.X(c.R.i1 + 1)), xb = Math.max(P.X(c.R.i0), P.X(c.R.i1 + 1)), za = Math.min(P.Z(c.R.j0), P.Z(c.R.j1 + 1)), zb = Math.max(P.Z(c.R.j0), P.Z(c.R.j1 + 1)), inR = (qx, qz) => qx > xa && qx < xb && qz > za && qz < zb;
+      const pf = variant !== 'charms' && (HL.PROFS || []).find((p) => p[4] === name && inR(p[0], p[1])), cs = (HL.CAULDRONS || []).filter((q) => inR(q[0], q[2]) && Math.abs(q[1] - P.y - 1.22) < 0.6);
+      if (pf && cs.length >= 2) { const hy = Math.round(Math.atan2(pf[0] - x, pf[1] - z) / HALF) * HALF, fx = Math.sin(hy), fz = Math.cos(hy), u = (q) => (q[0] - x) * fx + (q[2] - z) * fz;
+        const front = Math.max(...cs.map(u)), row = cs.filter((q) => u(q) > front - 1), B = row.sort((a, b) => Math.hypot(a[0] - pf[0], a[2] - pf[1]) - Math.hypot(b[0] - pf[0], b[2] - pf[1]))[0];
+        const F = Scenes.frame(B[0], P.y, B[2], hy), lc = (wx, wz) => { const dx = wx - F.x, dz = wz - F.z; return [F.c * dx - F.s * dz, F.s * dx + F.c * dz]; };
+        const mid = lc(x, z), other = row.filter((q) => q !== B).map((q) => lc(q[0], q[2])).sort((a, b) => Math.abs(a[1]) - Math.abs(b[1]))[0] || [mid[0] * 2, 0], pl = lc(pf[0], pf[1]), sd = Math.sign(mid[0]) || 1;
+        const A = { deskMe: [-0.45, 0, -1.08, 0], deskF: [0.45, 0, -1.08, 0], deskR: [other[0] - 0.45 * sd, 0, other[1] - 1.08, 0], prof: [pl[0] * 0.6, 0, pl[1], Math.atan2(-pl[0] * 0.6, -1.08 - pl[1])] };
+        const C = { default: { p: [mid[0], 2.4, -6], l: [0, 1.2, 1], fov: 50 },
+          potionsWide: { p: [mid[0] * 0.9, 3.0, -7.5], l: [mid[0] * 0.3, 1.2, 1.2], p2: [mid[0] * 0.8, 2.6, -5.6], fov: 50, dur: 10 },
+          cauldron: { p: [0.2 * sd, 1.5, 1.0], l: [0, 1.22, -1.0], p2: [0.12 * sd, 1.45, 0.75], fov: 44, dur: 10 } };
+        return { F, anchors: A, cams: C, variant, clear: 7 }; } }
     const F = Scenes.frame(x, P.y, z, along ? PI : HALF), D = along ? d : w;
     const A = { deskMe: [-1.0, 0, 0.6, 0], deskF: [0.6, 0, 0.6, 0], deskR: [2.2, 0, -0.8, 0], prof: [0, 0, -D / 2 + 2.4, PI] };
     const C = { default: { p: [0, 2.4, D / 2 - 1], l: [0, 1.2, -2], fov: 52 }, potionsWide: { p: [-3.5, 3.0, D / 2 - 1.2], l: [0, 1.2, -1.5], p2: [-2.2, 2.6, D / 2 - 2.4], fov: 52, dur: 10 },
@@ -213,12 +238,12 @@ const STAGES = {
 Scenes.tpl = function (id, spec) {
   const S = Career.S, o = (spec && spec.o) || {}, kit = o.outfit === 'kit' || o.outfit === 'track';
   const pro = S && S.phase !== 'school' && kit, myKey = pro ? QC.key(Career.myTeam()) : QC.key(S ? S.profile.house : 0);
-  const formal = o.outfit === 'formal', staff = /^(prof|head|hooch|scout|rep|press|coach|agent|minister|extra)/.test(id), dress = formal && !staff ? 'ball' : null;   // dress robes at the balls
+  const formal = o.outfit === 'formal', staff = /^(prof|head|hooch|scout|rep|press|coach|agent|minister|extra)/.test(id), dress = formal && !staff ? 'ball' : o.outfit === 'first' ? 'first' : null;   // dress robes at the balls; plain black before the Sorting
   if (id === 'me') { const P = S.profile; return HL.student(dress || myKey, P.body === 'f', (P.look && P.look.v) || 0, kit); }
   const mate = id === 'friend' ? S && S.mates[S.friend] : id === 'capt' ? S && S.mates[S.capt] : /^mate_/.test(id) ? S && S.mates[id.slice(5)] : null;
   if (mate) return HL.student(dress || myKey, mate.body === 'f', (mate.look && mate.look.v) || 1, kit);
   if (id === 'rival' && S && S.rival) return HL.student(dress || QC.key(S.rival.house), S.rival.body === 'f', (S.rival.look && S.rival.look.v) || 2, kit);
-  if (dress) { const h = [...id].reduce((s, ch) => s + ch.charCodeAt(0), 0); return HL.student('ball', h % 2 === 1, 1 + (h % 6), false); }
+  if (dress) { const h = [...id].reduce((s, ch) => s + ch.charCodeAt(0), 0); return HL.student(dress, h % 2 === 1, 1 + (h % 6), false); }
   if (S && S.phase === 'school' && /^(rep|extra)/.test(id) && (o.outfit === 'casual' || o.outfit === 'coat')) { const h = [...id].reduce((s2, ch) => s2 + ch.charCodeAt(0), 0); return HL.student(QC.key(h % 4), h % 2 === 1, 1 + (h % 6), false); }   // at school the press pack is half pupils (the commentator, the school paper)
   if (o.outfit === 'staff' || staff || formal || o.outfit === 'coat') { const h = [...id].reduce((s, ch) => s + ch.charCodeAt(0), 0); return h % 2 ? 'prof_a' : 'prof_b'; }
   const h = [...id].reduce((s, ch) => s + ch.charCodeAt(0), 0), team = o.team != null ? o.team : S ? (S.phase === 'school' ? S.profile.house : Career.myTeam()) : 0;
@@ -229,7 +254,7 @@ Scenes.need = async function (list) { const names = [...new Set(list.map((c) => 
 Scenes.enter = function (name, variant, opts) {
   opts = opts || {}; this.leave(true);
   if (MG.state === 'title' || MG.state === 'house') HL.ui.screen('');   // (a scene never plays under the title's buttons)
-  const S = (STAGES[name] || STAGES.world)(variant || '') || STAGES.world(''); this.set = S; if (name === 'common' || name === 'potions') QC.clearAround(S, name === 'common' ? 6 : 4, 40);   // (no castle pupil in your armchair or at your desk, no ghost through the shot) this.F = S.F; this.active = true; this.mode = opts.mode || 'view'; this.t = 0;
+  const S = (STAGES[name] || STAGES.world)(variant || '') || STAGES.world(''); this.set = S; if (name === 'common' || name === 'potions' || name === 'hall') QC.clearAround(S, name === 'common' ? 6 : name === 'potions' ? (S.clear || 4) : 0, 40);   // (no castle pupil in your armchair or at your desk, no ghost through the shot) this.F = S.F; this.active = true; this.mode = opts.mode || 'view'; this.t = 0;
   // the player's own body steps aside (it stands at the stage, unseen, so that what goes by where you are — the castle's lights and voices, who is drawn — follows the scene)
   const P = PLAYER.a; if (P) { if (HL.fly.on) HL.fly.dismount(true); this._pl = { x: P.x, y: P.y, z: P.z, yaw: P.yaw, st: PLAYER.state, ms: MG.state }; const w = Scenes.W([0, 0, 2.5]); P.x = w.x; P.z = w.z; P.y = S.F.y; P.vx = P.vy = P.vz = 0; PLAYER.state = 'cine'; Scenes.hidePlayer(true); }
   this._ms = MG.state === 'scene' ? (this._ms || 'play') : MG.state; MG.state = 'scene'; HL.ui.show(false); if (HL.ui.sayOff) HL.ui.sayOff(); if (HL.Q && HL.Q.hud && HL.Q.hud.cv) HL.Q.hud.cv.style.display = 'none';
@@ -275,7 +300,7 @@ Scenes.anim = function (c, name) {
 Scenes.shot = function (s, snap) {
   if (!s) return; const res = (v) => typeof v === 'function' ? v() : v, Wv = (v) => s.world ? new THREE.Vector3().fromArray(res(v)) : Scenes.W(res(v), new THREE.Vector3());
   const p = Wv(s.p), l = Wv(s.l);
-  this.cam = { p0: snap ? p.clone() : this.cp.clone(), l0: snap ? l.clone() : this.cl.clone(), f0: snap ? (s.fov || 45) : this.cfov, p1: p, l1: l, f1: s.fov || 45, p2: s.p2 ? Wv(s.p2) : null, l2: s.l2 ? Wv(s.l2) : null, t: 0, blend: snap ? 0 : (s.blend !== undefined ? s.blend : 0.9), dur: s.dur || 6, orbit: s.orbit || null };
+  this.cam = { p0: snap ? p.clone() : this.cp.clone(), l0: snap ? l.clone() : this.cl.clone(), f0: snap ? (s.fov || 45) : this.cfov, p1: p, l1: l, f1: s.fov || 45, p2: s.p2 ? Wv(s.p2) : null, l2: s.l2 ? Wv(s.l2) : null, t: 0, blend: snap ? 0 : (s.blend !== undefined ? s.blend : 0.9), dur: s.dur || 6, orbit: s.orbit || null, wide: !!s.wide };
   if (snap) { this.cp.copy(p); this.cl.copy(l); this.cfov = s.fov || 45; }
 };
 Scenes.camNow = function () {
@@ -323,7 +348,7 @@ Scenes.backOn = function (sp) { const c = this.cam, cp = c ? (c.orbit ? this.cp 
 Scenes.frameSpeaker = function (who) {
   if (Scenes.noAuto || !this.cast || (this.set && this.set.noAutoFrame)) return; const sp = this.cast[who === 'hat' ? 'me' : who]; if (!sp) return;
   if (this.lastAuto === who && this.cam && this.cam.auto) return;   // the same voice goes on in the same shot
-  if (this.sees(this.head(sp)) && !this.backOn(sp)) return;
+  if (!(this.cam && this.cam.wide) && this.sees(this.head(sp)) && !this.backOn(sp)) return;   // (a wide shot establishes; the lines play closer)
   const s = this.ots(who === 'hat' ? 'me' : who); if (!s) return; this.shot(s); this.cam.auto = true; this.lastAuto = who;
 };
 /* ------------------------------------------------------------------ the frame while a scene plays (MG.state 'scene': the world lives, nobody plays) */
@@ -366,7 +391,9 @@ const Script = {
       if (b.cam) { const s = typeof b.cam === 'string' ? Scenes.set.cams[b.cam] : b.cam; if (s) Scenes.shot(s, !!b.snap); Scenes.lastAuto = null; continue; }
       if (b.anim) { for (const id in b.anim) if (Scenes.cast[id]) Scenes.anim(Scenes.cast[id], b.anim[id]); continue; }
       if (b.walk) { for (const id in b.walk) { const c = Scenes.cast[id]; if (!c) continue; const [x, z, dur, then, face] = b.walk[id], to = Scenes.W([x, 0, z]); c.sit = false; c.a.sitY = undefined; c.walk = { from: new THREE.Vector3(c.a.x, c.a.y, c.a.z), to, t: 0, dur: dur || 2, then, face, v: Math.hypot(to.x - c.a.x, to.z - c.a.z) / (dur || 2) }; c.a.setBase('calm', 0.2); } continue; }
-      if (b.fx) continue;
+      // a cut that moves someone (and may change what they wear): the actor is drawn anew at the other anchor
+      if (b.swap) { for (const id in b.swap) { const c = Scenes.cast[id]; if (c) { c.a.dispose(); delete Scenes.cast[id]; } Scenes.spawn(id, b.swap[id]); } continue; }
+      if (b.fx) { if (b.fx === 'cheer') { if (HL.AU && HL.AU.has('cheer')) HL.AU.play('cheer', { vol: 0.75 }); for (const id in Scenes.cast) { const c = Scenes.cast[id]; if (!c.sit && id !== 'me' && id !== 'head') c.a.play('cheer', { fade: 0.15 }); } } continue; }
       if (b.title) { Dialogue.card(b.title, b.sub); this.waiting = 'wait'; this.waitT = 2.6; return; }
       if (b.wait) { this.waiting = 'wait'; this.waitT = b.wait; Dialogue.line(null); return; }
       if (b.say) { const [who, text] = b.say; this.speaker(who); Scenes.frameSpeaker(who); Dialogue.line(Story.names(who), text, who); this.waiting = 'tap'; return; }
