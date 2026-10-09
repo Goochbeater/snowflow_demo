@@ -111,7 +111,7 @@ QC.ICON = {
   tea: 'M5 9h12v4a6 6 0 0 1-12 0z M17 10h2a2 2 0 0 1 0 4h-2 M8 4c0 1 1 1 1 2 M12 4c0 1 1 1 1 2', globe: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M3 12h18 M12 3c3 3 3 15 0 18 M12 3c-3 3-3 15 0 18',
   star: 'M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z', spark: 'M12 3v5 M12 16v5 M3 12h5 M16 12h5 M6.5 6.5l2.5 2.5 M15 15l2.5 2.5 M17.5 6.5L15 9 M9 15l-2.5 2.5',
   flame: 'M12 21c-4 0-6-3-6-6 0-4 4-6 3-11 3 2 4 4 4 7 1-1 2-2 2-4 2 2 3 5 3 8 0 3-2 6-6 6z', dots: 'M6 12h.01 M12 12h.01 M18 12h.01', pencil: 'M4 20l4-1 11-11-3-3L5 16z M14 7l3 3',
-  next: 'M9 6l6 6-6 6',
+  next: 'M9 6l6 6-6 6', lock: 'M7 11V8a5 5 0 0 1 10 0v3 M5.5 11h13v9h-13z M12 14.5v2.5',
 };
 /* a look, as a face: its skin, its hair's colour and cut (the same tables the castle dresses its students from) */
 QC.face = function (v, witch) {
@@ -132,6 +132,11 @@ QC.face = function (v, witch) {
 /* the castle's people step out of a stage's frame (a professor stood at your shoulder in the creator) */
 QC.clearAround = function (set, r, rGhost) { if (!set || !set.F || !HL.npcs) return set; const F = set.F, gh = new Set((HL.ghosts || []).map((g) => g.a)), out = HL.npcs.filter((a) => !a.sceneOut && Math.hypot(a.x - F.x, a.z - F.z) < (gh.has(a) ? Math.max(r, rGhost || 0) : r));   // (a ghost read as a white blob behind the hub) for (const a of out) a.sceneOut = true; HL._nearN = null;
   const l0 = set.onLeave; set.onLeave = () => { for (const a of out) a.sceneOut = false; HL._nearN = null; if (l0) l0(); }; return set; };
+/* a broom, drawn: its handle's wood and its tail (the shop was text in boxes) */
+QC.broomArt = function (id) { const W = { star: ['#b8894e', '#c9a46a', 0], clean7: ['#7a4a26', '#a77a44', 0], comet260: ['#d8c49a', '#c8b07a', 1], nimbus2000: ['#5a2414', '#8a5a2e', 1], nimbus2001: ['#18120e', '#5a4632', 2], firebolt: ['#9a6a3e', '#d0a050', 3] }[id] || ['#8a5a2e', '#a77a44', 0];
+  const [h, t, k] = W, band = k ? `<rect x="104" y="13" width="5" height="8" rx="1" fill="${k > 2 ? '#e8c060' : '#c0c4cc'}"/>` : '', foot = k > 1 ? `<path d="M120 17h14" stroke="${k > 2 ? '#e8c060' : '#9aa0aa'}" stroke-width="1.6"/>` : '';
+  return `<svg class="bart" viewBox="0 0 200 34" aria-hidden="true"><path d="M10 17c40-2 96-2 100-1" stroke="${h}" stroke-width="4.2" stroke-linecap="round" fill="none"/><path d="M10 15.4c40-2 96-2 100-1" stroke="rgba(255,255,255,.25)" stroke-width="1" fill="none"/>${band}${foot}
+    <path d="M108 17c14-9 44-13 84-10-8 4-8 16 0 20-40 3-70-1-84-10z" fill="${t}"/><path d="M114 17c20-5 46-7 70-6 M114 17c20 5 46 7 70 6 M116 17h66" stroke="rgba(40,24,10,.45)" stroke-width="1" fill="none"/></svg>`; };
 QC.svg = (k) => `<svg class="qi" viewBox="0 0 24 24" aria-hidden="true"><path d="${QC.ICON[k] || QC.ICON.next}"/></svg>`;
 const hexN = (css) => parseInt(String(css).replace('#', ''), 16);
 const darkerN = (css, k) => { const c = new THREE.Color(css); c.multiplyScalar(k); return c.getHex(); };

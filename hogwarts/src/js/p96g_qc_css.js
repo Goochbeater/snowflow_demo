@@ -412,4 +412,11 @@ body.touch #locker .lkBtns .act.go { order: -1; min-height: 46px; padding: 10px 
 #scrCareer .mbtn.q { padding: 8px 12px; } #scrCareer .mbtn.q b { font-size: 13px; }
 #scrCareer .paperEmpty { display: grid; gap: 6px; place-items: center; text-align: center; padding: 48px 20px; } #scrCareer .paperEmpty b { font-family: var(--f-display); font-size: 26px; color: var(--gold-hi); } #scrCareer .paperEmpty span { opacity: .8; font-style: italic; }
 @media (max-height: 620px) { #scrCareer .attr { padding: 2px 0 !important; } #scrCareer .attr button { width: 30px; height: 30px; min-height: 0; } #scrCareer .panel.wide .stats .stat { padding: 3px 8px; } }
+/* the broom shop: every card the same shape, the broom drawn, the price you cannot pay greyed with what you lack */
+#scrCareer .broomCard { grid-template-rows: auto auto auto auto 1fr auto; align-content: stretch; }
+#scrCareer .broomCard svg.bart { width: 100%; height: 30px; }
+#scrCareer .broomCard small { min-height: 2.6em; } #scrCareer .broomCard .act { align-self: end; }
+#scrCareer .broomCard .need { font-size: 11px; text-align: center; color: #ff9a8a; margin-top: -2px; }
+#scrCareer .act[disabled] { background: rgba(255,255,255,.035) !important; color: rgba(241,228,198,.5) !important; border-color: rgba(241,228,198,.14) !important; cursor: default; box-shadow: none !important; }
+#scrCareer .act svg.qi { width: 1em; height: 1em; vertical-align: -0.12em; }
 `;
