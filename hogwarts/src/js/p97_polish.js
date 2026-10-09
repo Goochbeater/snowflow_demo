@@ -58,10 +58,20 @@ body.touch .hlSort:has([data-k]) > p:nth-last-of-type(2) { display: none; }   /*
   #scrCareer .persona { padding: 6px 10px; margin-bottom: 6px; } #scrCareer .persona > span { margin-bottom: 2px; } #scrCareer .pbar { margin-top: 2px; grid-template-columns: 20px 80px 1fr; gap: 6px; font-size: 11px; } #scrCareer .pbar .tone { width: 18px; height: 18px; }
   #scrCareer .panel.wide:has(.attrs) .stats { grid-template-columns: repeat(4, 1fr) !important; gap: 4px; } #scrCareer .panel.wide:has(.attrs) .stat { padding: 2px 7px !important; } #scrCareer .panel.wide:has(.attrs) .stat b { font-size: 15px; } #scrCareer .panel.wide:has(.attrs) .stat i { font-size: 9.5px; }
   #scrCareer .panel.wide:has(.attrs) .actions { margin-top: 6px; } }
+/* the pause menu on a landscape phone: the controls down the left, the settings and the way out on the right, all of it
+   on one screen (stacked, QUIT TO TITLE fell off the bottom of a 412-px screen) */
+@media (max-height: 620px) and (min-width: 700px) {
+  html body .hlPause { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr); grid-auto-flow: row dense; align-content: center; gap: 6px 10px; padding: calc(10px + env(safe-area-inset-top)) calc(4vw + env(safe-area-inset-right)) 10px calc(4vw + env(safe-area-inset-left)); overflow-y: auto; }
+  html body .hlPause > h3 { grid-column: 1; grid-row: 1; text-align: left; margin: 0 0 2px; align-self: end; }
+  html body .hlPause > .hlKeys { grid-column: 1; grid-row: 2 / span 7; align-self: start; justify-content: start; font-size: 11.5px; line-height: 1.32; gap: 1px 12px; margin: 0; }
+  html body .hlPause > .tcSet { grid-column: 2 / span 2; flex-wrap: wrap; justify-content: flex-start; gap: 4px; margin: 0; }
+  html body .hlPause > .tcSet .hlBtn { min-width: 0; padding: 5px 9px; font-size: 11px; margin: 0; } html body .hlPause > .tcSet .tcVal { min-width: 70px; font-size: 11.5px; }
+  html body .hlPause > .hlBtn { grid-column: auto; max-width: none; width: auto; margin: 0; padding: 7px 8px; font-size: 12px; letter-spacing: .16em; }
+  html body .hlPause > .hlBtn[data-a="r"], html body .hlPause > .hlBtn[data-a="t"] { grid-column: 2 / span 2; max-width: none; } }
 /* on a phone the objective is two lines at most over the view (the whole of it is in the journal) */
 body.touch #hlQuest .o { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 /* the map's card fits a phone's height without scrolling */
-@media (max-height: 620px) { html body .hlMap.mm .card { padding: 8px 11px; } html body .hlMap.mm .card h3 { font-size: 19px !important; margin: 0 0 2px; } html body .hlMap.mm .card p { font-size: 11.5px; margin: 1px 0 3px; line-height: 1.25; } html body .hlMap.mm .card .lg { font-size: 11px; margin: 1px 0; } html body .hlMap.mm .card b { margin-top: 3px; } }`;
+@media (max-height: 620px) { html body .hlMap.mm .card { padding: 8px 11px; } html body .hlMap.mm .card h3 { font-size: 19px !important; margin: 0 0 2px; } html body .hlMap.mm .card p { font-size: 11.5px; margin: 1px 0 3px; line-height: 1.25; } html body .hlMap.mm .card .lg { font-size: 11px; margin: 1px 0; } html body .hlMap.mm .card b { margin-top: 3px; } html body .hlMap.mm .card p.how { font-size: 11.5px !important; line-height: 1.3; opacity: .85; } }`;
   document.head.appendChild(css); }
 /* a match opens like a broadcast: through the flyover a lower third names the two sides with their crests, the competition
    and the ground, and your job in it (the castle's title card said the same in the middle of the sky); then the count is
