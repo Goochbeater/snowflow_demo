@@ -39,8 +39,8 @@ html body.touch #invClose { display: none; } html body.touch .hlInv .box { paddi
 @media (max-height: 380px) { html body #invStats .st { font-size: 10.5px; padding: .5px 1px; } html body #invStats .gap { height: 2px; } html body #invWho .lv b { font-size: 15px; } html body #invGold { padding-top: 3px; font-size: 13px; } }
 /* the match setup (and the Sorting): what is chosen reads as chosen — gold-filled, the rest dimmed — the options fall in
    groups, and the one way forward is the gold button (thirteen equal outlined boxes read as a debug menu) */
-.hlSort:has([data-go]) .hlBtn[data-k] { opacity: .66; background: rgba(10,10,14,.5); border-color: rgba(217,184,106,.3); }
-.hlSort:has([data-go]) .hlBtn[data-k].sel { opacity: 1; background: linear-gradient(rgba(226,194,122,.34), rgba(226,194,122,.16)); border-color: #e8c97a; color: #fff6dc; box-shadow: inset 0 0 0 1px rgba(255,236,190,.3), 0 0 14px rgba(226,194,122,.18); }
+.hlSort:has([data-go]) :is(.hlBtn[data-k], .hlBtn[data-w]) { opacity: .66; background: rgba(10,10,14,.5); border-color: rgba(217,184,106,.3); }
+.hlSort:has([data-go]) :is(.hlBtn[data-k], .hlBtn[data-w]).sel { opacity: 1; background: linear-gradient(rgba(226,194,122,.34), rgba(226,194,122,.16)); border-color: #e8c97a; color: #fff6dc; box-shadow: inset 0 0 0 1px rgba(255,236,190,.3), 0 0 14px rgba(226,194,122,.18); }
 .hlSort:has([data-go]) .hlBtn[data-k="role"][data-v="chaser"], .hlSort:has([data-go]) .hlBtn[data-k="len"][data-v="180"] { margin-left: 26px; }
 .hlSort .hlBtn[data-go] { background: linear-gradient(#e6c780, #b48c3c); color: #1c1307; border-color: #f7dfa0; text-shadow: none; box-shadow: 0 2px 14px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,250,225,.6); }
 .hlSort .hlBtn[data-go]:hover, .hlSort .hlBtn[data-go].sel { background: linear-gradient(#f2d692, #c49a46); color: #120c04; }
