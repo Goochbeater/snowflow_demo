@@ -262,7 +262,8 @@ const CareerUI = {
     const S = Career.S, roster = S.phase === 'school' ? Career.squad() : (S.roster || []);
     const roleN = r => ({ chaser: 'Chaser', beater: 'Beater', keeper: 'Keeper', seeker: 'Seeker' })[r];
     this.show(`<div class="panel wide"><h2>${teamName(Career.myTeam())}</h2>
-      <div class="roster">${roster.map(m => `<div class="mate"><b>${m.name}${m.id === S.capt ? ' · C' : ''}</b><span>${roleN(m.role)}${m.pers ? ' · ' + m.pers : ''}${m.grudge ? ' · upset' : ''}</span><div class="bar"><i style="width:${m.chem}%;background:${m.chem > 60 ? '#5ab0ff' : m.chem > 35 ? '#e8b84a' : '#e0533a'}"></i></div></div>`).join('')}</div>
+      <div class="roster">${roster.map(m => { const ch = Math.round(m.chem), cw = ch > 60 ? 'Close' : ch > 35 ? 'Getting on' : 'Cool';   // (each card has its face, its role, and what the bar means)
+        return `<div class="mate">${m.look ? QC.face(m.look.v || 1, m.body === 'f') : ''}<div class="mt"><b>${m.name}${m.id === S.capt ? ' <em class="cap">C</em>' : ''}</b><span>${roleN(m.role)}${m.pers ? ' · ' + m.pers : ''}${m.grudge ? ' · <em class="up">upset</em>' : ''}</span><div class="bar"><i style="width:${m.chem}%;background:${ch > 60 ? '#5ab0ff' : ch > 35 ? '#e8b84a' : '#e0533a'}"></i></div><small>Chemistry · ${cw}</small></div></div>`; }).join('')}</div>
       ${S.rival && S.phase === 'school' ? `<div class="rival"><b>Rival: ${S.rival.name}</b><span>${teamName(S.rival.house)} · heat ${Math.round(S.rival.heat)}</span></div>` : ''}
       <div class="actions"><button class="act go" data-cgo="hub">DONE</button></div></div>`);
   },

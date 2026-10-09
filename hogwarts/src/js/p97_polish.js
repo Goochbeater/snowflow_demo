@@ -45,6 +45,19 @@ html body.touch #invClose { display: none; } html body.touch .hlInv .box { paddi
 .hlSort .hlBtn[data-go] { background: linear-gradient(#e6c780, #b48c3c); color: #1c1307; border-color: #f7dfa0; text-shadow: none; box-shadow: 0 2px 14px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,250,225,.6); }
 .hlSort .hlBtn[data-go]:hover, .hlSort .hlBtn[data-go].sel { background: linear-gradient(#f2d692, #c49a46); color: #120c04; }
 body.touch .hlSort:has([data-k]) > p:nth-last-of-type(2) { display: none; }   /* (the keyboard line) */
+/* the career's team: a face on each card, the captain's armband, what the bar measures */
+#scrCareer .mate { display: grid; grid-template-columns: 40px 1fr; gap: 10px; align-items: center; }
+#scrCareer .mate svg.face { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,.05); }
+#scrCareer .mate .mt { min-width: 0; } #scrCareer .mate b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#scrCareer .mate em.cap { font-style: normal; font-size: 10px; letter-spacing: .06em; padding: 0 5px; border-radius: 4px; background: var(--gold, #e8b84a); color: #1c1307; vertical-align: 2px; }
+#scrCareer .mate em.up { font-style: normal; color: #f08a6a; } #scrCareer .mate small { display: block; font-size: 10.5px; opacity: .6; margin-top: 3px; letter-spacing: .04em; }
+/* the profile on a phone: everything, DONE included, without scrolling */
+@media (max-height: 460px) {
+  #scrCareer .panel.wide:has(.attrs) .lvl { margin-bottom: 4px; } #scrCareer .panel.wide:has(.attrs) .lvl span { font-size: 11px; }
+  #scrCareer .attrs .attr { padding: 0 !important; gap: 6px; } #scrCareer .attrs .attr span { font-size: 12px; } #scrCareer .attrs .attr button { width: 26px !important; height: 26px !important; font-size: 15px; border-radius: 7px; }
+  #scrCareer .persona { padding: 6px 10px; margin-bottom: 6px; } #scrCareer .persona > span { margin-bottom: 2px; } #scrCareer .pbar { margin-top: 2px; grid-template-columns: 20px 80px 1fr; gap: 6px; font-size: 11px; } #scrCareer .pbar .tone { width: 18px; height: 18px; }
+  #scrCareer .panel.wide:has(.attrs) .stats { grid-template-columns: repeat(4, 1fr) !important; gap: 4px; } #scrCareer .panel.wide:has(.attrs) .stat { padding: 2px 7px !important; } #scrCareer .panel.wide:has(.attrs) .stat b { font-size: 15px; } #scrCareer .panel.wide:has(.attrs) .stat i { font-size: 9.5px; }
+  #scrCareer .panel.wide:has(.attrs) .actions { margin-top: 6px; } }
 /* on a phone the objective is two lines at most over the view (the whole of it is in the journal) */
 body.touch #hlQuest .o { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 /* the map's card fits a phone's height without scrolling */
