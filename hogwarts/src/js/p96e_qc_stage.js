@@ -132,7 +132,10 @@ const STAGES = {
     const g = new THREE.Group(), wood = new THREE.MeshStandardMaterial({ color: 0x5a3a20, roughness: 0.82 }), dark = new THREE.MeshStandardMaterial({ color: 0x2e1e10, roughness: 0.9 });
     { const pts = []; for (let i = 0; i <= 10; i++) { const t = i / 10; pts.push(new THREE.Vector2(0.62 * Math.sin(t * HALF) + 0.02, -0.34 + t * 0.42)); } const hull = new THREE.LatheGeometry(pts, 24, 0, PI); hull.rotateZ(PI); hull.scale(1, 1, 2.6); hull.computeVertexNormals(); const m = new THREE.Mesh(hull, new THREE.MeshStandardMaterial({ color: 0x5a3a20, roughness: 0.82, side: THREE.DoubleSide })); m.position.y = 0.08; m.castShadow = true; g.add(m); }
     for (const zz of [0.35, -0.55]) { const th = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.05, 0.24), wood); th.position.set(0, 0.0, zz); g.add(th); }
-    { const crook = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.025, 1.1, 6), dark); crook.position.set(0, 0.5, 1.45); g.add(crook); const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(3, 2.1, 0.9) })); lamp.position.set(0, 1.02, 1.5); g.add(lamp); g.userData.lamp = lamp; }
+    { const crook = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.025, 1.1, 6), dark); crook.position.set(0, 0.5, 1.45); g.add(crook); const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(1.55, 1.1, 0.5) })); lamp.position.set(0, 1.0, 1.5); g.add(lamp); g.userData.lamp = lamp;
+      /* a lantern, not a bare bulb: an iron cage and a cap round the flame (the glow was the biggest thing in the arrival's shots) */
+      const cage = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.085, 0.2, 6, 1, true), new THREE.MeshStandardMaterial({ color: 0x2a2018, roughness: 0.6, metalness: 0.4, wireframe: true })); cage.position.set(0, 1.0, 1.5); g.add(cage);
+      const cap = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.08, 6), dark); cap.position.set(0, 1.14, 1.5); g.add(cap); }
     const w = (Scenes.F = F, Scenes.W([0, 0, 0], new THREE.Vector3())); g.position.set(w.x, wy, w.z); g.rotation.y = Y; R.scene.add(g);
     /* the castle beat: from the boat if the crag allows, else craned up until the towers clear it (it used to stare into the rock) */
     { const T = new THREE.Vector3(30, HL.Y0 + 28, 112), clear = (P) => { const d = T.clone().sub(P), L = d.length(); d.multiplyScalar(1 / L); for (let k = 8; k < L - 30; k += 4) { const q = P.clone().addScaledVector(d, k); if (HL.gy(q.x, q.z) > q.y - 2) return false; } const hit = PHY.ray(P.x, P.y, P.z, d.x, d.y, d.z, L - 30, 'los'); return !(hit && hit.t < L - 30); };
@@ -140,7 +143,7 @@ const STAGES = {
       const P1 = at(h, -3), P2 = at(h + 2.5, 2), T2 = T.clone(); T2.y -= 4;
       C.castle = { world: true, p: P1.toArray(), l: T.toArray(), p2: P2.toArray(), l2: T2.toArray(), fov: h > 8 ? 42 : 36, dur: 8 };
       if (!clear(Scenes.W([6, 6.5, -12], new THREE.Vector3()))) C.lakeWide = Object.assign({}, C.castle, { p: at(h + 4, -12).toArray(), p2: at(h + 1, -7).toArray(), fov: 46, dur: 11 }); }
-    const lt = R.addLight ? R.addLight({ pos: Scenes.W([0, 1.05, 1.5], new THREE.Vector3()), col: new THREE.Color(1, 0.72, 0.4), i: 6, range: 7, prio: 6, on: true, persist: true }) : null;
+    const lt = R.addLight ? R.addLight({ pos: Scenes.W([0, 1.05, 1.5], new THREE.Vector3()), col: new THREE.Color(1, 0.72, 0.4), i: 3.6, range: 6, prio: 6, on: true, persist: true }) : null;
     return { F, anchors: A, cams: C, boat: g, clampY: true, water: wy, update(dt, t) { g.position.y = wy + Math.sin(t * 1.3) * 0.03; g.rotation.z = Math.sin(t * 0.9) * 0.025; g.rotation.x = Math.sin(t * 1.1) * 0.015; for (const id in Scenes.cast) { const c = Scenes.cast[id]; c.a.sitY = wy - 0.12 + Math.sin(t * 1.3) * 0.03; } }, onLeave() { R.scene.remove(g); if (lt) lt.i = 0; } };
   },
   /* the players' gate of the pitch: the huddle before a match (the career's locker room), and the walk out */
