@@ -346,7 +346,7 @@ const Script = {
     HL.ui.fade(1); Dialogue.loading(true);
     try { await Scenes.need((script.cast || []).concat([{ id: 'me', o: {} }])); } catch (e) { console.warn('stage cast', e); }
     if (typeof CareerUI !== 'undefined') CareerUI.backdrop = null; Scenes.enter(script.set, script.variant, { weather: script.weather });
-    for (const c of script.cast || []) Scenes.spawn(c.id, c);
+    for (const c of script.cast || []) { if (/^d([5-9]|10)$/.test(c.id) && typeof PERF !== 'undefined' && PERF.tier === 'low') continue; Scenes.spawn(c.id, c); }   // (on the lowest tier the ball keeps its first three couples)
     this.beats = script.beats.slice(); this.i = 0; this.done = done; this.waiting = null; this.waitT = 0;
     // a few frames under the black so the new view is drawn (and its shaders built) before it is shown
     for (let k = 0; k < 3; k++) await new Promise((r) => requestAnimationFrame(r));
