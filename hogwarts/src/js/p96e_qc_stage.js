@@ -67,7 +67,7 @@ const STAGES = {
     const seat = (x, z, yaw) => [x, 0, z, yaw, 'sit'];
     const A = {
       seatMe: seat(hx - 1.15, -2.0, PI / 2), seatF: seat(hx + 1.15, -1.3, -PI / 2), firstYears: [-1.6, 0, -(zm - za) + 3.5, 0], stool: [0, 0, -(zm - za) - 3.2, 0], high: [0, 0.45, -(zm - G.z0) + 7.2 - 1.5, 0],
-      danceMe: [-0.6, 0, -L * 0.18, 0.4], danceP: [0.6, 0, -L * 0.18 + 0.7, PI + 0.4], dance1: [-3, 0, -L * 0.22, 0.2], dance2: [3.2, 0, -L * 0.15, -0.6], dance3: [-2.4, 0, -L * 0.05, 2.6], dance4: [2.6, 0, -L * 0.3, 3.4],
+      danceMe: [-0.45, 0, -L * 0.18, 0.4], danceP: [0.45, 0, -L * 0.18 + 0.2, PI + 0.4], dance1: [-3.2, 0, -L * 0.24, 0.2], dance2: [-2.4, 0, -L * 0.24 + 0.3, PI + 0.2], dance3: [2.6, 0, -L * 0.1, 2.6], dance4: [3.4, 0, -L * 0.1 + 0.3, 2.6 - PI], dance5: [-1.2, 0, -L * 0.34, 0], dance6: [-0.4, 0, -L * 0.34 + 0.3, PI], dance7: [4.6, 0, -L * 0.28, 0.8], dance8: [5.4, 0, -L * 0.28 + 0.3, 0.8 - PI], dance9: [-5, 0, -L * 0.06, -0.4], dance10: [-4.2, 0, -L * 0.06 + 0.3, PI - 0.4],
       examMe: [hx - 1.15, 0, 0, PI / 2, 'sit'], examF: [hx + 1.15, 0, 1.6, -PI / 2, 'sit'],
     };
     const C = {
@@ -87,6 +87,17 @@ const STAGES = {
     const prev = Scenes.F; Scenes.F = F; const list = [];
     if (variant === 'sorting') { const hat = SProps.hat(); hat.userData.tick = (dt, t) => { const c = Scenes.cast.me; if (!c || !c.a.head) return; c.a.head(hat.position); hat.position.y += 0.13; hat.rotation.y = c.a.yaw + Math.sin(t * 1.3) * 0.08; hat.rotation.z = Math.sin(t * 0.9) * 0.05;
         const talk = Dialogue.who === 'hat'; hat.userData.mouth.scale.y = talk ? 0.008 + Math.abs(Math.sin(t * 11)) * 0.02 : 0.008; hat.children[0].rotation.x = talk ? Math.sin(t * 3) * 0.05 : 0; }; list.push(hat); }
+    if (variant === 'yule' || variant === 'gala') {
+      /* the couples turn about each other, stepping, faces to each other (they stood still and cheered) */
+      S.noAutoFrame = true; const pairs = [['danceMe', 'danceP'], ['dance1', 'dance2'], ['dance3', 'dance4'], ['dance5', 'dance6'], ['dance7', 'dance8'], ['dance9', 'dance10']], u0 = S.update;
+      S.update = (dt, t) => { for (let q = 0; q < pairs.length; q++) { const [ka, kb] = pairs[q], ca = Object.values(Scenes.cast).find((c) => c.spec.at === ka), cb = Object.values(Scenes.cast).find((c) => c.spec.at === kb); if (!ca || !cb || ca.walk || cb.walk) continue;
+          const A0 = A[ka], B0 = A[kb], cx = (A0[0] + B0[0]) / 2, cz = (A0[2] + B0[2]) / 2, th = t * (0.55 + q * 0.04) + q * 1.7, r = 0.38, pa = Scenes.W([cx + Math.cos(th) * r, 0, cz + Math.sin(th) * r], new THREE.Vector3()), pb = Scenes.W([cx - Math.cos(th) * r, 0, cz - Math.sin(th) * r], new THREE.Vector3());
+          for (const [c, p0, p1] of [[ca, pa, pb], [cb, pb, pa]]) { const a2 = c.a, vx = p0.x - a2.x, vz = p0.z - a2.z; a2.x = p0.x; a2.z = p0.z; a2.yaw = Math.atan2(p1.x - p0.x, p1.z - p0.z); a2.speed = Math.min(1.2, Math.hypot(vx, vz) / Math.max(dt, 1e-3)) * 0.8; a2.mvx = 1; a2.mvz = 0; if (a2.base !== 'calm' && a2.base !== 'talk') a2.setBase('calm', 0.3); } }
+        if (u0) u0(dt, t); };
+      /* and the hall strung with lights from wall to wall */
+      { const N = 520, im = new THREE.InstancedMesh(new THREE.SphereGeometry(0.05, 6, 4), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, 1.7, 1.0), toneMapped: false }), N), m4 = new THREE.Matrix4(), W2 = (G.x1 - G.x0) / 2 - 0.6; let k = 0;
+        for (let st = 0; st < 13 && k < N; st++) { const lz = -L / 2 + 2 + st * (L / 12), y0 = 8.4 + (st % 2) * 0.6; for (let i = 0; i <= 39 && k < N; i++) { const u = i / 39, lx = -W2 + u * W2 * 2, ly = y0 - Math.sin(u * PI) * 1.6, w = Scenes.W([lx, ly, lz + Math.sin(u * PI * 3) * 0.2], new THREE.Vector3()); m4.makeTranslation(w.x, w.y, w.z); im.setMatrixAt(k++, m4); } }
+        im.count = k; im.frustumCulled = false; list.push(im); } }
     if (variant === 'halloween') for (let i = 0; i < 26; i++) { const p = SProps.pumpkin(0.9 + RNG() * 0.4), w = Scenes.W([TX[i % 4] + (RNG() - 0.5) * 5, 6.5 + RNG() * 4, -L / 2 + 4 + (i / 26) * (L - 4)], new THREE.Vector3()); p.position.copy(w); p.rotation.y = F.yaw + PI + (RNG() - 0.5) * 0.8; p.userData.bob = w.y; p.userData.ph = i; list.push(p); }
     /* the holidays and the balls empty the hall of its everyday diners (the script says "half empty"; a ball has no one eating) */
     if (variant === 'christmas' || variant === 'yule' || variant === 'gala') { const out = HL.npcs.filter((a) => a.x > G.x0 && a.x < G.x1 && a.z > G.z0 && a.z < G.z1 && Math.abs(a.y - Y) < 3); for (const a of out) a.sceneOut = true; HL._nearN = null; HL.stillOut = { x0: G.x0, x1: G.x1, z0: G.z0, z1: G.z1, y: Y };
@@ -251,7 +262,7 @@ Scenes.anim = function (c, name) {
   if (/^sit/.test(name) || c.sit) { a.setBase('sit', 0.25); return; }
   const base = { idle: 'calm', talk: 'talk', walk: 'calm', jog: 'calm', sprint: 'calm', dance: 'talk', spell: 'calm', cast: 'calm', kneel: 'calm', fold: 'fold', interact: 'calm' }[name] || 'calm';
   a.setBase(base, 0.3);
-  if (name === 'cheer' || name === 'dance') a.play('cheer', { fade: 0.15 }); else if (name === 'spell' || name === 'cast') a.play('castUp', { fade: 0.12 }); else if (name === 'interact' || name === 'pickup') a.play('interact', { fade: 0.12 });
+  if (name === 'dance') a.setBase('calm', 0.2); else if (name === 'cheer') a.play('cheer', { fade: 0.15 }); else if (name === 'spell' || name === 'cast') a.play('castUp', { fade: 0.12 }); else if (name === 'interact' || name === 'pickup') a.play('interact', { fade: 0.12 });
 };
 /* ------------------------------------------------------------------ the camera */
 Scenes.shot = function (s, snap) {
@@ -303,7 +314,7 @@ Scenes.ots = function (who) {
 /* the shot sees the back of their head (a line spoken away from the lens) */
 Scenes.backOn = function (sp) { const c = this.cam, cp = c ? (c.orbit ? this.cp : c.p1) : this.cp, f = new THREE.Vector3(Math.sin(sp.a.yaw + (sp.a.lookYaw || 0)), 0, Math.cos(sp.a.yaw + (sp.a.lookYaw || 0))), v = new THREE.Vector3(cp.x - sp.a.x, 0, cp.z - sp.a.z).normalize(); return f.dot(v) < -0.25; };
 Scenes.frameSpeaker = function (who) {
-  if (Scenes.noAuto || !this.cast) return; const sp = this.cast[who === 'hat' ? 'me' : who]; if (!sp) return;
+  if (Scenes.noAuto || !this.cast || (this.set && this.set.noAutoFrame)) return; const sp = this.cast[who === 'hat' ? 'me' : who]; if (!sp) return;
   if (this.lastAuto === who && this.cam && this.cam.auto) return;   // the same voice goes on in the same shot
   if (this.sees(this.head(sp)) && !this.backOn(sp)) return;
   const s = this.ots(who === 'hat' ? 'me' : who); if (!s) return; this.shot(s); this.cam.auto = true; this.lastAuto = who;
