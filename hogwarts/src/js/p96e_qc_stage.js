@@ -24,10 +24,32 @@ const SProps = {
     return m; },
   pumpkin(s) { const M = this.M(), g = new THREE.Group(), geo = new THREE.SphereGeometry(0.42, 18, 12), pa = geo.attributes.position; for (let i = 0; i < pa.count; i++) { const x = pa.getX(i), z = pa.getZ(i), a = Math.atan2(z, x), k = 1 + 0.06 * Math.cos(a * 8); pa.setXYZ(i, x * k, pa.getY(i) * 0.82, z * k); } geo.computeVertexNormals();
     const b = new THREE.Mesh(geo, M.pump); b.castShadow = true; g.add(b); const st = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.05, 0.16, 6), M.stem); st.position.y = 0.38; g.add(st); const f = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.62), M.face); f.position.set(0, 0.02, 0.4); g.add(f); g.scale.setScalar(s || 1); return g; },
-  fir(h) { const M = this.M(), g = new THREE.Group(), n = 6; const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, h * 0.18, 8), M.trunk); tr.position.y = h * 0.09; g.add(tr);
-    for (let i = 0; i < n; i++) { const t = i / n, r = (1 - t) * h * 0.3 + 0.2, c = new THREE.Mesh(new THREE.ConeGeometry(r, h * 0.26, 12), M.fir); c.position.y = h * 0.16 + t * h * 0.72 + h * 0.13; c.castShadow = true; g.add(c);
-      for (let k = 0; k < 7 - i; k++) { const a = k / (7 - i) * TAU + i, bb = new THREE.Mesh(new THREE.SphereGeometry(0.07 + RNG() * 0.04, 8, 6), i % 2 ? M.bauble[(k + i) % 4] : M.light); bb.position.set(Math.cos(a) * r * 0.86, c.position.y - h * 0.1, Math.sin(a) * r * 0.86); g.add(bb); } }
-    const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.22, 0), M.light); star.position.y = h * 1.02; g.add(star); return g; },
+  /* a Christmas fir: nine tiers of drooping boughs whose rims break into branch tips, a gold garland wound round it,
+     small warm lights and glass baubles hung on the boughs' surface, a five-pointed star (it was six smooth cones) */
+  fir(h) { const M = this.M(), g = new THREE.Group(), n = 9, rs = mulberry(((h * 1000) | 0) + 7), parts = [], m4 = new THREE.Matrix4();
+    if (!M.firN) { M.firN = new THREE.MeshStandardMaterial({ color: 0xffffff, vertexColors: true, roughness: 0.92 }); M.garl = new THREE.MeshStandardMaterial({ color: 0xd8a838, metalness: 0.9, roughness: 0.3, emissive: 0x5a3a08, emissiveIntensity: 0.5 }); M.star = new THREE.MeshBasicMaterial({ color: new THREE.Color(3.2, 2.5, 1.1) }); M.bulb = new THREE.MeshBasicMaterial({ color: 0xffffff }); M.glass = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.85, roughness: 0.2, emissive: 0xffffff, emissiveIntensity: 0.12 }); }
+    const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.22, h * 0.2, 8), M.trunk); tr.position.y = h * 0.1; g.add(tr);
+    const rad = (y) => Math.max(0.12, (1 - (y - h * 0.12) / (h * 0.86)) * h * 0.31);   // the tree's silhouette at height y
+    for (let i = 0; i < n; i++) { const t = i / n, y0 = h * 0.12 + t * h * 0.8, r = rad(y0) * (1.06 + rs() * 0.08), th = h * 0.2 * (1 - t * 0.35), cg = new THREE.ConeGeometry(r, th, 22, 3, true), pa = cg.attributes.position, col = [];
+      for (let k = 0; k < pa.count; k++) { const x = pa.getX(k), yy = pa.getY(k), z = pa.getZ(k), rim = yy < -th / 2 + 1e-3, a = Math.atan2(z, x), tip = rim ? 1 + 0.2 * Math.max(0, Math.cos(a * 11 + i)) : 1;
+        pa.setXYZ(k, x * tip, yy - (rim ? 0.09 * (tip - 1) * 5 * th / 2 : 0), z * tip); const sh = 0.55 + 0.45 * ((yy + th / 2) / th); col.push(0.11 * sh, 0.25 * sh + rs() * 0.02, 0.14 * sh); }
+      cg.setAttribute('color', new THREE.Float32BufferAttribute(cg.index ? col : col, 3)); cg.computeVertexNormals(); parts.push([cg, m4.clone().makeTranslation(0, y0 + th / 2, 0)]); }
+    { const geo = SProps.merge(parts), m = new THREE.Mesh(geo, M.firN); m.castShadow = true; g.add(m); }
+    // the garland: three turns down the tree, lying on the boughs
+    { const pts = []; for (let k = 0; k <= 90; k++) { const u = k / 90, y = h * 0.9 - u * h * 0.72, a = u * TAU * 3.2, r = rad(y) * 0.98 + 0.04; pts.push(new THREE.Vector3(Math.cos(a) * r, y, Math.sin(a) * r)); }
+      g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 160, 0.035, 5, false), M.garl)); }
+    // lights and baubles, instanced, on the surface
+    { const NL = Math.round(h * 16), NB = Math.round(h * 5), L = new THREE.InstancedMesh(new THREE.SphereGeometry(0.032, 6, 4), M.bulb, NL), B = new THREE.InstancedMesh(new THREE.SphereGeometry(0.075, 10, 8), M.glass, NB), c = new THREE.Color(), BC = [0xb81c22, 0xd8a838, 0x2448b8, 0xd8d8e4, 0x1c7a3a];
+      const put = (im, k, y, out) => { const a = rs() * TAU, r = rad(y) * (0.82 + rs() * 0.14) + out; m4.makeTranslation(Math.cos(a) * r, y, Math.sin(a) * r); im.setMatrixAt(k, m4); };
+      for (let k = 0; k < NL; k++) { put(L, k, h * 0.16 + rs() * h * 0.76, 0.02); const w = rs(); L.setColorAt(k, c.setRGB(3.0, 2.0 + w * 0.5, 0.9 + w * 0.6)); }
+      for (let k = 0; k < NB; k++) { put(B, k, h * 0.16 + rs() * h * 0.66, 0.06); B.setColorAt(k, c.setHex(BC[k % BC.length])); }
+      L.instanceColor.needsUpdate = B.instanceColor.needsUpdate = true; g.add(L, B); }
+    { const s = new THREE.Shape(); for (let k = 0; k < 10; k++) { const a = HALF + k * PI / 5, r = k % 2 ? 0.1 : 0.24; s[k ? 'lineTo' : 'moveTo'](Math.cos(a) * r, Math.sin(a) * r); } s.closePath();
+      const st = new THREE.Mesh(new THREE.ExtrudeGeometry(s, { depth: 0.05, bevelEnabled: false }), M.star); st.position.set(0, h * 0.96 + 0.22, -0.025); g.add(st); }
+    return g; },
+  /* several geometries (with their matrices) as one, for one draw */
+  merge(parts) { const P = [], N = [], C = []; for (const [g0, mx] of parts) { const g = (g0.index ? g0.toNonIndexed() : g0).applyMatrix4(mx); const p = g.attributes.position, n = g.attributes.normal, c = g.attributes.color; for (let i = 0; i < p.count; i++) { P.push(p.getX(i), p.getY(i), p.getZ(i)); N.push(n.getX(i), n.getY(i), n.getZ(i)); if (c) C.push(c.getX(i), c.getY(i), c.getZ(i)); } }
+    const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); out.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3)); if (C.length) out.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); return out; },
   snow(cx, cy, cz, w, hgt) { const N = 2600, pos = new Float32Array(N * 3); for (let i = 0; i < N; i++) { pos[i * 3] = cx + (RNG() - 0.5) * w; pos[i * 3 + 1] = cy + RNG() * hgt; pos[i * 3 + 2] = cz + (RNG() - 0.5) * w; }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); const m = new THREE.PointsMaterial({ color: 0xffffff, map: this.M().flake, size: 0.12, transparent: true, opacity: 0.9, depthWrite: false }); const pts = new THREE.Points(g, m); pts.frustumCulled = false;
     pts.userData.tick = (dt) => { for (let i = 0; i < N; i++) { let y = pos[i * 3 + 1] - dt * (0.6 + (i % 7) * 0.08); if (y < cy) y += hgt; pos[i * 3 + 1] = y; pos[i * 3] += Math.sin(MG.rt * 0.7 + i) * dt * 0.15; } g.attributes.position.needsUpdate = true; }; return pts; },
@@ -340,7 +362,7 @@ Scenes.ots = function (who) {
   const L = this.head(ls), d = S.clone().sub(L); d.y = 0; const len = d.length() || 1; d.multiplyScalar(1 / len);
   // the side of the line: fixed for the pair whichever of them speaks
   const ids = [who, Object.keys(this.cast).find((k) => this.cast[k] === ls)].sort(), sign = ids[0] === who ? 1 : -1, n = new THREE.Vector3(-d.z, 0, d.x).multiplyScalar(sign);
-  const P = L.clone().addScaledVector(d, -0.75).addScaledVector(n, 0.42); P.y = Math.max(L.y, S.y) + 0.1;
+  const P = L.clone().addScaledVector(d, -0.85).addScaledVector(n, 0.55); P.y = Math.max(L.y, S.y) + 0.16;   // (the listener's head a soft third of the frame, not half of it; a little above the table's clutter)
   return { world: true, p: P.toArray(), l: S.clone().addScaledVector(n, -0.12).toArray(), fov: len > 3 ? 30 : 36, dur: 30, blend: 0 };
 };
 /* the shot sees the back of their head (a line spoken away from the lens) */
