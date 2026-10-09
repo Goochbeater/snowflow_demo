@@ -32,7 +32,7 @@ const SProps = {
     const rad = (y) => Math.max(0.12, (1 - (y - h * 0.12) / (h * 0.86)) * h * 0.31);   // the tree's silhouette at height y
     for (let i = 0; i < n; i++) { const t = i / n, y0 = h * 0.12 + t * h * 0.8, r = rad(y0) * (1.06 + rs() * 0.08), th = h * 0.2 * (1 - t * 0.35), cg = new THREE.ConeGeometry(r, th, 22, 3, true), pa = cg.attributes.position, col = [];
       for (let k = 0; k < pa.count; k++) { const x = pa.getX(k), yy = pa.getY(k), z = pa.getZ(k), rim = yy < -th / 2 + 1e-3, a = Math.atan2(z, x), tip = rim ? 1 + 0.2 * Math.max(0, Math.cos(a * 11 + i)) : 1;
-        pa.setXYZ(k, x * tip, yy - (rim ? 0.09 * (tip - 1) * 5 * th / 2 : 0), z * tip); const sh = 0.55 + 0.45 * ((yy + th / 2) / th); col.push(0.11 * sh, 0.25 * sh + rs() * 0.02, 0.14 * sh); }
+        pa.setXYZ(k, x * tip, yy - (rim ? 0.09 * (tip - 1) * 5 * th / 2 : 0), z * tip); const sh = 0.55 + 0.45 * ((yy + th / 2) / th); col.push(0.075 * sh, 0.17 * sh + rs() * 0.02, 0.06 * sh); }   // (a deep warm spruce: the paler, bluer green went teal under the hall's cool fill)
       cg.setAttribute('color', new THREE.Float32BufferAttribute(cg.index ? col : col, 3)); cg.computeVertexNormals(); parts.push([cg, m4.clone().makeTranslation(0, y0 + th / 2, 0)]); }
     { const geo = SProps.merge(parts), m = new THREE.Mesh(geo, M.firN); m.castShadow = true; g.add(m); }
     // the garland: three turns down the tree, lying on the boughs
