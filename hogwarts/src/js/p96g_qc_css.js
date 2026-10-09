@@ -376,4 +376,15 @@ svg.qi { width: 1.2em; height: 1.2em; fill: none; stroke: currentColor; stroke-w
 @media (max-height: 620px) and (min-aspect-ratio: 16/10) { #scrCareer .resPanel { justify-self: end; width: min(540px, 57vw); } }
 /* the creator's BEGIN stays in reach while the form scrolls */
 #scrCareer .crPanel > .actions { position: sticky; bottom: -14px; margin: 10px -16px -14px; padding: 10px 16px 12px; background: linear-gradient(180deg, rgba(24,17,10,0), rgba(24,17,10,.96) 30%); z-index: 2; }
+/* the creator's three pages and its faces */
+#scrCareer .crTabs { display: flex; gap: 4px; margin: 0 0 8px; border-bottom: 1px solid var(--line); }
+#scrCareer .crTabs button { flex: 1; padding: 8px 6px 9px; min-height: 40px; background: none; border: 0; border-bottom: 2px solid transparent; font-family: var(--f-head); letter-spacing: .12em; font-size: 12px; text-transform: uppercase; opacity: .7; cursor: pointer; }
+#scrCareer .crTabs button.on { opacity: 1; color: var(--gold-hi); border-bottom-color: var(--gold); }
+#scrCareer .crPage { display: grid; gap: 0; } #scrCareer .crPage[hidden] { display: none !important; }
+#scrCareer .seg.looks { gap: 6px; } #scrCareer .seg.looks button { width: 48px; height: 48px; min-height: 0; padding: 2px; border-radius: 50% !important; display: grid; place-items: center; }
+#scrCareer .seg.looks button.on { box-shadow: 0 0 0 2px var(--gold), 0 0 14px rgba(232,184,74,.45); }
+#scrCareer .seg.looks svg.face { width: 42px; height: 42px; border-radius: 50%; }
+#scrCareer .crWhy { margin: 8px 0 0; font-size: 13px; }
+#scrCareer .seg button { min-height: 40px; }
+@media (max-height: 620px) { #scrCareer .seg button { min-height: 38px; } #scrCareer .crTabs button { min-height: 36px; padding: 6px; } #scrCareer .seg.looks button { width: 44px; height: 44px; } #scrCareer .seg.looks svg.face { width: 38px; height: 38px; } }
 `;

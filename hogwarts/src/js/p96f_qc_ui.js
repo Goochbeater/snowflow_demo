@@ -36,32 +36,46 @@ const CareerUI = {
     const P = this.cp = this.cp || { name: '', pron: 'they', body: 'f', v: 1, house: -1, pos: 'chaser', nation: NATION_IDS[0], diff: 'normal', snitch: 'arcade', length: 1 };
     this.hubBackdrop('creator');
     const seg = (key, opts) => `<div class="seg" data-k="${key}">${opts.map(([v, t]) => `<button type="button" data-v="${v}" class="${String(P[key]) === String(v) ? 'on' : ''}">${t}</button>`).join('')}</div>`;
-    const looks = [1, 2, 3, 4, 5, 6].map((v) => [v, 'Look ' + v]);
+    /* three short pages (who you are · where you play · how it plays), each whole on a phone; the looks as faces */
+    const looks = [1, 2, 3, 4, 5, 6].map((v) => [v, QC.face(v, P.body === 'f')]), tab = this.crTab = this.crTab || 'you';
     this.show(`<div class="creator"><div class="crPanel"><h2>A Quidditch Career</h2>
-      <p class="note" style="margin:-4px 0 8px">From your first flying lesson at Hogwarts to the professional league and the World Cup.</p>
-      <div class="row"><label>Name</label><input id="crName" maxlength="24" placeholder="First Last" value="${P.name}" autocomplete="off"></div>
+      <div class="crTabs" role="tablist">${[['you', 'You'], ['play', 'Your game'], ['rules', 'Rules']].map(([k, t]) => `<button type="button" role="tab" data-ct="${k}" class="${k === tab ? 'on' : ''}">${t}</button>`).join('')}</div>
+      <div class="crPage" data-cp="you" ${tab === 'you' ? '' : 'hidden'}>
+      <div class="row"><label for="crName">Name</label><input id="crName" maxlength="24" placeholder="First Last" value="${P.name}" autocomplete="off"></div>
       <div class="row"><label>Pronouns</label>${seg('pron', [['she', 'she/her'], ['he', 'he/him'], ['they', 'they/them']])}</div>
       <div class="row"><label>You are</label>${seg('body', [['f', 'A witch'], ['m', 'A wizard']])}</div>
-      <div class="row"><label>Look</label>${seg('v', looks)}</div>
+      <div class="row"><label>Look</label><div class="seg looks" data-k="v">${looks.map(([v, svg]) => `<button type="button" data-v="${v}" aria-label="Look ${v}" class="${String(P.v) === String(v) ? 'on' : ''}">${svg}</button>`).join('')}</div></div></div>
+      <div class="crPage" data-cp="play" ${tab === 'play' ? '' : 'hidden'}>
       <div class="row"><label>Position</label>${seg('pos', [['chaser', 'Chaser'], ['seeker', 'Seeker']])}</div>
       <div class="row"><label>House</label>${seg('house', [[-1, 'Sorting Hat'], [0, 'Gryffindor'], [1, 'Slytherin'], [2, 'Ravenclaw'], [3, 'Hufflepuff']])}</div>
-      <div class="row"><label>Nation</label><select id="crNation">${NATION_IDS.map(n => `<option value="${n}" ${P.nation === n ? 'selected' : ''}>${teamName(n)}</option>`).join('')}</select></div>
+      <div class="row"><label for="crNation">Nation</label><select id="crNation">${NATION_IDS.map(n => `<option value="${n}" ${P.nation === n ? 'selected' : ''}>${teamName(n)}</option>`).join('')}</select></div>
+      <p class="note crWhy">${P.pos === 'seeker' ? 'Seekers hunt the Golden Snitch: catching it ends the match.' : 'Chasers carry the Quaffle and score through the hoops, ten points a goal.'}</p></div>
+      <div class="crPage" data-cp="rules" ${tab === 'rules' ? '' : 'hidden'}>
       <div class="row"><label>Difficulty</label>${seg('diff', [['easy', 'Easy'], ['normal', 'Normal'], ['hard', 'Hard']])}</div>
       <div class="row"><label>Snitch</label>${seg('snitch', [['arcade', 'Arcade · 30'], ['classic', 'Classic · 150']])}</div>
-      <div class="row"><label>Match length</label>${seg('length', [[0, '3 min'], [1, '5 min'], [2, '8 min']])}</div>
-      <div class="actions"><button class="act" id="crBack">BACK</button><button class="act go" id="crGo">BEGIN AT HOGWARTS</button></div></div></div>`);
+      <div class="row"><label>Match length</label>${seg('length', [[0, '3 min'], [1, '5 min'], [2, '8 min']])}</div></div>
+      <div class="actions"><button class="act" id="crBack">BACK</button>${tab === 'rules' ? '' : '<button class="act" id="crNext">NEXT</button>'}<button class="act go" id="crGo">BEGIN AT HOGWARTS</button></div></div></div>`);
     const R = this.root;
+    const goTab = (k) => { this.crTab = k; R.querySelectorAll('.crTabs button').forEach((b) => b.classList.toggle('on', b.dataset.ct === k)); R.querySelectorAll('.crPage').forEach((pg) => { pg.hidden = pg.dataset.cp !== k; }); const nx = R.querySelector('#crNext'); if (nx) nx.hidden = k === 'rules'; Sound.play('ui'); };
+    R.querySelectorAll('.crTabs button').forEach((b) => b.addEventListener('click', () => goTab(b.dataset.ct)));
+    { const nx = R.querySelector('#crNext'); if (nx) nx.addEventListener('click', () => goTab(this.crTab === 'you' ? 'play' : 'rules')); }
+    /* turn yourself round: drag anywhere off the panel */
+    { let dx0 = null; const spin = R.querySelector('.creator'); spin.addEventListener('pointerdown', (e) => { if (e.target.closest('.crPanel')) return; dx0 = e.clientX; });
+      spin.addEventListener('pointermove', (e) => { if (dx0 === null) return; const c = Scenes.cast.me; if (c) c.a.yaw += (e.clientX - dx0) * 0.012; dx0 = e.clientX; });
+      const end = () => { dx0 = null; }; spin.addEventListener('pointerup', end); spin.addEventListener('pointercancel', end); }
     R.querySelectorAll('.seg[data-k]').forEach(sg => sg.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
       const k = sg.dataset.k, raw = b.dataset.v; P[k] = raw === 'true' ? true : raw === 'false' ? false : /^-?\d+$/.test(raw) ? +raw : raw;
       sg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); Sound.play('ui');
       if (['body', 'v', 'house', 'pos'].includes(k)) this.respawnPreview();
+      if (k === 'body') R.querySelectorAll('.looks button').forEach((lb) => { lb.innerHTML = QC.face(+lb.dataset.v, P.body === 'f'); });
+      if (k === 'pos') { const w = R.querySelector('.crWhy'); if (w) w.textContent = P.pos === 'seeker' ? 'Seekers hunt the Golden Snitch: catching it ends the match.' : 'Chasers carry the Quaffle and score through the hoops, ten points a goal.'; }
     })));
     R.querySelector('#crName').addEventListener('input', e => { P.name = e.target.value; });
     R.querySelector('#crNation').addEventListener('change', e => { P.nation = +e.target.value; });
     R.querySelector('#crBack').addEventListener('click', () => { if (Career.has()) this.open(); else this.exit(); });
     R.querySelector('#crGo').addEventListener('click', () => {
       const name = (P.name || '').trim().replace(/\s+/g, ' ');
-      if (name.length < 2) { R.querySelector('#crName').focus(); R.querySelector('#crName').classList.add('err'); return; }
+      if (name.length < 2) { goTab('you'); R.querySelector('#crName').focus(); R.querySelector('#crName').classList.add('err'); return; }
       const full = name.includes(' ') ? name : name + ' ' + pick(NAME_L);
       const house = P.house >= 0 ? P.house : this.sortingHat();
       Career.create({ name: full.replace(/\b\w/g, c => c.toUpperCase()), pron: P.pron, body: P.body, look: { v: P.v }, house, pos: P.pos, nation: P.nation }, { diff: P.diff, snitch: P.snitch, length: P.length });
@@ -80,7 +94,7 @@ const CareerUI = {
   /* the live picture behind the screens: a slow turn through the common room at school, the players' gate as a professional, the gate in close-up behind the creator */
   hubBackdrop(kind) {
     if (this.backdrop === kind && Scenes.active) return; this.backdrop = kind; this._pv = (this._pv || 0) + 1;
-    if (kind === 'creator') { Scenes.enter('locker', 'school', { mode: 'view' }); Scenes.shot({ p: [-0.35, 1.42, -2.7], l: [0.85, 1.08, 0], fov: 32, dur: 999 }, true); return; }
+    if (kind === 'creator') { Scenes.enter('locker', 'school', { mode: 'view' }); Scenes.shot({ p: [-0.2, 1.46, -2.3], l: [0.72, 1.2, 0], fov: 30, dur: 999 }, true); return; }   // (waist up: the face reads)
     const set = kind === 'school' ? Scenes.enter('common', '', { mode: 'view' }) : Scenes.enter('locker', 'pro', { mode: 'view' });
     if (kind !== 'school' || !Career.S) { Scenes.shot(set.cams.hub || { orbit: { c: [0, 1.4, -1], r: 7, h: 1.6, a0: 0.3, w: 0.035 }, p: [0, 2, 6], l: [0, 1.2, 0], fov: 48, dur: 999 }, true); return; }
     /* at school the hub is you and your friend by your own common-room fire, framed in the right of the screen (the panels have the left) */

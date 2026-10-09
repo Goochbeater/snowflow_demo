@@ -113,6 +113,22 @@ QC.ICON = {
   flame: 'M12 21c-4 0-6-3-6-6 0-4 4-6 3-11 3 2 4 4 4 7 1-1 2-2 2-4 2 2 3 5 3 8 0 3-2 6-6 6z', dots: 'M6 12h.01 M12 12h.01 M18 12h.01', pencil: 'M4 20l4-1 11-11-3-3L5 16z M14 7l3 3',
   next: 'M9 6l6 6-6 6',
 };
+/* a look, as a face: its skin, its hair's colour and cut (the same tables the castle dresses its students from) */
+QC.face = function (v, witch) {
+  const hx = (n) => '#' + n.toString(16).padStart(6, '0'), tone = hx(HL.SKINS[v % HL.SKINS.length]), hc = hx(HL.HAIR[(v * 3 + (witch ? 1 : 0)) % HL.HAIR.length]),
+    cut = (witch ? ['Hair_Long', 'Hair_Buns', 'Hair_Long'] : ['Hair_SimpleParted', 'Hair_Buzzed', 'Hair_SimpleParted'])[v % 3];
+  const back = cut === 'Hair_Long' ? `<path d="M11.2 15c0-7 3.8-10.4 8.8-10.4S28.8 8 28.8 15v13.5c-2 1.6-4.4 2.2-6 2.2h-5.6c-1.6 0-4-.6-6-2.2z" fill="${hc}"/>` : '';
+  const top = cut === 'Hair_Buns' ? `<circle cx="12.6" cy="8.4" r="3.6" fill="${hc}"/><circle cx="27.4" cy="8.4" r="3.6" fill="${hc}"/><path d="M12 15.5c-.4-6 3.2-9.2 8-9.2s8.4 3.2 8 9.2c-2.6-3.4-5-4.4-8-4.4s-5.4 1-8 4.4z" fill="${hc}"/>`
+    : cut === 'Hair_Buzzed' ? `<path d="M12.6 14.6c0-5.6 3.2-8.2 7.4-8.2s7.4 2.6 7.4 8.2c-2.4-2.4-4.8-3.2-7.4-3.2s-5 .8-7.4 3.2z" fill="${hc}" opacity=".88"/>`
+    : cut === 'Hair_SimpleParted' ? `<path d="M11.8 16c-.6-6.6 3.2-10 8.2-10s8.8 3.4 8.2 10c-1.2-2.6-2.6-4-4.4-4.8-2.8 1.6-6.4 2.4-10 1.6-.8.8-1.4 1.8-2 3.2z" fill="${hc}"/>`
+    : `<path d="M11.6 16.4c-.6-6.8 3.4-10.4 8.4-10.4s9 3.6 8.4 10.4c-1.6-3.2-4.2-4.6-6.6-4.6-1.4 1.4-4.6 2.2-7 1.6-1.4.8-2.4 1.8-3.2 3z" fill="${hc}"/>`;
+  return `<svg class="face" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19.5" fill="rgba(255,255,255,.05)"/>${back}
+    <path d="M6 40c.6-6.6 5.6-10.4 14-10.4S33.4 33.4 34 40z" fill="#1e1a22"/><path d="M15.4 29.8 20 35l4.6-5.2" fill="none" stroke="#d8c48a" stroke-width="1.2"/>
+    <rect x="17.4" y="23" width="5.2" height="7.6" rx="2" fill="${tone}"/><rect x="17.4" y="23" width="5.2" height="3" fill="rgba(0,0,0,.16)"/>
+    <ellipse cx="20" cy="17.2" rx="7.3" ry="8.6" fill="${tone}"/><ellipse cx="20" cy="21.6" rx="5" ry="2.6" fill="rgba(0,0,0,.05)"/>
+    <ellipse cx="17.1" cy="17.8" rx=".95" ry="1.15" fill="#241a14"/><ellipse cx="22.9" cy="17.8" rx=".95" ry="1.15" fill="#241a14"/>
+    <path d="M18.2 22.2c1.2.7 2.4.7 3.6 0" fill="none" stroke="rgba(90,40,30,.55)" stroke-width=".8" stroke-linecap="round"/>${top}</svg>`;
+};
 QC.svg = (k) => `<svg class="qi" viewBox="0 0 24 24" aria-hidden="true"><path d="${QC.ICON[k] || QC.ICON.next}"/></svg>`;
 const hexN = (css) => parseInt(String(css).replace('#', ''), 16);
 const darkerN = (css, k) => { const c = new THREE.Color(css); c.multiplyScalar(k); return c.getHex(); };
