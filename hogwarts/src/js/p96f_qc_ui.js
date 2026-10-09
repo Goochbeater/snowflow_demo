@@ -106,7 +106,7 @@ const CareerUI = {
       return; }
     /* at school the hub is you and your friend by your own common-room fire, framed in the right of the screen (the panels have the left) */
     const L = set.anchors.chairL, Rr = set.anchors.chairR, mx = (L[0] + Rr[0]) / 2, mz = (L[2] + Rr[2]) / 2;
-    Scenes.shot({ p: [mx + 2.2, 1.55, mz + 3.6], l: [mx - 1.4, 1.1, mz + 0.2], p2: [mx + 1.7, 1.48, mz + 3.1], fov: 44, dur: 40 }, true);
+    Scenes.shot(set.cams.hub && !set.cams.hub.orbit ? set.cams.hub : { p: [mx + 2.2, 1.55, mz + 3.6], l: [mx - 1.4, 1.1, mz + 0.2], p2: [mx + 1.7, 1.48, mz + 3.1], fov: 44, dur: 40 }, true);
     const pv = this._pv, S = Career.S, cast = [{ id: 'me', at: 'chairL', anim: 'sit', o: {} }].concat(S.friend && S.mates[S.friend] ? [{ id: 'friend', at: 'chairR', anim: 'sit', o: {} }] : []);
     Scenes.need(cast).then(() => { if (this._pv !== pv || !Scenes.active || Scenes.set !== set) return; for (const c of cast) Scenes.spawn(c.id, c); }).catch(() => {});
   },
@@ -234,7 +234,7 @@ const CareerUI = {
       <div class="menuGrid">
         <button class="mbtn primary" data-tr="hoops"><b>HOOP PRACTICE</b><small>90 seconds of scrimmage. +XP for every goal.</small></button>
         <button class="mbtn" data-tr="snitch"><b>SNITCH DRILL</b><small>Find and catch the Snitch before the whistle.</small></button>
-        ${ATTRS.map(([k, n]) => `<button class="mbtn" data-q="${k}"><b>QUICK: ${n.toUpperCase()}</b><small>${S.attrs[k]} / ${Career.attrCap()}</small></button>`).join('')}
+        <div class="mhead">Quick sessions · one attribute, directly</div>${ATTRS.map(([k, n]) => `<button class="mbtn q" data-q="${k}"><b>${n.toUpperCase()}</b><small>${S.attrs[k]} / ${Career.attrCap()}</small></button>`).join('')}
       </div><div class="actions"><button class="act" data-cgo="hub">BACK</button></div></div>`);
     this.root.querySelectorAll('[data-q]').forEach(b => b.addEventListener('click', () => { const r = Career.train(b.dataset.q, 1); Sound.play('ui'); this.notice('Session complete', `${ATTRS.find(a => a[0] === b.dataset.q)[1]} ${r.gain ? '+' + r.gain : '(at cap)'} · +${r.xp} XP${r.ups ? ' · LEVEL UP' : ''}`, () => this.hub()); }));
     this.root.querySelectorAll('[data-tr]').forEach(b => b.addEventListener('click', () => {
@@ -280,7 +280,7 @@ const CareerUI = {
     if (cur === 'leaders') return this.leadersView(body);
     const papers = cur === 'prophet' ? ['prophet', 'school'] : [cur];
     const list = S.news.filter(a => papers.includes(a.paper));
-    if (!list.length) { body.innerHTML = `<div class="paperEmpty">No stories yet.</div>`; return; }
+    if (!list.length) { body.innerHTML = `<div class="paperEmpty"><b>${{ prophet: 'The Daily Prophet', quibbler: 'The Quibbler', witch: 'Witch Weekly' }[cur] || 'The papers'}</b><span>Nothing on you yet. Play your first match and the presses will turn.</span></div>`; return; }
     const sel = this.selArticle && list.find(a => a.id === this.selArticle) || list[0];
     const mast = { prophet: 'The Daily Prophet', school: 'The Daily Prophet', quibbler: 'The Quibbler', witch: 'Witch Weekly' }[sel.paper];
     body.innerHTML = `<div class="paperList">${list.slice(0, 20).map(a => `<button class="${a === sel ? 'on' : ''} ${a.fresh ? 'fresh' : ''}" data-a="${a.id}"><b>${a.headline}</b><span>${a.when || ''}</span></button>`).join('')}</div>

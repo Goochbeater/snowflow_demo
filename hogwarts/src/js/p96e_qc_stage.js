@@ -123,6 +123,13 @@ const STAGES = {
       const A = { chairL: ch(3), chairR: ch(4), standF: [0.9, 0, 1.1, PI - 0.4], fire: [(ox - R.x0) - 1.2, 0, 0, HALF], board: [0, 0, -2.5, PI] };
       const C = { default: { p: [0.3, 1.6, 5.4], l: [0, 1.0, 1.0], fov: 50 }, fire: { p: [-0.8, 1.4, 4.6], l: [0.4, 1.0, 1.2], p2: [0.4, 1.35, 4.2], fov: 46, dur: 12 }, hub: { orbit: { c: [0, 1.2, 0], r: 2.8, h: 0.8, a0: 0.3, w: 0.04 }, p: [0, 1.6, 3], l: [0, 1, -1], fov: 54, dur: 999 } };
       return { F, anchors: A, cams: C, variant }; }
+    /* the towers' lounges: two of the real armchairs round the fire (the stage's own anchors sat you on air) */
+    { const LC = HL.LCHAIRS && HL.LCHAIRS[hk]; if (LC && LC.chairs.length >= 4) { const a1 = LC.chairs[1], a2 = LC.chairs[3], mx = (a1.x + a2.x) / 2, mz = (a1.z + a2.z) / 2, fy = Math.atan2(LC.fire[0] - mx, LC.fire[1] - mz), F = Scenes.frame(mx, LC.y, mz, fy), c2 = Math.cos(fy), s2 = Math.sin(fy);
+        const loc = (q) => { const dx = q.x - mx, dz = q.z - mz; return [c2 * dx - s2 * dz, 0, s2 * dx + c2 * dz, q.yaw - fy, 'sit']; }, fd = Math.hypot(LC.fire[0] - mx, LC.fire[1] - mz);
+        const A = { chairL: loc(a1), chairR: loc(a2), standF: [0.9, 0, -1.4, 0.4], fire: [0, 0, fd - 1.2, PI], board: [0, 0, -2.5, PI] };
+        // (the fire is ahead, local +z: the faces are lit from it and seen from it)
+        const C = { default: { p: [-1.6, 1.45, fd - 1.4], l: [0.3, 1.0, 0], fov: 46 }, fire: { p: [1.4, 1.35, fd - 1.0], l: [-0.2, 1.0, 0], p2: [1.1, 1.3, fd - 1.5], fov: 42, dur: 12 }, hub: { p: [-1.9, 1.5, fd - 0.9], l: [0.5, 1.05, -0.2], p2: [-1.6, 1.45, fd - 1.3], fov: 44, dur: 40 } };
+        return { F, anchors: A, cams: C, variant }; } }
     const c = (HL.COMMONS && HL.COMMONS[hk]) || HL.COMMON; if (!c) return null; const F = Scenes.frame(c[0], c[1], c[2], 0);
     const A = { chairL: [-1.1, 0, -0.6, PI / 2 - 0.5, 'sit'], chairR: [1.1, 0, -0.6, -PI / 2 + 0.5, 'sit'], standF: [0.9, 0, 1.1, PI - 0.4], fire: [0, 0, -3.2, PI], board: [0, 0, -2.5, PI] };
     const C = { default: { p: [0.2, 1.7, 3.4], l: [0, 1.0, -2], fov: 50 }, fire: { p: [-0.5, 1.4, 2.4], l: [0.1, 1.0, -1.4], p2: [0.4, 1.35, 1.6], fov: 44, dur: 12 }, hub: { orbit: { c: [0, 1.1, -0.6], r: 3.8, h: 0.7, a0: 0.3, w: 0.04 }, p: [0, 1.6, 3], l: [0, 1, -1], fov: 46, dur: 999 } };
@@ -222,7 +229,7 @@ Scenes.need = async function (list) { const names = [...new Set(list.map((c) => 
 Scenes.enter = function (name, variant, opts) {
   opts = opts || {}; this.leave(true);
   if (MG.state === 'title' || MG.state === 'house') HL.ui.screen('');   // (a scene never plays under the title's buttons)
-  const S = (STAGES[name] || STAGES.world)(variant || '') || STAGES.world(''); this.set = S; this.F = S.F; this.active = true; this.mode = opts.mode || 'view'; this.t = 0;
+  const S = (STAGES[name] || STAGES.world)(variant || '') || STAGES.world(''); this.set = S; if (name === 'common' || name === 'potions') QC.clearAround(S, name === 'common' ? 6 : 4, 40);   // (no castle pupil in your armchair or at your desk, no ghost through the shot) this.F = S.F; this.active = true; this.mode = opts.mode || 'view'; this.t = 0;
   // the player's own body steps aside (it stands at the stage, unseen, so that what goes by where you are — the castle's lights and voices, who is drawn — follows the scene)
   const P = PLAYER.a; if (P) { if (HL.fly.on) HL.fly.dismount(true); this._pl = { x: P.x, y: P.y, z: P.z, yaw: P.yaw, st: PLAYER.state, ms: MG.state }; const w = Scenes.W([0, 0, 2.5]); P.x = w.x; P.z = w.z; P.y = S.F.y; P.vx = P.vy = P.vz = 0; PLAYER.state = 'cine'; Scenes.hidePlayer(true); }
   this._ms = MG.state === 'scene' ? (this._ms || 'play') : MG.state; MG.state = 'scene'; HL.ui.show(false); if (HL.ui.sayOff) HL.ui.sayOff(); if (HL.Q && HL.Q.hud && HL.Q.hud.cv) HL.Q.hud.cv.style.display = 'none';

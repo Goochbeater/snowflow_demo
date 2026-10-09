@@ -408,4 +408,8 @@ body.touch #locker .lkBtns .act.go { order: -1; min-height: 46px; padding: 10px 
 #scrCareer .seg.looks button { width: 100% !important; height: auto !important; aspect-ratio: 1; }
 #scrCareer .seg.looks svg.face { width: 88% !important; height: 88% !important; }
 #scrCareer .crPanel > .actions { flex-wrap: nowrap; } #scrCareer .crPanel > .actions [hidden] { display: none !important; }
+#scrCareer .menuGrid .mhead { grid-column: 1 / -1; font-family: var(--f-head); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--mist); margin: 4px 0 -2px; }
+#scrCareer .mbtn.q { padding: 8px 12px; } #scrCareer .mbtn.q b { font-size: 13px; }
+#scrCareer .paperEmpty { display: grid; gap: 6px; place-items: center; text-align: center; padding: 48px 20px; } #scrCareer .paperEmpty b { font-family: var(--f-display); font-size: 26px; color: var(--gold-hi); } #scrCareer .paperEmpty span { opacity: .8; font-style: italic; }
+@media (max-height: 620px) { #scrCareer .attr { padding: 2px 0 !important; } #scrCareer .attr button { width: 30px; height: 30px; min-height: 0; } #scrCareer .panel.wide .stats .stat { padding: 3px 8px; } }
 `;
