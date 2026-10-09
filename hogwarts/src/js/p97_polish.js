@@ -137,3 +137,9 @@ HL.bedHook = function (st) {
   return true; };
 /* the Hat calls the house in its own voice */
 { const n0 = Script.next; Script.next = function () { const r = n0.apply(this, arguments); try { const b = this.beats && this.beats[this.i - 1]; if (b && b.say && b.say[0] === 'hat' && /better be/i.test(b.say[1]) && HL.AU && Career.S) { const k = QC.key(Career.S.profile.house); if (HL.AU.has('hat_' + k)) HL.AU.play('hat_' + k, { vol: 0.9, vary: false }); } } catch (e) { /* */ } return r; }; }
+/* the paper's photograph is of the match you played: each match starts with none, your catch of the Snitch is caught
+   on camera as a goal is, and a match with neither is photographed at full time, the side on the pitch after it (the
+   Seeker's paper ran a crest on newsprint) */
+{ const Q = HL.Q, s0 = Q.start; Q.start = function () { if (typeof Photo !== 'undefined') { Photo.frames = []; Photo.lastStill = null; Photo.rec = 0; } return s0.apply(this, arguments); };
+  const e0 = Q.end; Q.end = function (why) { if (typeof Photo !== 'undefined' && QC.active && Q.phase !== 'over' && Q.stats && Q.stats.snitch && /snitch/i.test(why || '')) { Photo.rec = 1.4; Photo.at = 0.05; Photo.frames = []; Photo.kind = 'snitch'; } return e0.apply(this, arguments); };
+  if (typeof CareerUI !== 'undefined') { const r0 = CareerUI.resultScene; CareerUI.resultScene = function () { const r = r0.apply(this, arguments); if (typeof Photo !== 'undefined' && !Photo.frames.length && Photo.rec <= 0) { Photo.rec = 1.4; Photo.at = 1.6; Photo.frames = []; Photo.kind = 'fulltime'; } return r; }; } }
