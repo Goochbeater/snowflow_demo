@@ -33,7 +33,20 @@ html body .hlTitle .cr { left: calc(max(5vw, 28px) + env(safe-area-inset-left));
 @media (max-height: 380px) { html body .hlTitle h2 { margin: .5em 0 1em; } html body .hlTitle .hlBtn { padding-top: 7px; padding-bottom: 7px; margin: 4px 0; } html body .hlTitle .cr { font-size: 9px; } }
 /* a bout of Crossed Wands: the quest and its waypoint step aside; on a phone the bar hangs under your own vitals, not on them */
 body.hlDuelOn #hlQuest, body.hlDuelOn #hlWay { opacity: 0 !important; transition: opacity .3s; }
-body.touch #hlDuel { top: calc(46px + env(safe-area-inset-top)) !important; min-width: 250px !important; max-width: 46vw; padding: 5px 14px 7px !important; }`;
+body.touch #hlDuel { top: calc(46px + env(safe-area-inset-top)) !important; min-width: 250px !important; max-width: 46vw; padding: 5px 14px 7px !important; }
+/* the pack on glass: one close (the round one every screen has), and nothing of the pack's under it */
+html body.touch #invClose { display: none; } html body.touch .hlInv .box { padding-right: calc(58px + env(safe-area-inset-right)); }
+@media (max-height: 380px) { html body #invStats .st { font-size: 10.5px; padding: .5px 1px; } html body #invStats .gap { height: 2px; } html body #invWho .lv b { font-size: 15px; } html body #invGold { padding-top: 3px; font-size: 13px; } }
+/* the match setup (and the Sorting): what is chosen reads as chosen — gold-filled, the rest dimmed — the options fall in
+   groups, and the one way forward is the gold button (thirteen equal outlined boxes read as a debug menu) */
+.hlSort:has([data-go]) .hlBtn[data-k] { opacity: .66; background: rgba(10,10,14,.5); border-color: rgba(217,184,106,.3); }
+.hlSort:has([data-go]) .hlBtn[data-k].sel { opacity: 1; background: linear-gradient(rgba(226,194,122,.34), rgba(226,194,122,.16)); border-color: #e8c97a; color: #fff6dc; box-shadow: inset 0 0 0 1px rgba(255,236,190,.3), 0 0 14px rgba(226,194,122,.18); }
+.hlSort:has([data-go]) .hlBtn[data-k="role"][data-v="chaser"], .hlSort:has([data-go]) .hlBtn[data-k="len"][data-v="180"] { margin-left: 26px; }
+.hlSort .hlBtn[data-go] { background: linear-gradient(#e6c780, #b48c3c); color: #1c1307; border-color: #f7dfa0; text-shadow: none; box-shadow: 0 2px 14px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,250,225,.6); }
+.hlSort .hlBtn[data-go]:hover, .hlSort .hlBtn[data-go].sel { background: linear-gradient(#f2d692, #c49a46); color: #120c04; }
+body.touch .hlSort:has([data-k]) > p:nth-last-of-type(2) { display: none; }   /* (the keyboard line) */
+/* the map's card fits a phone's height without scrolling */
+@media (max-height: 620px) { html body .hlMap.mm .card { padding: 8px 11px; } html body .hlMap.mm .card h3 { font-size: 19px !important; margin: 0 0 2px; } html body .hlMap.mm .card p { font-size: 11.5px; margin: 1px 0 3px; line-height: 1.25; } html body .hlMap.mm .card .lg { font-size: 11px; margin: 1px 0; } html body .hlMap.mm .card b { margin-top: 3px; } }`;
   document.head.appendChild(css); }
 /* a match opens like a broadcast: through the flyover a lower third names the two sides with their crests, the competition
    and the ground, and your job in it (the castle's title card said the same in the middle of the sky); then the count is
