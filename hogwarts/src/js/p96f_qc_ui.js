@@ -95,7 +95,7 @@ const CareerUI = {
   hubBackdrop(kind) {
     if (this.backdrop === kind && Scenes.active) return; this.backdrop = kind; this._pv = (this._pv || 0) + 1;
     if (kind === 'creator') { QC.clearAround(Scenes.enter('locker', 'school', { mode: 'view' }), 40); Scenes.shot({ p: [-0.2, 1.46, -2.3], l: [0.72, 1.2, 0], fov: 30, dur: 999 }, true); return; }   // (waist up: the face reads)
-    const set = QC.clearAround(kind === 'school' ? Scenes.enter('common', '', { mode: 'view' }) : Scenes.enter('locker', 'pro', { mode: 'view' }), kind === 'school' ? 0 : 45);
+    const set = QC.clearAround(kind === 'school' ? Scenes.enter('common', '', { mode: 'view' }) : Scenes.enter('locker', 'pro', { mode: 'view' }), kind === 'school' ? 6 : 45, 40);   // (at school the room keeps its students, but not one at the lens, and no ghost)
     if (kind !== 'school' || !Career.S) {
       if (!Career.S) { Scenes.shot(set.cams.hub || { orbit: { c: [0, 1.4, -1], r: 7, h: 1.6, a0: 0.3, w: 0.035 }, p: [0, 2, 6], l: [0, 1.2, 0], fov: 48, dur: 999 }, true); return; }
       /* a professional's hub: you in your club's kit at the players' gate, the stands rising behind (right of the screen; the panels have the left) */

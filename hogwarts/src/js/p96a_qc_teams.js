@@ -130,7 +130,7 @@ QC.face = function (v, witch) {
     <path d="M18.2 22.2c1.2.7 2.4.7 3.6 0" fill="none" stroke="rgba(90,40,30,.55)" stroke-width=".8" stroke-linecap="round"/>${top}</svg>`;
 };
 /* the castle's people step out of a stage's frame (a professor stood at your shoulder in the creator) */
-QC.clearAround = function (set, r) { if (!set || !set.F || !HL.npcs) return set; const F = set.F, out = HL.npcs.filter((a) => Math.hypot(a.x - F.x, a.z - F.z) < r && !a.sceneOut); for (const a of out) a.sceneOut = true; HL._nearN = null;
+QC.clearAround = function (set, r, rGhost) { if (!set || !set.F || !HL.npcs) return set; const F = set.F, gh = new Set((HL.ghosts || []).map((g) => g.a)), out = HL.npcs.filter((a) => !a.sceneOut && Math.hypot(a.x - F.x, a.z - F.z) < (gh.has(a) ? Math.max(r, rGhost || 0) : r));   // (a ghost read as a white blob behind the hub) for (const a of out) a.sceneOut = true; HL._nearN = null;
   const l0 = set.onLeave; set.onLeave = () => { for (const a of out) a.sceneOut = false; HL._nearN = null; if (l0) l0(); }; return set; };
 QC.svg = (k) => `<svg class="qi" viewBox="0 0 24 24" aria-hidden="true"><path d="${QC.ICON[k] || QC.ICON.next}"/></svg>`;
 const hexN = (css) => parseInt(String(css).replace('#', ''), 16);
