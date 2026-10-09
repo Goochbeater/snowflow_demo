@@ -61,13 +61,25 @@ body.touch .hlSort:has([data-k]) > p:nth-last-of-type(2) { display: none; }   /*
 /* the pause menu on a landscape phone: the controls down the left, the settings and the way out on the right, all of it
    on one screen (stacked, QUIT TO TITLE fell off the bottom of a 412-px screen) */
 @media (max-height: 620px) and (min-width: 700px) {
-  html body .hlPause { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr); grid-auto-flow: row dense; align-content: center; gap: 6px 10px; padding: calc(10px + env(safe-area-inset-top)) calc(4vw + env(safe-area-inset-right)) 10px calc(4vw + env(safe-area-inset-left)); overflow-y: auto; }
-  html body .hlPause > h3 { grid-column: 1; grid-row: 1; text-align: left; margin: 0 0 2px; align-self: end; }
-  html body .hlPause > .hlKeys { grid-column: 1; grid-row: 2 / span 7; align-self: start; justify-content: start; font-size: 11.5px; line-height: 1.32; gap: 1px 12px; margin: 0; }
-  html body .hlPause > .tcSet { grid-column: 2 / span 2; flex-wrap: wrap; justify-content: flex-start; gap: 4px; margin: 0; }
-  html body .hlPause > .tcSet .hlBtn { min-width: 0; padding: 5px 9px; font-size: 11px; margin: 0; } html body .hlPause > .tcSet .tcVal { min-width: 70px; font-size: 11.5px; }
-  html body .hlPause > .hlBtn { grid-column: auto; max-width: none; width: auto; margin: 0; padding: 7px 8px; font-size: 12px; letter-spacing: .16em; }
-  html body .hlPause > .hlBtn[data-a="r"], html body .hlPause > .hlBtn[data-a="t"] { grid-column: 2 / span 2; max-width: none; } }
+  html body .hlPause:has(> .hlBtn[data-a="r"]) { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1fr); grid-auto-flow: row dense; align-content: center; gap: 6px 10px; padding: calc(10px + env(safe-area-inset-top)) calc(4vw + env(safe-area-inset-right)) 10px calc(4vw + env(safe-area-inset-left)); overflow-y: auto; }
+  html body .hlPause:has(> .hlBtn[data-a="r"]) > h3 { grid-column: 1; grid-row: 1; text-align: left; margin: 0 0 2px; align-self: end; }
+  html body .hlPause:has(> .hlBtn[data-a="r"]) > .hlKeys { grid-column: 1; grid-row: 2 / span 7; align-self: start; justify-content: start; font-size: 11.5px; line-height: 1.32; gap: 1px 12px; margin: 0; }
+  html body .hlPause:has(> .hlBtn[data-a="r"]) > .tcSet { grid-column: 2 / span 2; flex-wrap: wrap; justify-content: flex-start; gap: 4px; margin: 0; }
+  html body .hlPause:has(> .hlBtn[data-a="r"]) > .tcSet .hlBtn { min-width: 0; padding: 5px 9px; font-size: 11px; margin: 0; } html body .hlPause:has(> .hlBtn[data-a="r"]) > .tcSet .tcVal { min-width: 70px; font-size: 11.5px; }
+  html body .hlPause:has(> .hlBtn[data-a="r"]) > .hlBtn { grid-column: auto; max-width: none; width: auto; margin: 0; padding: 7px 8px; font-size: 12px; letter-spacing: .16em; }
+  html body .hlPause:has(> .hlBtn[data-a="r"]) > .hlBtn[data-a="r"], html body .hlPause:has(> .hlBtn[data-a="r"]) > .hlBtn[data-a="t"] { grid-column: 2 / span 2; max-width: none; } }
+/* the match's full-time card: crests either side of a big score, the stats as a table, the way on in gold */
+.hlPause.qRes { gap: 0; } .qRes .qrV { font-family: 'HLA', Georgia, serif; font-size: 15px; letter-spacing: .5em; padding-left: .5em; color: #f1d58e; }
+.qRes .qrStars { font-size: 26px; letter-spacing: .2em; color: #ffd24a; text-shadow: 0 0 12px rgba(255,200,80,.5); margin: 2px 0 0; } .qRes .qrStars span { color: rgba(255,255,255,.16); text-shadow: none; }
+.qRes .qrBoard { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 22px; margin: 6px 0 4px; width: min(720px, 86vw); }
+.qRes .qrSide { display: flex; flex-direction: column; align-items: center; gap: 6px; } .qRes .qrSide svg, .qRes .qrSide img { width: 64px; height: 76px; } .qRes .qrSide b { font-family: 'HLA', Georgia, serif; font-weight: 400; font-size: 15px; letter-spacing: .2em; }
+.qRes .qrScore { text-align: center; font-family: 'HLA', Georgia, serif; font-size: 64px; line-height: 1; letter-spacing: .04em; white-space: nowrap; } .qRes .qrScore i { font-style: normal; font-size: 26px; opacity: .55; margin: 0 .3em; vertical-align: .5em; }
+.qRes .qrScore small { display: block; font-family: 'HLB', Georgia, serif; font-style: italic; font-size: 13px; letter-spacing: .02em; color: #cfc6b0; margin-top: 6px; }
+.qRes .qrStats { display: grid; grid-template-columns: auto auto auto auto; gap: 3px 18px; margin: 10px 0 4px; padding: 8px 16px; border-top: 1px solid rgba(214,170,74,.3); border-bottom: 1px solid rgba(214,170,74,.3); font-size: 13px; }
+.qRes .qrStats b { font-weight: 400; color: #a89f8a; text-align: right; } .qRes .qrStats span { color: #f1e6ca; font-variant-numeric: tabular-nums; }
+.qRes .qrRule { margin: 2px 0 8px; font-size: 11.5px; color: #8e8672; letter-spacing: .05em; }
+.qRes .hlBtn[data-a="n"] { background: linear-gradient(#e6c780, #b48c3c); color: #1c1307; border-color: #f7dfa0; text-shadow: none; }
+@media (max-height: 460px) { .qRes .qrBoard { margin: 2px 0; } .qRes .qrSide svg, .qRes .qrSide img { width: 46px; height: 54px; } .qRes .qrScore { font-size: 48px; } .qRes .qrStats { margin: 6px 0 2px; font-size: 12px; padding: 5px 12px; } .qRes .qrStars { font-size: 20px; } }
 /* on a phone the objective is two lines at most over the view (the whole of it is in the journal) */
 body.touch #hlQuest .o { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 /* the map's card fits a phone's height without scrolling */
