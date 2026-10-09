@@ -11,7 +11,9 @@
   const m = m0.apply(this, arguments); return m === 'match' && HL.Q.phase === 'over' ? 'wait' : m; }; }
 /* the flight controls hint goes when you land (it used to linger over the castle for its full ten seconds) */
 { const h0 = HL.ui.hint; HL.ui.hint = function () { delete HL.ui.el.Hint.dataset.fly; return h0.apply(this, arguments); };
-  const m0 = HL.ui.onMount; HL.ui.onMount = function (on) { const E = HL.ui.el.Hint, had = E.innerHTML; m0.apply(this, arguments); if (on && E.innerHTML !== had) E.dataset.fly = '1';
+  const m0 = HL.ui.onMount; HL.ui.onMount = function (on) { const E = HL.ui.el.Hint, had = E.innerHTML; m0.apply(this, arguments); if (on && E.innerHTML !== had) { E.dataset.fly = '1';
+      /* on a phone the first flight's lesson is one short line under the rider (two lines of six chips lay over the broom) */
+      if (document.body.classList.contains('touch')) MG.after(0.12, () => { if (PLAYER.state !== 'fly' || !E.dataset.fly) return; HL.ui.hint('Push the stick to fly · <kbd>SHIFT</kbd> · <kbd>SPACE</kbd><kbd>C</kbd> climb and dive · steer where you look · <kbd>B</kbd> to land', 10); E.dataset.fly = '1'; }, true); }
     else if (!on && E.dataset.fly) { E.classList.remove('on'); HL.ui.hintT = 0; delete E.dataset.fly; } }; }
 /* QUIT TO TITLE asks twice (it sat under the thumb and quit on one tap); the legal line and the build stamp keep out of the buttons' way */
 { const p0 = HL.ui.pause; HL.ui.pause = function () { p0.apply(this, arguments); if (MG.state !== 'pause') return; const b = HL.ui.el.Screen.querySelector('.hlBtn[data-a="t"]'); if (!b) return; const go = b.onclick, t0 = b.textContent;
@@ -28,7 +30,10 @@ html body .hlTitle h2:before { display: none; } html body .hlTitle h2:after { tr
 html body .hlTitle .hlBtn { margin: 5px 0; min-width: 0; width: min(34vw, 340px); box-sizing: border-box; text-align: left; padding-left: 22px; padding-right: 12px; white-space: nowrap; font-size: min(17px, 4.2vh); letter-spacing: .28em; }
 html body .hlTitle .hlBtn:hover, html body .hlTitle .hlBtn.sel { letter-spacing: .32em; }
 html body .hlTitle .cr { left: calc(max(5vw, 28px) + env(safe-area-inset-left)); max-width: min(38vw, 420px); font-size: 10px; line-height: 1.35; opacity: .8; }
-@media (max-height: 380px) { html body .hlTitle h2 { margin: .5em 0 1em; } html body .hlTitle .hlBtn { padding-top: 7px; padding-bottom: 7px; margin: 4px 0; } html body .hlTitle .cr { font-size: 9px; } }`;
+@media (max-height: 380px) { html body .hlTitle h2 { margin: .5em 0 1em; } html body .hlTitle .hlBtn { padding-top: 7px; padding-bottom: 7px; margin: 4px 0; } html body .hlTitle .cr { font-size: 9px; } }
+/* a bout of Crossed Wands: the quest and its waypoint step aside; on a phone the bar hangs under your own vitals, not on them */
+body.hlDuelOn #hlQuest, body.hlDuelOn #hlWay { opacity: 0 !important; transition: opacity .3s; }
+body.touch #hlDuel { top: calc(46px + env(safe-area-inset-top)) !important; min-width: 250px !important; max-width: 46vw; padding: 5px 14px 7px !important; }`;
   document.head.appendChild(css); }
 /* a match opens like a broadcast: through the flyover a lower third names the two sides with their crests, the competition
    and the ground, and your job in it (the castle's title card said the same in the middle of the sky); then the count is

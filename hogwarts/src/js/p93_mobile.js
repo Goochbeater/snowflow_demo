@@ -19,7 +19,7 @@ body.touch #hlHint { bottom: calc(8px + env(safe-area-inset-bottom)); left: 47%;
 body.touch #hlPrompt { top: 58%; font-size: 14px; padding: 5px 14px; }
 body.touch #hlToast { top: 13%; padding: 12px 40px 14px; max-width: 70vw; } body.touch #hlToast .a { font-size: 20px; letter-spacing: 0.16em; } body.touch #hlToast .b { font-size: 13px; } body.touch #hlToast hr { width: 200px; margin: 4px auto; }
 body.touch #hlPop { top: 30%; font-size: 15px; } body.touch #hlName { bottom: 30%; font-size: 15px; }
-body.touch[data-tm="fly"] #hlHint { bottom: calc(92px + env(safe-area-inset-bottom)); max-width: 50vw; }
+body.touch[data-tm="fly"] #hlHint { bottom: calc(92px + env(safe-area-inset-bottom)); max-width: 66vw; }
 /* in a match the hint reads under the scoreboard, clear of your rider; the knots readout gives way to the House Spirit bar */
 body.touch.tq #hlHint { top: calc(66px + env(safe-area-inset-top)); bottom: auto; max-width: 54vw; } body.touch.tq #hlFly { display: none; }
 body.touch #hlFly { bottom: calc(8px + env(safe-area-inset-bottom)); width: 190px; } body.touch #hlFly .sp { font-size: 20px; } body.touch #hlFly .al { font-size: 10px; margin-top: 3px; letter-spacing: .1em; }
@@ -66,7 +66,7 @@ body.touch #hlQtut { top: calc(4px + env(safe-area-inset-top)) !important; max-w
 /* ---------------- the Fold's cover screen (344 px tall): the hint wider and smaller so it takes fewer lines of the view */
 @media (max-height: 380px) {
   body.touch #hlHint { font-size: 11px; max-width: 58vw; padding: 4px 12px; line-height: 1.3; }
-  body.touch[data-tm="fly"] #hlHint { bottom: calc(80px + env(safe-area-inset-bottom)); max-width: 58vw; }
+  body.touch[data-tm="fly"] #hlHint { bottom: calc(80px + env(safe-area-inset-bottom)); max-width: 70vw; }
   body.touch #hlQuest { width: min(38vw, 340px); } body.touch #hlQuest .o { font-size: 11.5px; } body.touch #hlQuest .n { font-size: 14px; }
   body .hlPause { padding: 4px 3vw 6px; } body .hlPause h3 { font-size: 16px; margin: 0 0 2px; }
   body .hlPause .hlKeys { font-size: 10.5px; gap: 0 14px; margin: 0 0 3px; line-height: 1.22; }
