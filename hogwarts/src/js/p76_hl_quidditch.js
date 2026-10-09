@@ -16,7 +16,7 @@ HL.Q = { on: false, flyers: [], bl: [], score: [0, 0], t: 0, phase: 'off', ball:
     for (let j = 0; j < 16; j++) { x.fillStyle = j % 2 ? '#3c5a26' : '#46662a'; x.fillRect(0, j * 64, 512, 64); }
     for (let i = 0; i < 26000; i++) { const g = 60 + Math.random() * 60; x.fillStyle = `rgba(${g * 0.55 | 0},${g | 0},${g * 0.3 | 0},0.22)`; x.fillRect(Math.random() * 512, Math.random() * 1024, 1.5, 3 + Math.random() * 3); }
     x.strokeStyle = 'rgba(240,240,225,0.85)'; x.lineWidth = 5; x.beginPath(); x.ellipse(256, 512, 236, 494, 0, 0, TAU); x.stroke(); x.beginPath(); x.moveTo(20, 512); x.lineTo(492, 512); x.stroke(); x.beginPath(); x.arc(256, 512, 44, 0, TAU); x.stroke();
-    for (const y of [512 - 400, 512 + 400]) { x.fillStyle = 'rgba(214,196,150,0.9)'; x.beginPath(); x.ellipse(256, y, 110, 50, 0, 0, TAU); x.fill(); }
+    for (const y of [512 - 400, 512 + 400]) { /* the keeper's area: turf worn thin under the hoops and a chalk line round it (a flat sand-coloured disc read as a placeholder) */ const g = x.createRadialGradient(256, y, 8, 256, y, 112); g.addColorStop(0, 'rgba(120,112,66,0.55)'); g.addColorStop(0.6, 'rgba(104,110,58,0.32)'); g.addColorStop(1, 'rgba(90,110,50,0)'); x.save(); x.translate(256, y); x.scale(1, 50 / 110); x.translate(-256, -y); x.fillStyle = g; x.beginPath(); x.arc(256, y, 112, 0, TAU); x.fill(); x.restore(); x.strokeStyle = 'rgba(240,240,225,0.72)'; x.lineWidth = 4; x.beginPath(); x.ellipse(256, y, 104, 46, 0, 0, TAU); x.stroke(); }
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; };
   HL.foot(C.x - Q.AX - 36, C.z - Q.AZ - 34, C.x + Q.AX + 36, C.z + Q.AZ + 34);
   HL.BUILD.push(async function pitch(L) {

@@ -387,4 +387,14 @@ svg.qi { width: 1.2em; height: 1.2em; fill: none; stroke: currentColor; stroke-w
 #scrCareer .crWhy { margin: 8px 0 0; font-size: 13px; }
 #scrCareer .seg button { min-height: 40px; }
 @media (max-height: 620px) { #scrCareer .seg button { min-height: 38px; } #scrCareer .crTabs button { min-height: 36px; padding: 6px; } #scrCareer .seg.looks button { width: 44px; height: 44px; } #scrCareer .seg.looks svg.face { width: 38px; height: 38px; } }
+/* results: the three numbers that matter, large, counting up; the rest in a line */
+#scrCareer .potm { display: flex; align-items: center; justify-content: center; gap: 8px; margin: -2px 0 6px; font-family: var(--f-head); letter-spacing: .2em; font-size: 12px; color: #241400; background: linear-gradient(90deg, rgba(240,196,90,0), #f0c45a 20%, #f0c45a 80%, rgba(240,196,90,0)); padding: 4px 0; }
+#scrCareer .keyRow { display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 8px; align-items: end; margin: 4px 0 6px; text-align: center; }
+#scrCareer .key b { display: block; font-family: var(--f-display); font-size: 36px; line-height: 1; font-variant-numeric: tabular-nums; color: #f6ead0; }
+#scrCareer .key i { display: block; font-style: normal; font-size: 11px; letter-spacing: .16em; opacity: .75; margin-top: 4px; }
+#scrCareer .key.rate { position: relative; } #scrCareer .key.rate b { font-size: 46px; color: var(--gold-hi); }
+#scrCareer .key.rate u { display: block; height: 4px; margin: 6px auto 0; width: 70%; border-radius: 2px; background: linear-gradient(90deg, var(--gold) calc(var(--k, 1) * var(--r) * 100%), rgba(255,255,255,.12) 0); }
+#scrCareer .resLine { text-align: center; font-style: italic; opacity: .85; margin: 4px 0 6px; font-size: 14px; }
+#scrCareer .gains { display: flex; justify-content: center; gap: 16px; font-family: var(--f-head); font-size: 12.5px; letter-spacing: .1em; color: var(--gold-hi); margin-bottom: 4px; } #scrCareer .gains .dn { color: #ff8a7a; }
+@media (max-height: 620px) { #scrCareer .key b { font-size: 28px; } #scrCareer .key.rate b { font-size: 36px; } #scrCareer .results .big { font-size: 30px; } #scrCareer .resLine { margin: 2px 0 4px; font-size: 13px; } }
 `;

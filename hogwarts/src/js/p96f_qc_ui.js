@@ -182,11 +182,17 @@ const CareerUI = {
     if (r.sim) this.hubScene(); else this.resultScene(r.win === 0);
     this.show(`<div class="panel resPanel"><div class="verdict">${verdict}</div>
       <div class="results"><div><img src="${Tex.crestURL[my]}"><div class="big">${r.score[0]}</div><div class="nm">${CONFIG.teams[my].short}</div></div><div style="opacity:.6;font-family:var(--f-head)">VS</div><div><img src="${Tex.crestURL[op]}"><div class="big">${r.score[1]}</div><div class="nm">${CONFIG.teams[op].short}</div></div></div>
-      <div class="rating"><b>${out.rating.toFixed(1)}</b><span>MATCH RATING${S.last.potm ? ' · PLAYER OF THE MATCH' : ''}</span></div>
-      <div class="stats">${[['GOALS', st.goals], ['ASSISTS', st.assists], ['STEALS', st.steals], ['FINISHERS', st.finishers], ['SNITCH', st.snitch ? 'CAUGHT' : '-'], ['XP', '+' + Math.round(out.xp)], ['GALLEONS', '+' + out.gal], ['FAME', (out.fame >= 0 ? '+' : '') + out.fame]].map(([k, v]) => `<div class="stat"><i>${k}</i><b>${v}</b></div>`).join('')}</div>
+      ${S.last.potm ? `<div class="potm">${QC.svg('star')}<span>PLAYER OF THE MATCH</span></div>` : ''}
+      <div class="keyRow"><div class="key"><b data-count="${st.goals}">0</b><i>GOALS</i></div><div class="key rate"><b data-count="${out.rating.toFixed(1)}" data-dec="1">0.0</b><i>MATCH RATING</i><u style="--r:${clamp(out.rating / 10, 0, 1).toFixed(3)}"></u></div><div class="key"><b data-count="${st.role === 'seeker' || S.profile.pos === 'seeker' ? (st.snitch ? 1 : 0) : st.assists}">0</b><i>${S.profile.pos === 'seeker' ? 'SNITCH' : 'ASSISTS'}</i></div></div>
+      <p class="resLine">${[st.steals ? `${st.steals} steal${st.steals > 1 ? 's' : ''}` : '', st.finishers ? `${st.finishers} Roaring Shot${st.finishers > 1 ? 's' : ''}` : '', S.profile.pos !== 'seeker' && st.snitch ? 'caught the Snitch' : ''].filter(Boolean).join(' · ') || 'A quiet match for you.'}</p>
+      <div class="gains"><span>+${Math.round(out.xp)} XP</span><span>+${out.gal} galleons</span><span class="${out.fame < 0 ? 'dn' : 'up'}">${out.fame >= 0 ? '+' : ''}${out.fame} fame</span></div>
       ${out.goalsDone.length || chemLines ? `<div class="resGoals">${out.goalsDone.map(g => `<div class="ok">✔ ${g.text}</div>`).join('')}${chemLines ? `<div class="chem">${chemLines}</div>` : ''}</div>` : ''}
       ${out.levels ? `<div class="lvlUp">LEVEL UP · ${S.lvl} · +${out.levels * 5} skill points</div>` : ''}${out.grew ? `<div class="note" style="text-align:center;margin-top:6px">Development: ${out.grew.map(k => ATTRS.find(a => a[0] === k)[1] + ' +1').join(' · ')}</div>` : ''}
       <div class="actions sticky"><button class="act" id="rSkip">SKIP PRESS</button><button class="act go" id="rPress">PRESS CONFERENCE</button></div></div>`);
+    /* the numbers count up, the rating's ring fills */
+    { const t0 = performance.now(), els = [...this.root.querySelectorAll('[data-count]')], ring = this.root.querySelector('.key.rate u'); if (ring) ring.style.setProperty('--k', 0);
+      const tick = (now) => { const u = Math.min(1, (now - t0 - 250) / 900), e = u <= 0 ? 0 : 1 - Math.pow(1 - u, 3); for (const el of els) { const v = +el.dataset.count; el.textContent = el.dataset.dec ? (v * e).toFixed(1) : String(Math.round(v * e)); } if (ring) ring.style.setProperty('--k', e.toFixed(3)); if (u < 1 && els[0] && els[0].isConnected) requestAnimationFrame(tick); };
+      requestAnimationFrame(tick); }
     const after = () => this.press(true);
     this.root.querySelector('#rPress').addEventListener('click', () => { Sound.play('ui'); this.root.hidden = true; PressRoom.run('post', null, () => { Career.advance(); after(); }); });
     this.root.querySelector('#rSkip').addEventListener('click', () => { Sound.play('ui'); News.pending = null; Career.advance(); after(); });
