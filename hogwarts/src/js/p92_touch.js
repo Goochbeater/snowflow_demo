@@ -182,7 +182,7 @@ TOUCH.layout = function () {
   if (!TOUCH.root) return; const W = window.innerWidth, H = window.innerHeight, u = TOUCH.u = clamp(Math.min(W, H) / 412, 0.82, 1.4) * TOUCH.cfg.size;
   TOUCH.root.style.setProperty('--u', u.toFixed(3)); document.body.style.setProperty('--tu', u.toFixed(3)); TOUCH.root.style.setProperty('--sr', (58 * u).toFixed(1) + 'px');
   const cx = W - 74 * u, cy = H - 74 * u, at = (deg, r) => [cx + Math.cos(deg * D2R) * r, cy - Math.sin(deg * D2R) * r];
-  const step = Math.max(44, 44 * u), ty = 24 * u, tx = (i) => W - 24 * u - i * step, col = (i) => ty + (i + 1) * step;
+  const step = Math.max(44, 44 * u), ty = 24 * u, tx = (i) => W - 24 * u - i * step, colTop = H > 700 ? Math.round(H * 0.3) : ty + step, col = (i) => colTop + i * step;   // (on a tall screen the tools come down toward the thumb)
   const P = {
     cast: [cx, cy, 41], shoot: [cx, cy, 41],
     protego: [cx - 102 * u, cy + 10 * u, 30], pass: [cx - 102 * u, cy + 10 * u, 31], down: [cx - 102 * u, cy + 10 * u, 28],
@@ -349,6 +349,8 @@ TOUCH.fixEl = function (el) {
     if (RX.test(el.innerHTML)) { if (el.children.length < 60 && !el.querySelector(live)) fix(el);
       /* a screen with a live canvas in it (the pack's figure) is left whole; its plain lines of text are rewritten one by one */
       else for (const d of el.querySelectorAll('div,p,li')) if (RX.test(d.innerHTML) && [...d.querySelectorAll('*')].every((x) => /^(B|I|EM|KBD|SPAN|BR|SMALL|STRONG)$/.test(x.tagName) || (!x.textContent.trim() && !x.matches(live + ',button')))) fix(d); }
+    /* a separator never starts a line ("MAP the map ·" | "JOURNAL…"): it is bound to the word before it */
+    { const tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let n; while ((n = tw.nextNode())) if (/ [·|] /.test(n.textContent) && !n.parentElement.closest('input,textarea')) n.textContent = n.textContent.replace(/ ([·|]) /g, '\u00a0$1 '); }
     for (const k of el.querySelectorAll('kbd:not(.tk)')) { if (k.closest('.hlMap')) continue; const c = TOUCH.chip(k.textContent); if (!c) continue; if (!c.svg && !c.t) { k.style.display = 'none'; k.classList.add('tk'); continue; } k.classList.add('tk'); if (!c.t) k.classList.add('nolbl'); k.innerHTML = c.svg + (c.t ? '<span>' + c.t + '</span>' : '');
       /* "PASS pass": the chip already says it */ const n = k.nextSibling, m = c.t && n && n.nodeType === 3 && /^[\s\u00a0]*([A-Za-z]+)/.exec(n.textContent); if (m && m[1].toLowerCase() === c.t.split(' ').pop().toLowerCase()) n.textContent = ' ' + n.textContent.slice(m[0].length).replace(/^[\s\u00a0]+/, ''); }
   }

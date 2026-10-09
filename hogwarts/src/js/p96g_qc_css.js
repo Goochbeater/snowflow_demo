@@ -397,4 +397,11 @@ svg.qi { width: 1.2em; height: 1.2em; fill: none; stroke: currentColor; stroke-w
 #scrCareer .resLine { text-align: center; font-style: italic; opacity: .85; margin: 4px 0 6px; font-size: 14px; }
 #scrCareer .gains { display: flex; justify-content: center; gap: 16px; font-family: var(--f-head); font-size: 12.5px; letter-spacing: .1em; color: var(--gold-hi); margin-bottom: 4px; } #scrCareer .gains .dn { color: #ff8a7a; }
 @media (max-height: 620px) { #scrCareer .key b { font-size: 28px; } #scrCareer .key.rate b { font-size: 36px; } #scrCareer .results .big { font-size: 30px; } #scrCareer .resLine { margin: 2px 0 4px; font-size: 13px; } }
+/* the hub: one quiet card style for who you are and how you stand; the event alone in gold */
+#scrCareer .hubTop, #scrCareer .hubMeters { border-radius: 3px !important; background: linear-gradient(180deg, rgba(20,15,10,.84), rgba(10,8,6,.84)) !important; border: 1px solid rgba(214,170,74,.26) !important; box-shadow: none !important; }
+/* the huddle's two buttons sit over the thumb, above TALK (they were up in the top corner) */
+body.touch #locker .lkBtns { position: fixed; right: calc(12px + env(safe-area-inset-right)); bottom: calc(150px * var(--tu, 1) + env(safe-area-inset-bottom)); margin: 0; flex-direction: column; align-items: flex-end; gap: 8px; }
+body.touch #locker .lkBtns .act.go { order: -1; min-height: 46px; padding: 10px 18px; }
+#locker .lkGate { position: absolute; transform: translate(-50%, -100%); pointer-events: none; font-family: var(--f-head); letter-spacing: .16em; font-size: 12px; color: #241400; background: linear-gradient(180deg, #f0d48a, #b98a3a); padding: 5px 12px; border-radius: 2px; box-shadow: 0 0 0 1px #000, 0 6px 18px rgba(0,0,0,.5); white-space: nowrap; display: none; }
+#locker .lkGate.on { display: block; } #locker .lkGate:after { content: ''; position: absolute; left: 50%; bottom: -6px; margin-left: -6px; border: 6px solid transparent; border-bottom: 0; border-top-color: #b98a3a; }
 `;

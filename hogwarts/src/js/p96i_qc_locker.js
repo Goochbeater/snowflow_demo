@@ -16,7 +16,7 @@ const Locker = {
   init() {
     if (this.ui) return; const d = document.createElement('div'); d.id = 'locker';
     d.innerHTML = `<div class="lkTop"><div class="lkTitle" id="lkTitle"></div><div class="lkGoals" id="lkGoals"></div><div class="lkBtns"><button class="act" id="lkSim">SIM MATCH</button><button class="act go" id="lkPlay">TAKE THE PITCH</button></div></div>
-      <div class="lkHint" id="lkHint"></div><div class="lkPanel" id="lkPanel"></div>`;
+      <div class="lkHint" id="lkHint"></div><div class="lkGate" id="lkGate">TO THE PITCH</div><div class="lkPanel" id="lkPanel"></div>`;
     document.body.appendChild(d); this.ui = d;
     d.querySelector('#lkPlay').addEventListener('click', () => this.play());
     d.querySelector('#lkSim').addEventListener('click', () => { this.exit(); this.cbSim && this.cbSim(); });
@@ -62,6 +62,9 @@ const Locker = {
   },
   update(dt) {
     if (!this.on) return; const P = PLAYER.a;
+    /* the way out, marked over the gate itself until you are at it */
+    { const g = this.ui.querySelector('#lkGate'); if (g && this.gate && P) { const v = new THREE.Vector3(this.gate.x, HL.gy(this.gate.x, this.gate.z) + 2.6, this.gate.z), d = Math.hypot(P.x - v.x, P.z - v.z); v.project(R.camera);
+        const on = !this.panel && d > 3.2 && v.z < 1 && Math.abs(v.x) < 0.95 && Math.abs(v.y) < 0.95; g.classList.toggle('on', on); if (on) { g.style.left = ((v.x * 0.5 + 0.5) * innerWidth).toFixed(0) + 'px'; g.style.top = ((-v.y * 0.5 + 0.5) * innerHeight).toFixed(0) + 'px'; } } }
     for (const mt of this.mates) { const a = mt.a; if (P) { const d = Math.hypot(P.x - a.x, P.z - a.z); if (d < 3) { a.lookYaw = clamp(wrapA(Math.atan2(P.x - a.x, P.z - a.z) - a.yaw), -1, 1) * 0.8; if (a.base !== 'talk' && !this.talked[mt.m.id]) a.setBase('talk', 0.3); } else { a.lookYaw = damp(a.lookYaw || 0, 0, 3, dt); if (a.base === 'talk' && mt.base !== 'talk' && !this.panel) a.setBase(mt.base, 0.4); } } a.animate(dt); a.pose3D(dt); }
     if (this.coach) { this.coach.animate(dt); this.coach.pose3D(dt); }
     if (this.panel && MG.state === 'play') { PLAYER.a.vx = PLAYER.a.vz = 0; }

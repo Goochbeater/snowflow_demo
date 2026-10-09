@@ -40,6 +40,19 @@ const SProps = {
     const mouth = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 6), new THREE.MeshBasicMaterial({ color: 0x120b06 })); mouth.scale.set(0.07, 0.008, 0.02); mouth.position.set(0, 0.125, 0.11); g.add(mouth);
     for (const [y, r] of [[0.16, 0.1], [0.07, 0.12]]) { const brow = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 6), new THREE.MeshBasicMaterial({ color: 0x1e140b })); brow.scale.set(0.035, 0.006, 0.012); brow.position.set(y > 0.1 ? -0.035 : 0.035, y + 0.02, r - 0.005); if (y > 0.1) g.add(brow); }
     g.userData.mouth = mouth; return g; },
+  /* snow lying on everything that faces the sky within r of a point: each nearby surface's material is lent a copy that
+     whitens and roughens what faces up (the flakes fell on dry summer cobbles); the bunting comes down; the light goes cold */
+  snowCover(S, cx, cz, r) { const cache = new Map(), swaps = [], hid = [], v = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0), G = R.G, g0 = [G.gHigh.clone(), G.gShadow.clone(), G.sat];
+    const lend = (m) => { let c = cache.get(m); if (c) return c; c = m.clone(); const ob = m.onBeforeCompile, ck = m.customProgramCacheKey;
+      c.onBeforeCompile = (sh, rr) => { if (ob) ob.call(m, sh, rr); sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        { vec3 upV = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz); float sn = smoothstep(0.42, 0.78, dot(normal, upV)); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.86, 0.9, 0.95), sn * 0.92); roughnessFactor = mix(roughnessFactor, 0.72, sn); }`); };
+      c.customProgramCacheKey = () => (ck ? ck.call(m) : '') + '|snow'; cache.set(m, c); return c; };
+    R.scene.traverse((o) => { if (!o.isMesh || o.isSkinnedMesh || !o.visible || Array.isArray(o.material)) return; const m = o.material;
+      if (HL.BUNT && HL.BUNT.includes(m)) { o.visible = false; hid.push(o); return; }
+      if (!m || !m.isMeshStandardMaterial || m.transparent || m.userData.noSnow) return; const gm = o.geometry; if (!gm.boundingSphere) gm.computeBoundingSphere(); const bs = gm.boundingSphere; if (!bs) return;
+      v.copy(bs.center).applyMatrix4(o.matrixWorld); if (Math.hypot(v.x - cx, v.z - cz) > r + bs.radius * o.matrixWorld.getMaxScaleOnAxis()) return; swaps.push([o, m]); o.material = lend(m); });
+    G.gHigh.setRGB(0.95, 1.0, 1.08); G.gShadow.setRGB(0.86, 0.95, 1.14); G.sat = Math.min(G.sat, 0.9); void up;
+    const l0 = S.onLeave; S.onLeave = () => { for (const [o, m] of swaps) o.material = m; for (const o of hid) o.visible = true; for (const c of cache.values()) c.dispose(); G.gHigh.copy(g0[0]); G.gShadow.copy(g0[1]); G.sat = g0[2]; if (l0) l0(); }; },
   /* put a list of props into the stage, removed with it */
   place(S, list) { S.props = (S.props || []).concat(list); for (const o of list) R.scene.add(o); const l0 = S.onLeave, u0 = S.update; S.onLeave = () => { for (const o of list) R.scene.remove(o); if (l0) l0(); }; S.update = (dt, t) => { for (const o of list) { if (o.userData.tick) o.userData.tick(dt, t); if (o.userData.bob) o.position.y = o.userData.bob + Math.sin(t * 1.1 + o.userData.ph) * 0.18; } if (u0) u0(dt, t); }; },
 };
@@ -120,7 +133,7 @@ const STAGES = {
     const A = { streetMe: [-0.6, 0, 6, PI * 0.9], streetF: [0.6, 0, 5.4, -PI * 0.85], streetR: [0.3, 0, 2.2, 0] };
     const C = { default: { p: [0, 2, 12], l: [0, 1.5, 0], fov: 50 }, streetWide: { p: [2.5, 4.5, 16], l: [0, 2, -8], p2: [1.5, 3.4, 11], fov: 50, dur: 10 }, streetClose: { p: [1.4, 1.65, 8.2], l: [-0.1, 1.45, 5.6], p2: [1.1, 1.6, 7.6], fov: 40, dur: 10 } };
     const S = { F, anchors: A, cams: C, variant, ground: true };
-    if (variant === 'snow') { const prev = Scenes.F; Scenes.F = F; const w = Scenes.W([0, 0, 4], new THREE.Vector3()); Scenes.F = prev; SProps.place(S, [SProps.snow(w.x, w.y, w.z, 34, 14)]); }
+    if (variant === 'snow') { const prev = Scenes.F; Scenes.F = F; const w = Scenes.W([0, 0, 4], new THREE.Vector3()); Scenes.F = prev; SProps.place(S, [SProps.snow(w.x, w.y, w.z, 34, 14)]); SProps.snowCover(S, w.x, w.z, 90); }
     return S;
   },
   /* the Black Lake: a boat on the open water below the crag, the castle lit on the cliff above (first-years cross by boat) */

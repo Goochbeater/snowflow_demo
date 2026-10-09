@@ -75,6 +75,15 @@ body.touch #hlQtut { top: calc(4px + env(safe-area-inset-top)) !important; max-w
   body.touch #hlToast { top: 9%; padding: 8px 30px 10px; } body.touch #hlToast .a { font-size: 17px; } body.touch #hlToast .b { font-size: 12px; }
 }
 /* ---------------- the touch layer's own adjustments */
+/* the pause menu in the order a player reaches for it: RESUME first and gold; the four sound switches together; settings; QUIT last and quiet */
+@media (max-height: 620px) {
+  body .hlPause > h3 { order: -4; } body .hlPause > .hlKeys { order: -3; } body .hlPause > .tcSet { order: -2; }
+  body .hlPause > .hlBtn[data-a="r"] { order: -1; flex: 0 1 82vw; max-width: 690px; background: linear-gradient(180deg, #f0d48a, #b98a3a); color: #1c1206; border-color: #fff1c4; }
+  body .hlPause > .hlBtn[data-snd] { order: 1; flex: 0 1 19.5vw; max-width: 170px; font-size: 11px; letter-spacing: .14em; padding-left: 4px; padding-right: 4px; }
+  body .hlPause > .hlBtn[data-a="q"], body .hlPause > .hlBtn[data-a="h"] { order: 2; }
+  body .hlPause > .hlBtn[data-a="t"] { order: 3; flex: 0 1 82vw; max-width: 690px; background: none; border-color: rgba(214,170,74,.22); opacity: .82; }
+}
+#hlToast .b { text-wrap: balance; } body:has(#hlToast.on) #hlQuest { opacity: .55; transition: opacity .3s; }
 body.touch .hlBark { font-size: 12.5px !important; max-width: 220px !important; padding: 4px 10px 5px !important; }
 /* full-screen screens (map, journal, pack) hide the HUD behind them; the storey tabs keep to one line */
 body:has(#hlScreen .hlMap, #hlScreen .hlJ, #hlScreen .hlInv) :is(#hlQuest, #hlVit, #hlPts, #hlGold, #hlHint, #hlSay) { visibility: hidden; }

@@ -48,3 +48,6 @@ body.qcount #hlPop { top: 34% !important; font-family: 'HLA', Georgia, serif; fo
   const u0 = U.update; U.update = function () { const r = u0.apply(this, arguments); const ph = Q.on ? Q.phase : '';
     if (lt && lt.classList.contains('on') && ph !== 'intro') lt.classList.remove('on'); document.body.classList.toggle('qcount', ph === 'count'); return r; };
 }
+/* one voice at a time: a hint that only repeats the errand the tracker already shows is not shown (the same sentence sat top-left and bottom-centre) */
+{ const h0 = HL.ui.hint, words = (t) => (t || '').toLowerCase().replace(/<[^>]+>/g, ' ').replace(/[^a-z ]/g, ' ').split(/\s+/).filter((w) => w.length > 3);
+  HL.ui.hint = function (html) { try { const q = HL.ui.el.Quest, o = q && q.style.display !== 'none' && q.querySelector('.o'); if (o && html) { const a = new Set(words(o.textContent)), b = words(html); if (a.size >= 5 && b.length && b.filter((w) => a.has(w)).length / b.length > 0.6) return; } } catch (e) { /* */ } return h0.apply(this, arguments); }; }
