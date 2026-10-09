@@ -157,11 +157,13 @@ HL.AU = { on: true, ctx: null, buf: {}, pend: {}, played: {}, last: {}, beds: {}
       S.flyT = PLAYER.state === 'fly' ? (S.flyT || 0) + dt : 0;
       if (!inside && S.wasIn) S.alt = !S.alt; S.wasIn = inside;   /* (each time you come out of doors the grounds take the other of their two themes) */
       m = S.comb > 0 ? 'mus_duel' : S.flyT > 2.5 ? 'mus_fly' : vil ? 'mus_village' : deep && AU.has('mus_dark') ? 'mus_dark' : hall && AU.has('mus_feast') ? 'mus_feast' : inside ? 'mus_hall' : S.alt && AU.has('mus_castle2') ? 'mus_castle2' : 'mus_castle'; }
+    if (HL.musicHook) { const o = HL.musicHook(st, m); if (o !== undefined) m = o; }   // (the career's scenes and screens choose their own)
     if (m && !AU.has(m)) m = AU.has('mus_castle') ? 'mus_castle' : null;
     /* a change of theme has to hold for a moment (stepping through a doorway and back is not two changes of music); the title, a match and a fight take over at once */
     if (m !== S.mWant) { S.mWant = m; S.mT = 0; } else S.mT = (S.mT || 0) + dt; if (S.mT > 1.6 || !AU.want || m === 'mus_title' || m === 'mus_match' || m === 'mus_duel' || !m) AU.music(m);
     // ---- the opening: the engine in steam at the station, then the castle's bell
     { const c = CAM.cine && play && !Q.on ? (HL._cineStn ? 1 : 2) : 0; S.opening = c ? (S.opening || c === 1) : false;   /* (the title theme carries on through the opening: the station, the flight to the castle) */ if (c !== S.cine) { if (c === 1) AU.play('train', { vol: 0.9, vary: false, gap: 3 }); else if (c === 2 && S.cine === 1) AU.play('bell', { vol: 0.7, vary: false, gap: 3 }); S.cine = c; } }
+    if (HL.bedHook && HL.bedHook(st)) { AU.tick(dt); return; }
     if (!play) { AU.tick(dt); return; }
     // ---- beds: the grounds, the Great Hall, wind on a broom, the stands
     if (!Q.on) { const zn = S.zone ? S.zone.name || '' : '', stn = HL.STN && HL.STN.plat && Math.abs(a.z - HL.STN.z) < 26 && a.x > HL.STN.x0 - 20 && a.x < HL.STN.x1 + 20;

@@ -51,3 +51,22 @@ body.qcount #hlPop { top: 34% !important; font-family: 'HLA', Georgia, serif; fo
 /* one voice at a time: a hint that only repeats the errand the tracker already shows is not shown (the same sentence sat top-left and bottom-centre) */
 { const h0 = HL.ui.hint, words = (t) => (t || '').toLowerCase().replace(/<[^>]+>/g, ' ').replace(/[^a-z ]/g, ' ').split(/\s+/).filter((w) => w.length > 3);
   HL.ui.hint = function (html) { try { const q = HL.ui.el.Quest, o = q && q.style.display !== 'none' && q.querySelector('.o'); if (o && html) { const a = new Set(words(o.textContent)), b = words(html); if (a.size >= 5 && b.length && b.filter((w) => a.has(w)).length / b.length > 0.6) return; } } catch (e) { /* */ } return h0.apply(this, arguments); }; }
+/* the career is scored: its scenes and screens had no music and no room tone at all (the castle's score only knew the open game) */
+HL.musicHook = function (st, m) {
+  if (typeof QC === 'undefined' || !QC.active || (HL.Q && HL.Q.on)) return undefined;
+  if (typeof Locker !== 'undefined' && Locker.on) return 'mus_match';
+  if (st !== 'scene' || typeof Scenes === 'undefined' || !Scenes.set) return st === 'scene' ? 'mus_title' : undefined;
+  const S = Scenes.set, v = S.variant || '', live = typeof Script !== 'undefined' && Script.beats; let n = null;
+  if (S.tables) n = /yule|gala|christmas|feast|halloween|sorting/.test(v) ? 'mus_feast' : 'mus_hall';
+  else if (S.boat) n = 'mus_title'; else if (S.quill || S.anchors && S.anchors.lockMe) n = 'mus_match'; else if (S.anchors && S.anchors.streetMe) n = 'mus_village';
+  else if (S.anchors && S.anchors.pitchMe) n = live ? 'mus_match' : 'mus_castle2'; else n = live ? 'mus_hall' : 'mus_castle';
+  return HL.AU && HL.AU.has(n) ? n : 'mus_castle'; };
+HL.bedHook = function (st) {
+  const A = HL.AU; if (!A || typeof QC === 'undefined' || !QC.active || (HL.Q && HL.Q.on)) return false;
+  if (typeof Locker !== 'undefined' && Locker.on) { A.bed('crowd_loop', 0.32); A.bed('amb_out', 0.35); return false; }
+  if (st !== 'scene' || typeof Scenes === 'undefined' || !Scenes.set) return false; const S = Scenes.set;
+  if (S.tables) A.bed('amb_hall', 0.6); else if (S.boat) A.bed('amb_lake', 0.7); else if (S.quill || (S.anchors && (S.anchors.lockMe || S.anchors.pitchMe))) { A.bed('crowd_loop', S.quill ? 0.2 : 0.35); A.bed('amb_out', 0.4); }
+  else if (S.anchors && S.anchors.streetMe) { A.bed('amb_village', 0.55); A.bed('amb_out', 0.3); } else if (S.anchors && S.anchors.chairL) A.bed('amb_fire', 0.65); else A.bed('amb_hall', 0.35);
+  return true; };
+/* the Hat calls the house in its own voice */
+{ const n0 = Script.next; Script.next = function () { const r = n0.apply(this, arguments); try { const b = this.beats && this.beats[this.i - 1]; if (b && b.say && b.say[0] === 'hat' && /better be/i.test(b.say[1]) && HL.AU && Career.S) { const k = QC.key(Career.S.profile.house); if (HL.AU.has('hat_' + k)) HL.AU.play('hat_' + k, { vol: 0.9, vary: false }); } } catch (e) { /* */ } return r; }; }
