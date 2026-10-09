@@ -35,7 +35,7 @@ const PressRoom = {
   pickReporter() {
     const S = Career.S, root = this.ui.querySelector('#prReps');
     this.ui.querySelector('#prQ').classList.remove('on'); this.ui.querySelector('#prAns').innerHTML = '';
-    Scenes.shot(this.set.cams.reporters);
+    Scenes.shot(this.set.cams.reporters, this.asked > 0);   /* (from the shot of your face to the one over your shoulder is a cut: a blend between them passed through your head) */
     root.innerHTML = `<div class="prHint">${this.asked ? 'Another question. Who do you take?' : 'Hands go up. Who do you take?'}</div>` + this.reps.map((r, i) => `<button class="prRep ${r.diff}" data-i="${i}"><b>${r.name}</b><span>${r.outlet}</span><em>${r.diff === 'easy' ? 'SOFTBALL' : r.diff === 'mid' ? 'FAIR' : 'NEEDLER'} · ×${r.mult}</em><small>${r.blurb}</small></button>`).join('');
     root.classList.add('on');
     root.querySelectorAll('.prRep').forEach(b => b.addEventListener('click', () => { Sound.play('ui'); root.classList.remove('on'); this.ask(this.reps[+b.dataset.i], +b.dataset.i); }));
