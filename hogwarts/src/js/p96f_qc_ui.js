@@ -54,9 +54,9 @@ const CareerUI = {
       <div class="row"><label>Difficulty</label>${seg('diff', [['easy', 'Easy'], ['normal', 'Normal'], ['hard', 'Hard']])}</div>
       <div class="row"><label>Snitch</label>${seg('snitch', [['arcade', 'Arcade · 30'], ['classic', 'Classic · 150']])}</div>
       <div class="row"><label>Match length</label>${seg('length', [[0, '3 min'], [1, '5 min'], [2, '8 min']])}</div></div>
-      <div class="actions"><button class="act" id="crBack">BACK</button>${tab === 'rules' ? '' : '<button class="act" id="crNext">NEXT</button>'}<button class="act go" id="crGo">BEGIN AT HOGWARTS</button></div></div></div>`);
+      <div class="actions"><button class="act" id="crBack">BACK</button><button class="act go" id="crNext" ${tab === 'rules' ? 'hidden' : ''}>NEXT</button><button class="act go" id="crGo" ${tab === 'rules' ? '' : 'hidden'}>BEGIN AT HOGWARTS</button></div></div></div>`);
     const R = this.root;
-    const goTab = (k) => { this.crTab = k; R.querySelectorAll('.crTabs button').forEach((b) => b.classList.toggle('on', b.dataset.ct === k)); R.querySelectorAll('.crPage').forEach((pg) => { pg.hidden = pg.dataset.cp !== k; }); const nx = R.querySelector('#crNext'); if (nx) nx.hidden = k === 'rules'; Sound.play('ui'); };
+    const goTab = (k) => { this.crTab = k; R.querySelectorAll('.crTabs button').forEach((b) => b.classList.toggle('on', b.dataset.ct === k)); R.querySelectorAll('.crPage').forEach((pg) => { pg.hidden = pg.dataset.cp !== k; }); const nx = R.querySelector('#crNext'), gb = R.querySelector('#crGo'); if (nx) nx.hidden = k === 'rules'; if (gb) gb.hidden = k !== 'rules'; Sound.play('ui'); };
     R.querySelectorAll('.crTabs button').forEach((b) => b.addEventListener('click', () => goTab(b.dataset.ct)));
     { const nx = R.querySelector('#crNext'); if (nx) nx.addEventListener('click', () => goTab(this.crTab === 'you' ? 'play' : 'rules')); }
     /* turn yourself round: drag anywhere off the panel */
@@ -94,8 +94,8 @@ const CareerUI = {
   /* the live picture behind the screens: a slow turn through the common room at school, the players' gate as a professional, the gate in close-up behind the creator */
   hubBackdrop(kind) {
     if (this.backdrop === kind && Scenes.active) return; this.backdrop = kind; this._pv = (this._pv || 0) + 1;
-    if (kind === 'creator') { Scenes.enter('locker', 'school', { mode: 'view' }); Scenes.shot({ p: [-0.2, 1.46, -2.3], l: [0.72, 1.2, 0], fov: 30, dur: 999 }, true); return; }   // (waist up: the face reads)
-    const set = kind === 'school' ? Scenes.enter('common', '', { mode: 'view' }) : Scenes.enter('locker', 'pro', { mode: 'view' });
+    if (kind === 'creator') { QC.clearAround(Scenes.enter('locker', 'school', { mode: 'view' }), 40); Scenes.shot({ p: [-0.2, 1.46, -2.3], l: [0.72, 1.2, 0], fov: 30, dur: 999 }, true); return; }   // (waist up: the face reads)
+    const set = QC.clearAround(kind === 'school' ? Scenes.enter('common', '', { mode: 'view' }) : Scenes.enter('locker', 'pro', { mode: 'view' }), kind === 'school' ? 0 : 45);
     if (kind !== 'school' || !Career.S) {
       if (!Career.S) { Scenes.shot(set.cams.hub || { orbit: { c: [0, 1.4, -1], r: 7, h: 1.6, a0: 0.3, w: 0.035 }, p: [0, 2, 6], l: [0, 1.2, 0], fov: 48, dur: 999 }, true); return; }
       /* a professional's hub: you in your club's kit at the players' gate, the stands rising behind (right of the screen; the panels have the left) */

@@ -404,4 +404,8 @@ body.touch #locker .lkBtns { position: fixed; right: calc(12px + env(safe-area-i
 body.touch #locker .lkBtns .act.go { order: -1; min-height: 46px; padding: 10px 18px; }
 #locker .lkGate { position: absolute; transform: translate(-50%, -100%); pointer-events: none; font-family: var(--f-head); letter-spacing: .16em; font-size: 12px; color: #241400; background: linear-gradient(180deg, #f0d48a, #b98a3a); padding: 5px 12px; border-radius: 2px; box-shadow: 0 0 0 1px #000, 0 6px 18px rgba(0,0,0,.5); white-space: nowrap; display: none; }
 #locker .lkGate.on { display: block; } #locker .lkGate:after { content: ''; position: absolute; left: 50%; bottom: -6px; margin-left: -6px; border: 6px solid transparent; border-bottom: 0; border-top-color: #b98a3a; }
+#scrCareer .seg.looks { display: grid !important; grid-template-columns: repeat(6, minmax(0, 46px)); gap: 5px; }
+#scrCareer .seg.looks button { width: 100% !important; height: auto !important; aspect-ratio: 1; }
+#scrCareer .seg.looks svg.face { width: 88% !important; height: 88% !important; }
+#scrCareer .crPanel > .actions { flex-wrap: nowrap; } #scrCareer .crPanel > .actions [hidden] { display: none !important; }
 `;

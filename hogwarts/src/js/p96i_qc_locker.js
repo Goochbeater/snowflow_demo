@@ -32,7 +32,7 @@ const Locker = {
     const tpls = roster.map((m) => HL.student(key, m.body === 'f', (m.look && m.look.v) || 1, true)), coachT = capt ? HL.student(key, capt.body === 'f', (capt.look && capt.look.v) || 1, true) : (S.phase === 'school' ? 'prof_b' : 'prof_a'), meT = HL.student(key, S.profile.body === 'f', (S.profile.look && S.profile.look.v) || 1, true);
     await CAST.need([...tpls, coachT, meT]);
     Scenes.leave(true); CareerUI.root.hidden = true; CareerUI.backdrop = null;
-    const set = STAGES.locker(variant), F = set.F; this.set = set; const W = (p) => { const s0 = Scenes.F; Scenes.F = F; const v = Scenes.W(p, new THREE.Vector3()); Scenes.F = s0; return v; };
+    const set = STAGES.locker(variant), F = set.F; this.set = set; QC.clearAround(set, 45);   // (the castle's own people out of the huddle) const W = (p) => { const s0 = Scenes.F; Scenes.F = F; const v = Scenes.W(p, new THREE.Vector3()); Scenes.F = s0; return v; };
     const put = (tpl, at) => { const w = W(at), y = HL.gy(w.x, w.z) + 0.05, a = new Actor(CHAR.T[tpl], { x: w.x, y, z: w.z, yaw: F.yaw + at[3], hp: 100, team: 'npc', moves: MOV.wizard, r: 0.3, h: 1.8 }); a.noTarget = true; a.base = 'calm'; a.x = w.x; a.y = y; a.z = w.z; a.animate(0.016 + RNG()); a.pose3D(0.016); return a; };
     this.mates = []; this.uses = [];
     roster.forEach((m, i) => { const at = set.anchors['mate' + i]; if (!at) return; m.pers = m.pers || PERSONALITY[(m.name.length + i) % 4]; const a = put(tpls[i], at), mt = { m, a, base: ['calm', 'fold', 'calm', 'talk', 'fold', 'calm', 'talk'][i] }; a.base = mt.base;
@@ -50,7 +50,7 @@ const Locker = {
     this.closePanel(); this.renderGoals(); HL.ui.fade(0);
   },
   exit() {
-    if (!this.on) return; this.on = false; this.ui.classList.remove('on'); this.closePanel(); document.body.classList.remove('qclocker'); if (TOUCH.on) TOUCH.layout();
+    if (!this.on) return; this.on = false; if (this.set && this.set.onLeave) { const l = this.set.onLeave; this.set.onLeave = null; l(); } this.ui.classList.remove('on'); this.closePanel(); document.body.classList.remove('qclocker'); if (TOUCH.on) TOUCH.layout();
     for (const mt of this.mates) mt.a.dispose(); if (this.coach) this.coach.dispose(); this.mates = []; this.coach = null;
     for (const u of this.uses) { const i = HL.uses.indexOf(u); if (i >= 0) HL.uses.splice(i, 1); } this.uses = [];
     if (this._hero) { CHAR.T.maul = this._hero; this._hero = null; }
