@@ -45,6 +45,8 @@ html body.touch #invClose { display: none; } html body.touch .hlInv .box { paddi
 .hlSort .hlBtn[data-go] { background: linear-gradient(#e6c780, #b48c3c); color: #1c1307; border-color: #f7dfa0; text-shadow: none; box-shadow: 0 2px 14px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,250,225,.6); }
 .hlSort .hlBtn[data-go]:hover, .hlSort .hlBtn[data-go].sel { background: linear-gradient(#f2d692, #c49a46); color: #120c04; }
 body.touch .hlSort:has([data-k]) > p:nth-last-of-type(2) { display: none; }   /* (the keyboard line) */
+/* on a phone the objective is two lines at most over the view (the whole of it is in the journal) */
+body.touch #hlQuest .o { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 /* the map's card fits a phone's height without scrolling */
 @media (max-height: 620px) { html body .hlMap.mm .card { padding: 8px 11px; } html body .hlMap.mm .card h3 { font-size: 19px !important; margin: 0 0 2px; } html body .hlMap.mm .card p { font-size: 11.5px; margin: 1px 0 3px; line-height: 1.25; } html body .hlMap.mm .card .lg { font-size: 11px; margin: 1px 0; } html body .hlMap.mm .card b { margin-top: 3px; } }`;
   document.head.appendChild(css); }
