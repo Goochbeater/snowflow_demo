@@ -130,7 +130,8 @@ QC.face = function (v, witch) {
     <path d="M18.2 22.2c1.2.7 2.4.7 3.6 0" fill="none" stroke="rgba(90,40,30,.55)" stroke-width=".8" stroke-linecap="round"/>${top}</svg>`;
 };
 /* the castle's people step out of a stage's frame (a professor stood at your shoulder in the creator) */
-QC.clearAround = function (set, r, rGhost) { if (!set || !set.F || !HL.npcs) return set; const F = set.F, gh = new Set((HL.ghosts || []).map((g) => g.a)), out = HL.npcs.filter((a) => !a.sceneOut && Math.hypot(a.x - F.x, a.z - F.z) < (gh.has(a) ? Math.max(r, rGhost || 0) : r));   // (a ghost read as a white blob behind the hub) for (const a of out) a.sceneOut = true; HL._nearN = null;
+QC.clearAround = function (set, r, rGhost) { if (!set || !set.F || !HL.npcs) return set; const F = set.F, gh = new Set((HL.ghosts || []).map((g) => g.a)), out = HL.npcs.filter((a) => !a.sceneOut && Math.hypot(a.x - F.x, a.z - F.z) < (gh.has(a) ? Math.max(r, rGhost || 0) : r));   /* (a ghost read as a white blob behind the hub) */
+  for (const a of out) a.sceneOut = true; HL._nearN = null;
   const l0 = set.onLeave; set.onLeave = () => { for (const a of out) a.sceneOut = false; HL._nearN = null; if (l0) l0(); }; return set; };
 /* a broom, drawn: its handle's wood and its tail (the shop was text in boxes) */
 QC.broomArt = function (id) { const W = { star: ['#b8894e', '#c9a46a', 0], clean7: ['#7a4a26', '#a77a44', 0], comet260: ['#d8c49a', '#c8b07a', 1], nimbus2000: ['#5a2414', '#8a5a2e', 1], nimbus2001: ['#18120e', '#5a4632', 2], firebolt: ['#9a6a3e', '#d0a050', 3] }[id] || ['#8a5a2e', '#a77a44', 0];

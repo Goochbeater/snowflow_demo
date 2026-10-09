@@ -276,7 +276,8 @@ Scenes.need = async function (list) { const names = [...new Set(list.map((c) => 
 Scenes.enter = function (name, variant, opts) {
   opts = opts || {}; this.leave(true);
   if (MG.state === 'title' || MG.state === 'house') HL.ui.screen('');   // (a scene never plays under the title's buttons)
-  const S = (STAGES[name] || STAGES.world)(variant || '') || STAGES.world(''); this.set = S; if (name === 'common' || name === 'potions' || name === 'hall') QC.clearAround(S, name === 'common' ? 6 : name === 'potions' ? (S.clear || 4) : 0, 40);   // (no castle pupil in your armchair or at your desk, no ghost through the shot) this.F = S.F; this.active = true; this.mode = opts.mode || 'view'; this.t = 0;
+  const S = (STAGES[name] || STAGES.world)(variant || '') || STAGES.world(''); this.set = S; if (name === 'common' || name === 'potions' || name === 'hall') QC.clearAround(S, name === 'common' ? 6 : name === 'potions' ? (S.clear || 4) : 0, 40);   /* (no castle pupil in your armchair or at your desk, no ghost through the shot) */
+  this.F = S.F; this.active = true; this.mode = opts.mode || 'view'; this.t = 0;
   // the player's own body steps aside (it stands at the stage, unseen, so that what goes by where you are — the castle's lights and voices, who is drawn — follows the scene)
   const P = PLAYER.a; if (P) { if (HL.fly.on) HL.fly.dismount(true); this._pl = { x: P.x, y: P.y, z: P.z, yaw: P.yaw, st: PLAYER.state, ms: MG.state }; const w = Scenes.W([0, 0, 2.5]); P.x = w.x; P.z = w.z; P.y = S.F.y; P.vx = P.vy = P.vz = 0; PLAYER.state = 'cine'; Scenes.hidePlayer(true); }
   this._ms = MG.state === 'scene' ? (this._ms || 'play') : MG.state; MG.state = 'scene'; HL.ui.show(false); if (HL.ui.sayOff) HL.ui.sayOff(); if (HL.Q && HL.Q.hud && HL.Q.hud.cv) HL.Q.hud.cv.style.display = 'none';
