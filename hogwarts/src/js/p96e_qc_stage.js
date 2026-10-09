@@ -336,6 +336,8 @@ Scenes.anim = function (c, name) {
 Scenes.shot = function (s, snap) {
   if (!s) return; const res = (v) => typeof v === 'function' ? v() : v, Wv = (v) => s.world ? new THREE.Vector3().fromArray(res(v)) : Scenes.W(res(v), new THREE.Vector3());
   const p = Wv(s.p), l = Wv(s.l);
+  /* a blend whose path would pass through one of the cast (a shot from in front to one from behind) is a cut */
+  if (!snap && this.cast) { const a0 = this.cp, ab = _v5.copy(p).sub(a0), L2 = ab.lengthSq(); if (L2 > 1) for (const id in this.cast) { const c = this.cast[id], h = this.head(c), t = sat(_v4.copy(h).sub(a0).dot(ab) / L2); if (t > 0.05 && t < 0.95 && _v4.copy(a0).addScaledVector(ab, t).distanceTo(h) < 0.55) { snap = true; break; } } }
   this.cam = { p0: snap ? p.clone() : this.cp.clone(), l0: snap ? l.clone() : this.cl.clone(), f0: snap ? (s.fov || 45) : this.cfov, p1: p, l1: l, f1: s.fov || 45, p2: s.p2 ? Wv(s.p2) : null, l2: s.l2 ? Wv(s.l2) : null, t: 0, blend: snap ? 0 : (s.blend !== undefined ? s.blend : 0.9), dur: s.dur || 6, orbit: s.orbit || null, wide: !!s.wide };
   if (snap) { this.cp.copy(p); this.cl.copy(l); this.cfov = s.fov || 45; }
 };
