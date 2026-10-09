@@ -107,7 +107,7 @@ const STAGES = {
       houseTable: { p: [hx + 3.6, 2.1, -2 + 5.4], l: [hx, 0.95, -2], p2: [hx + 2.8, 1.7, -2 + 3.8], fov: 44, dur: 8, wide: true },
       // (from the end of the pair's stretch of table, eye height, easing in: it sat 40 cm over the plates, a gold dish filling the foreground; the lines cut in over the shoulder)
       tableClose: { p: [hx + 0.25, 1.72, 2.6], l: [hx, 1.05, -1.7], p2: [hx + 0.2, 1.62, 1.6], fov: 38, dur: 9, wide: true },
-      pumpkins: { p: [hx + 2, 1.5, 2], l: [hx, 9, -10], l2: [hx, 2.2, -4], p2: [hx + 1.4, 1.6, 0.6], fov: 54, dur: 6 },   // (tilts down from the lanterns to the table)
+      pumpkins: { p: [hx + 2, 1.5, 2], l: [hx, 5.6, -10], l2: [hx, 2.4, -4], p2: [hx + 1.4, 1.6, 0.6], fov: 54, dur: 6 },   // (tilts down from the lanterns to the table)
       trees: { p: [6, 2, 4], l: [12, 5, -6], p2: [5, 2.4, 0], fov: 50, dur: 8 },
       yuleWide: { p: [0, 7, L * 0.3], l: [0, 1.5, -L * 0.18], p2: [3, 5, L * 0.12], fov: 48, dur: 10 },
       danceOrbit: { orbit: { c: [0, 1.5, -L * 0.18], r: 2.3, h: 0.05, a0: 0.4, w: 0.18 }, p: [0, 2, 4], l: [0, 1.2, 0], fov: 36, dur: 20 },
@@ -130,7 +130,7 @@ const STAGES = {
       { const N = 520, im = new THREE.InstancedMesh(new THREE.SphereGeometry(0.05, 6, 4), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, 1.7, 1.0), toneMapped: false }), N), m4 = new THREE.Matrix4(), W2 = (G.x1 - G.x0) / 2 - 0.6; let k = 0;
         for (let st = 0; st < 13 && k < N; st++) { const lz = -L / 2 + 2 + st * (L / 12), y0 = 8.4 + (st % 2) * 0.6; for (let i = 0; i <= 39 && k < N; i++) { const u = i / 39, lx = -W2 + u * W2 * 2, ly = y0 - Math.sin(u * PI) * 1.6, w = Scenes.W([lx, ly, lz + Math.sin(u * PI * 3) * 0.2], new THREE.Vector3()); m4.makeTranslation(w.x, w.y, w.z); im.setMatrixAt(k++, m4); } }
         im.count = k; im.frustumCulled = false; list.push(im); } }
-    if (variant === 'halloween') for (let i = 0; i < 26; i++) { const p = SProps.pumpkin(0.9 + RNG() * 0.4), w = Scenes.W([TX[i % 4] + (RNG() - 0.5) * 5, 6.5 + RNG() * 4, -L / 2 + 4 + (i / 26) * (L - 4)], new THREE.Vector3()); p.position.copy(w); p.rotation.y = F.yaw + PI + (RNG() - 0.5) * 0.8; p.userData.bob = w.y; p.userData.ph = i; list.push(p); }
+    if (variant === 'halloween') for (let i = 0; i < 44; i++) { const p = SProps.pumpkin(0.8 + RNG() * 0.45), w = Scenes.W([TX[i % 4] + (RNG() - 0.5) * 5, 3.3 + RNG() * 3.6, -L / 2 + 3 + (i / 44) * (L - 3)], new THREE.Vector3());   /* (low enough over the tables to be in a seated shot: at six to ten metres they were above every frame) */ p.position.copy(w); p.rotation.y = F.yaw + PI + (RNG() - 0.5) * 0.8; p.userData.bob = w.y; p.userData.ph = i; list.push(p); }
     /* the holidays and the balls empty the hall of its everyday diners (the script says "half empty"; a ball has no one eating) */
     if (variant === 'christmas' || variant === 'yule' || variant === 'gala') { const out = HL.npcs.filter((a) => a.x > G.x0 && a.x < G.x1 && a.z > G.z0 && a.z < G.z1 && Math.abs(a.y - Y) < 3); for (const a of out) a.sceneOut = true; HL._nearN = null; HL.stillOut = { x0: G.x0, x1: G.x1, z0: G.z0, z1: G.z1, y: Y };
       const l0 = S.onLeave; S.onLeave = () => { for (const a of out) a.sceneOut = false; HL._nearN = null; HL.stillOut = null; if (l0) l0(); };
