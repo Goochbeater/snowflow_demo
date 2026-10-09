@@ -75,6 +75,7 @@ body.touch #hlQtut { top: calc(4px + env(safe-area-inset-top)) !important; max-w
   body.touch #hlToast { top: 9%; padding: 8px 30px 10px; } body.touch #hlToast .a { font-size: 17px; } body.touch #hlToast .b { font-size: 12px; }
 }
 /* ---------------- the touch layer's own adjustments */
+.hlTitle h2 { text-shadow: 0 0 12px rgba(0,0,0,.95), 0 0 30px rgba(0,0,0,.7), 0 2px 3px #000; }   /* (the sub-title sat on the spires at low contrast) */
 /* the pause menu in the order a player reaches for it: RESUME first and gold; the four sound switches together; settings; QUIT last and quiet */
 @media (max-height: 620px) {
   body .hlPause > h3 { order: -4; } body .hlPause > .hlKeys { order: -3; } body .hlPause > .tcSet { order: -2; }

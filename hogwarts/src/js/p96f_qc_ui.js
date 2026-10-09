@@ -96,7 +96,14 @@ const CareerUI = {
     if (this.backdrop === kind && Scenes.active) return; this.backdrop = kind; this._pv = (this._pv || 0) + 1;
     if (kind === 'creator') { Scenes.enter('locker', 'school', { mode: 'view' }); Scenes.shot({ p: [-0.2, 1.46, -2.3], l: [0.72, 1.2, 0], fov: 30, dur: 999 }, true); return; }   // (waist up: the face reads)
     const set = kind === 'school' ? Scenes.enter('common', '', { mode: 'view' }) : Scenes.enter('locker', 'pro', { mode: 'view' });
-    if (kind !== 'school' || !Career.S) { Scenes.shot(set.cams.hub || { orbit: { c: [0, 1.4, -1], r: 7, h: 1.6, a0: 0.3, w: 0.035 }, p: [0, 2, 6], l: [0, 1.2, 0], fov: 48, dur: 999 }, true); return; }
+    if (kind !== 'school' || !Career.S) {
+      if (!Career.S) { Scenes.shot(set.cams.hub || { orbit: { c: [0, 1.4, -1], r: 7, h: 1.6, a0: 0.3, w: 0.035 }, p: [0, 2, 6], l: [0, 1.2, 0], fov: 48, dur: 999 }, true); return; }
+      /* a professional's hub: you in your club's kit at the players' gate, the stands rising behind (right of the screen; the panels have the left) */
+      Scenes.shot({ p: [-1.7, 1.35, -3.9], l: [0.9, 2.1, 2.2], p2: [-1.45, 1.4, -3.5], fov: 46, dur: 40 }, true);
+      const pv = this._pv, cast = [{ id: 'me', at: [0.15, 0, 0, PI + 0.5], anim: 'idle', o: { outfit: 'kit' } }];
+      Scenes.need(cast).then(() => { if (this._pv !== pv || Scenes.set !== set) return; const a = Scenes.spawn('me', cast[0]); if (a) a.base = 'fold'; }).catch(() => {});
+      if (Career.S.phase !== 'school') { const T = Career.myTeam(), k = QC.key(T); QC.inject([k]); QC.dress(k, QC.key(T === CLUB_IDS[0] ? CLUB_IDS[1] : CLUB_IDS[0])); }
+      return; }
     /* at school the hub is you and your friend by your own common-room fire, framed in the right of the screen (the panels have the left) */
     const L = set.anchors.chairL, Rr = set.anchors.chairR, mx = (L[0] + Rr[0]) / 2, mz = (L[2] + Rr[2]) / 2;
     Scenes.shot({ p: [mx + 2.2, 1.55, mz + 3.6], l: [mx - 1.4, 1.1, mz + 0.2], p2: [mx + 1.7, 1.48, mz + 3.1], fov: 44, dur: 40 }, true);

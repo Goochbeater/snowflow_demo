@@ -69,8 +69,8 @@ PLAYER.cast = function (id, force) {
 PLAYER.release = function (id) {
   const a = PLAYER.a, P = HL.P, S = HL.SPELLS[id], tip = HL.wandTip(a, new THREE.Vector3());
   HL.aimUpdate(); const dir = P.aim.clone().sub(tip).normalize(); if (dir.dot(P.aimDir) < 0.3) dir.copy(P.aimDir);
-  a.wandGlow = 1.6; FX.flashLight(tip, S.col, 5, 6, 0.12); FX.spark(tip, dir, id === 'basic' ? 5 : 12, 5, [S.col[0] * 4, S.col[1] * 4, S.col[2] * 4], 0.25);
-  if (id !== 'basic') { R.kick(0.12); FX.addShake(0.08); HL.ui && HL.ui.spellName(S.name); }
+  a.wandGlow = 1.6; FX.flashLight(tip, S.col, id === 'basic' ? 9 : 5, 6, id === 'basic' ? 0.09 : 0.12); FX.spark(tip, dir, id === 'basic' ? 10 : 12, 5, [S.col[0] * 4, S.col[1] * 4, S.col[2] * 4], 0.25);
+  if (id !== 'basic') { R.kick(0.12); FX.addShake(0.08); HL.ui && HL.ui.spellName(S.name); } else { R.kick(0.05); FX.ring && FX.ring(tip, [S.col[0] * 3, S.col[1] * 3, S.col[2] * 3], 0.9, 0.16); }   /* (the basic cast had a faint spark and nothing else: now a flare at the tip, a ring and a small kick) */
   if (id === 'incendio') return HL.incendio(a, tip, dir);
   HL.shoot(a, tip, dir, id, { target: P.target, dmgMul: 1 });
 };
