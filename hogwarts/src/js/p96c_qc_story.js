@@ -176,8 +176,9 @@ const Story = {
         { say: ['scout', `Keep this up and there'll be trial letters in June. More than one, if you're lucky.`] },
         { choice: [{ t: '"I\'ll make sure of it."', tone: 'gr', fx: { fame: 3 } }, { t: '"Tell your club to get in line."', tone: 'sh', fx: { fame: 4, trust: -2 } }] },
       ] }),
-      graduation: () => ({ set: 'world', weather: 'golden', cast: [{ id: ME, at: 'pitchMe', anim: 'idle', o: school }, { id: F, at: 'pitchF', anim: 'talk', o: school }], beats: [
+      graduation: () => ({ set: 'world', variant: 'graduation', weather: 'golden', cast: [{ id: ME, at: 'pitchMe', anim: 'idle', o: school }, { id: F, at: 'pitchF', anim: 'talk', o: school }].concat([...Array(11)].map((_, i) => ({ id: 'g' + (i + 1), at: 'g' + (i + 1), anim: i % 3 ? 'cheer' : 'idle', o: { team: i % 4 } }))), beats: [
         { title: 'Graduation', sub: 'Seven years, done' },
+        { cam: 'gradWide' }, { fx: 'cheer' }, { wait: 2.6 },
         { cam: 'pitchLow' },
         { say: [F, `Seven years. I can't believe we have to give the brooms back.`] },
         { say: [F, `Whatever team you sign for, I'm buying a scarf. Front row. Loudest one there.`] },
