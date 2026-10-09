@@ -212,7 +212,10 @@ HL.ui.pause = function () {
 /* the title's camera: a slow turn around the castle from the loch side, the sun on its western face */
 HL.titleUpdate = function (dt) {
   HL.titleT = (HL.titleT || 0) + dt; const t = HL.titleT, a = 0.62 + t * 0.022, r = 330 - 30 * Math.sin(t * 0.05), cam = R.camera;
-  cam.position.set(20 + Math.sin(a) * r, 104 + 22 * Math.sin(t * 0.04), 10 - Math.cos(a) * r); cam.lookAt(18, 98, 14); if (Math.abs(cam.fov - 40) > 0.01) { cam.fov = 40; cam.updateProjectionMatrix(); }
+  // (aimed a little to the castle's left, so it stands in the right of the frame and the logo and menu have the sky and the hills on the left)
+  // (on a squarer screen the eye stands further off, so the castle keeps to its side of the frame)
+  const asp = cam.aspect || 1.6, rr = r * Math.max(1, 1.85 / asp), k = rr * Math.tan(20 * D2R) * asp * 0.42;
+  cam.position.set(20 + Math.sin(a) * rr, 104 + 22 * Math.sin(t * 0.04) + (rr - r) * 0.12, 10 - Math.cos(a) * rr); cam.lookAt(18 + Math.cos(a) * k, 98, 14 + Math.sin(a) * k); if (Math.abs(cam.fov - 40) > 0.01) { cam.fov = 40; cam.updateProjectionMatrix(); }
   if (PLAYER.a) { PLAYER.a.root.visible = false; if (PLAYER.a.wand) PLAYER.a.wand.visible = false; if (PLAYER.a.inst.cloth) PLAYER.a.inst.cloth.setVisible(false); }
   /* Nobody in the castle is drawn behind a menu. (The people of the world are shown and hidden by the play frame, which does not run here: all 558 of them — 8,000 meshes, eleven million triangles — were being drawn behind the title, which ran at 15 frames a second.) The play frame brings back whoever is near when the game starts. */
   HL._tHide = (HL._tHide || 0) - dt; if (HL._tHide <= 0 && HL.npcs) { HL._tHide = 0.5; for (const a of HL.npcs) if (!a.hiddenN) { a.hiddenN = true; a.root.visible = false; if (a.inst && a.inst.cloth) a.inst.cloth.setVisible(false); } }

@@ -18,6 +18,18 @@
   b.onclick = function (e) { if (!b.classList.contains('tcSure')) { b.classList.add('tcSure'); b.textContent = 'TAP AGAIN TO QUIT'; setTimeout(() => { if (b.isConnected) { b.classList.remove('tcSure'); b.textContent = t0; } }, 3000); return; } return go.call(this, e); }; }; }
 { const t0 = HL.ui.title; HL.ui.title = function () { t0.apply(this, arguments); const U = HL.ui, v = U.el.Screen.querySelector('.hlTitle .v'); if (v && !MG.flags.debug) v.style.display = 'none';
   /* nothing from the game left over the logo (a location card or a hint still running when you quit) */ U.el.Toast.classList.remove('on'); U.toastT = 0; U.el.Hint.classList.remove('on'); U.hintT = 0; }; }
+/* the title: the logo and the menu down the left over a dark scrim, the castle standing in the right of the frame (the
+   camera is aimed to its left, p77) — the logo sat on the spires and the buttons on the castle's walls */
+{ const css = document.createElement('style'); css.textContent = `
+html body .hlTitle { align-items: flex-start; justify-content: center; padding: 0 0 0 calc(max(5vw, 28px) + env(safe-area-inset-left)); background: linear-gradient(90deg, rgba(9,7,13,.86) 0%, rgba(9,7,13,.6) 28%, rgba(9,7,13,.18) 48%, rgba(9,7,13,0) 62%), linear-gradient(rgba(0,0,0,0) 72%, rgba(6,4,3,.5)); }
+html body .hlTitle h1 { position: static; font-size: min(6.6vw, 14.5vh, 96px); letter-spacing: .16em; padding-left: 0; line-height: 1; margin: 0 0 0 -0.04em; }
+html body .hlTitle h2 { position: static; font-size: min(1.45vw, 3vh, 17px); letter-spacing: .6em; padding-left: .08em; margin: .7em 0 1.5em; gap: 16px; }
+html body .hlTitle h2:before { display: none; } html body .hlTitle h2:after { transform: none; margin-left: 0; width: min(7vw, 90px); background: linear-gradient(90deg, rgba(241,213,142,.9), transparent); }
+html body .hlTitle .hlBtn { margin: 5px 0; min-width: 0; width: min(34vw, 340px); box-sizing: border-box; text-align: left; padding-left: 22px; padding-right: 12px; white-space: nowrap; font-size: min(17px, 4.2vh); letter-spacing: .28em; }
+html body .hlTitle .hlBtn:hover, html body .hlTitle .hlBtn.sel { letter-spacing: .32em; }
+html body .hlTitle .cr { left: calc(max(5vw, 28px) + env(safe-area-inset-left)); max-width: min(38vw, 420px); font-size: 10px; line-height: 1.35; opacity: .8; }
+@media (max-height: 380px) { html body .hlTitle h2 { margin: .5em 0 1em; } html body .hlTitle .hlBtn { padding-top: 7px; padding-bottom: 7px; margin: 4px 0; } html body .hlTitle .cr { font-size: 9px; } }`;
+  document.head.appendChild(css); }
 /* a match opens like a broadcast: through the flyover a lower third names the two sides with their crests, the competition
    and the ground, and your job in it (the castle's title card said the same in the middle of the sky); then the count is
    called in big numerals in the middle of the screen */
