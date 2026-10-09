@@ -109,7 +109,7 @@ const STAGES = {
       tableClose: { p: [hx + 0.25, 1.72, 2.6], l: [hx, 1.05, -1.7], p2: [hx + 0.2, 1.62, 1.6], fov: 38, dur: 9, wide: true },
       pumpkins: { p: [hx + 2, 1.5, 2], l: [hx, 5.6, -10], l2: [hx, 2.4, -4], p2: [hx + 1.4, 1.6, 0.6], fov: 54, dur: 6 },   // (tilts down from the lanterns to the table)
       trees: { p: [6, 2, 4], l: [12, 5, -6], p2: [5, 2.4, 0], fov: 50, dur: 8 },
-      yuleWide: { p: [0, 7, L * 0.3], l: [0, 1.5, -L * 0.18], p2: [3, 5, L * 0.12], fov: 48, dur: 10 },
+      yuleWide: { p: [3.2, 3.4, L * 0.06], l: [-0.4, 2.2, -L * 0.22], p2: [2.2, 2.9, -L * 0.04], fov: 48, dur: 10 },   // (in among the dancers, the lights strung overhead in the top of the frame: from seven metres up they were dots on an empty floor)
       danceOrbit: { orbit: { c: [0, 1.5, -L * 0.18], r: 2.3, h: 0.05, a0: 0.4, w: 0.18 }, p: [0, 2, 4], l: [0, 1.2, 0], fov: 36, dur: 20 },
       examWide: { p: [0, 6.5, 12], l: [0, 1, -12], p2: [-2, 4.5, 6], fov: 50, dur: 10 },
     };
@@ -196,7 +196,7 @@ const STAGES = {
   hogsmeade(variant) {
     const V = HL.VIL; if (!V) return null; const x = V.x + 6, z = V.z, y = HL.gy(x, z); const F = Scenes.frame(x, y, z, -HALF);
     const A = { streetMe: [-0.6, 0, 6, PI * 0.9], streetF: [0.6, 0, 5.4, -PI * 0.85], streetR: [0.3, 0, 2.2, 0] };
-    const C = { default: { p: [0, 2, 12], l: [0, 1.5, 0], fov: 50 }, streetWide: { p: [2.5, 4.5, 16], l: [0, 2, -8], p2: [1.5, 3.4, 11], fov: 50, dur: 10 }, streetClose: { p: [1.4, 1.65, 8.2], l: [-0.1, 1.45, 5.6], p2: [1.1, 1.6, 7.6], fov: 40, dur: 10 } };
+    const C = { default: { p: [0, 2, 12], l: [0, 1.5, 0], fov: 50 }, streetWide: { p: [2.5, 4.5, 16], l: [0, 2, -8], p2: [1.5, 3.4, 11], fov: 50, dur: 10 }, streetClose: { p: [3.3, 1.62, 5.4], l: [-0.2, 1.42, 4.0], p2: [3.0, 1.6, 4.9], fov: 42, dur: 10 } };   // (a three-shot from the side: from behind the pair the rival spoke from behind their heads)
     const S = { F, anchors: A, cams: C, variant, ground: true };
     if (variant === 'snow') { const prev = Scenes.F; Scenes.F = F; const w = Scenes.W([0, 0, 4], new THREE.Vector3()); Scenes.F = prev; SProps.place(S, [SProps.snow(w.x, w.y, w.z, 34, 14)]); SProps.snowCover(S, w.x, w.z, 90); }
     return S;
@@ -348,7 +348,7 @@ Scenes.camNow = function () {
    is far off), the camera cuts to a medium close-up over the shoulder of whoever they are talking to — always from the
    same side of the line between the two, so the cuts reverse as they should. */
 Scenes.head = (c) => new THREE.Vector3(c.a.x, c.a.y + (c.sit ? 1.18 : 1.58), c.a.z);
-Scenes.sees = function (P) {
+Scenes.sees = function (P, who) {
   // judged against where the shot is going (a cam beat just before the line has not been drawn yet)
   const c = this.cam, cp = new THREE.Vector3(), cl = new THREE.Vector3(); let fov = this.cfov || 45;
   if (c) { fov = c.f1; if (c.orbit) { const o = c.orbit, a2 = o.a0 + c.t * o.w; Scenes.W([o.c[0] + Math.sin(a2) * o.r, o.c[1] + o.h, o.c[2] + Math.cos(a2) * o.r], cp); Scenes.W(o.c, cl); } else { cp.copy(c.p1); cl.copy(c.l1); } } else { cp.copy(this.cp); cl.copy(this.cl); }
@@ -356,7 +356,10 @@ Scenes.sees = function (P) {
   v.multiplyScalar(1 / dist); const half = fov * D2R / 2, asp = window.innerWidth / Math.max(1, window.innerHeight), right = _v2.crossVectors(d, UP_).normalize(), up = _v3.crossVectors(right, d);
   const fz = v.dot(d); if (fz <= 0) return false; const tx = v.dot(right) / fz / (Math.tan(half) * asp), ty = v.dot(up) / fz / Math.tan(half);
   if (Math.abs(tx) > 0.62 || ty < -0.5 || ty > 0.75) return false;
-  const hit = PHY.ray(cp.x, cp.y, cp.z, v.x, v.y, v.z, dist, 'los'); return !(hit && hit.t < dist - 0.4);
+  const hit = PHY.ray(cp.x, cp.y, cp.z, v.x, v.y, v.z, dist, 'los'); if (hit && hit.t < dist - 0.4) return false;
+  // nor behind another of the cast (the ray sees walls, not people: a line was spoken from behind two heads)
+  for (const id in this.cast) { const o = this.cast[id]; if (o === who) continue; for (const hy of [o.sit ? 1.12 : 1.5, o.sit ? 0.8 : 1.1]) { const q = _v2.set(o.a.x - cp.x, o.a.y + hy - cp.y, o.a.z - cp.z), t = q.dot(v); if (t < 0.3 || t > dist - 0.35) continue; if (q.addScaledVector(v, -t).length() < 0.3) return false; } }
+  return true;
 };
 const UP_ = new THREE.Vector3(0, 1, 0);
 Scenes.ots = function (who) {
@@ -375,7 +378,7 @@ Scenes.backOn = function (sp) { const c = this.cam, cp = c ? (c.orbit ? this.cp 
 Scenes.frameSpeaker = function (who) {
   if (Scenes.noAuto || !this.cast || (this.set && this.set.noAutoFrame)) return; const sp = this.cast[who === 'hat' ? 'me' : who]; if (!sp) return;
   if (this.lastAuto === who && this.cam && this.cam.auto) return;   // the same voice goes on in the same shot
-  if (!(this.cam && this.cam.wide) && this.sees(this.head(sp)) && !this.backOn(sp)) return;   // (a wide shot establishes; the lines play closer)
+  if (!(this.cam && this.cam.wide) && this.sees(this.head(sp), sp) && !this.backOn(sp)) return;   // (a wide shot establishes; the lines play closer)
   const s = this.ots(who === 'hat' ? 'me' : who); if (!s) return; this.shot(s); this.cam.auto = true; this.lastAuto = who;
 };
 /* ------------------------------------------------------------------ the frame while a scene plays (MG.state 'scene': the world lives, nobody plays) */
