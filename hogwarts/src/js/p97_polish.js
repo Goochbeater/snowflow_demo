@@ -13,7 +13,7 @@
 { const h0 = HL.ui.hint; HL.ui.hint = function () { delete HL.ui.el.Hint.dataset.fly; return h0.apply(this, arguments); };
   const m0 = HL.ui.onMount; HL.ui.onMount = function (on) { const E = HL.ui.el.Hint, had = E.innerHTML; m0.apply(this, arguments); if (on && E.innerHTML !== had) { E.dataset.fly = '1';
       /* on a phone the first flight's lesson is one short line under the rider (two lines of six chips lay over the broom) */
-      if (document.body.classList.contains('touch')) MG.after(0.12, () => { if (PLAYER.state !== 'fly' || !E.dataset.fly) return; HL.ui.hint('Push the stick to fly · <kbd>SHIFT</kbd> · <kbd>SPACE</kbd><kbd>C</kbd> climb and dive · steer where you look · <kbd>B</kbd> to land', 10); E.dataset.fly = '1'; }, true); }
+      if (document.body.classList.contains('touch')) MG.after(0.12, () => { if (PLAYER.state !== 'fly' || !E.dataset.fly) return; HL.ui.hint('Push the stick to fly · <kbd>SHIFT</kbd> · <kbd>SPACE</kbd><kbd>C</kbd> climb, dive · <kbd>B</kbd> lands', 10); E.dataset.fly = '1'; }, true); }
     else if (!on && E.dataset.fly) { E.classList.remove('on'); HL.ui.hintT = 0; delete E.dataset.fly; } }; }
 /* QUIT TO TITLE asks twice (it sat under the thumb and quit on one tap); the legal line and the build stamp keep out of the buttons' way */
 { const p0 = HL.ui.pause; HL.ui.pause = function () { p0.apply(this, arguments); if (MG.state !== 'pause') return; const b = HL.ui.el.Screen.querySelector('.hlBtn[data-a="t"]'); if (!b) return; const go = b.onclick, t0 = b.textContent;
@@ -89,6 +89,8 @@ body.touch .hlSort:has([data-k]) > p:nth-last-of-type(2) { display: none; }   /*
   #scrCareer .resPanel .resLine { margin: 0 0 2px; font-size: 11.5px; } #scrCareer .resPanel .gains { margin-bottom: 2px; font-size: 11.5px; } #scrCareer .resPanel .resGoals { margin: 2px 0; font-size: 11.5px; }
   #scrCareer .resPanel .lvlUp { margin-top: 4px; padding: 4px 10px; font-size: 11px; } #scrCareer .resPanel .actions { margin-top: 6px; } }
 #scrCareer .resGoals .ok svg.qi { width: 13px; height: 13px; vertical-align: -2px; stroke: #7fd08a; }
+/* the first flight's line on a phone: one line, between the stick and the flight buttons (two lines lay over ROLL) */
+body.touch[data-tm="fly"] #hlHint { left: 42% !important; max-width: 46vw !important; white-space: nowrap; }
 /* the huddle: while you talk to someone, the gate buttons are put away (they showed through the talk panel) */
 body #locker:has(#lkPanel.on) .lkBtns { visibility: hidden; }
 /* on a phone the objective is two lines at most over the view (the whole of it is in the journal) */
