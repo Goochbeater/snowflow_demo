@@ -80,6 +80,8 @@ body.touch .hlSort:has([data-k]) > p:nth-last-of-type(2) { display: none; }   /*
 .qRes .qrRule { margin: 2px 0 8px; font-size: 11.5px; color: #8e8672; letter-spacing: .05em; }
 .qRes .hlBtn[data-a="n"] { background: linear-gradient(#e6c780, #b48c3c); color: #1c1307; border-color: #f7dfa0; text-shadow: none; }
 @media (max-height: 460px) { .qRes .qrBoard { margin: 2px 0; } .qRes .qrSide svg, .qRes .qrSide img { width: 46px; height: 54px; } .qRes .qrScore { font-size: 48px; } .qRes .qrStats { margin: 6px 0 2px; font-size: 12px; padding: 5px 12px; } .qRes .qrStars { font-size: 20px; } }
+/* the huddle: while you talk to someone, the gate buttons are put away (they showed through the talk panel) */
+body #locker:has(#lkPanel.on) .lkBtns { visibility: hidden; }
 /* on a phone the objective is two lines at most over the view (the whole of it is in the journal) */
 body.touch #hlQuest .o { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
 /* the map's card fits a phone's height without scrolling */
@@ -143,3 +145,9 @@ HL.bedHook = function (st) {
 { const Q = HL.Q, s0 = Q.start; Q.start = function () { if (typeof Photo !== 'undefined') { Photo.frames = []; Photo.lastStill = null; Photo.rec = 0; } return s0.apply(this, arguments); };
   const e0 = Q.end; Q.end = function (why) { if (typeof Photo !== 'undefined' && QC.active && Q.phase !== 'over' && Q.stats && Q.stats.snitch && /snitch/i.test(why || '')) { Photo.rec = 1.4; Photo.at = 0.05; Photo.frames = []; Photo.kind = 'snitch'; } return e0.apply(this, arguments); };
   if (typeof CareerUI !== 'undefined') { const r0 = CareerUI.resultScene; CareerUI.resultScene = function () { const r = r0.apply(this, arguments); if (typeof Photo !== 'undefined' && !Photo.frames.length && Photo.rec <= 0) { Photo.rec = 1.4; Photo.at = 1.6; Photo.frames = []; Photo.kind = 'fulltime'; } return r; }; } }
+
+/* the match's opening controls line on a phone: one short line of the buttons that are actually on screen (it was two lines of
+   keyboard words turned into chips, SHOOT among them for a Seeker who has none) */
+{ const h0 = HL.ui.hint; HL.ui.hint = function (html, dur) { const Q = HL.Q; if (document.body.classList.contains('touch') && Q && Q.on && typeof html === 'string' && /^<kbd>W<\/kbd> fly/.test(html)) {
+    html = Q.me && Q.me.role === 'seeker' ? 'Push the stick to fly · <kbd>LMB</kbd> to close on the Snitch · <kbd>R</kbd> dodges a Bludger · <kbd>SPACE</kbd><kbd>C</kbd> climb and dive' : 'Push the stick to fly · <kbd>LMB</kbd> shoot or tackle · <kbd>E</kbd> pass · <kbd>F</kbd> face the play · <kbd>R</kbd> roll'; dur = Math.min(dur || 9, 7); }
+  return h0.call(this, html, dur); }; }

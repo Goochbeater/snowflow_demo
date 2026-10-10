@@ -75,7 +75,8 @@ const Locker = {
   openPanel(html) { const p = this.ui.querySelector('#lkPanel'); p.innerHTML = html; p.classList.add('on'); this.panel = true; PLAYER.state = 'cine'; p.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => this.closePanel())); return p; },
   /* face to face: over your shoulder onto the team-mate, who sits in the left of the frame (the panel docks right) */
   ots(a) { const P = PLAYER.a; if (!P || !a) return; const H = a.head ? a.head(new THREE.Vector3()) : new THREE.Vector3(a.x, a.y + 1.6, a.z), M = P.head ? P.head(new THREE.Vector3()) : new THREE.Vector3(P.x, P.y + 1.6, P.z);
-    const d = H.clone().sub(M); d.y = 0; d.normalize(); const r = new THREE.Vector3(-d.z, 0, d.x), pos = M.clone().addScaledVector(d, -0.85).addScaledVector(r, -0.5); pos.y += 0.12; const look = H.clone().addScaledVector(r, -0.55); look.y -= 0.05;
+    const d = H.clone().sub(M); d.y = 0; const dl = d.length(); d.normalize(); if (dl > 1.7) M.copy(H).addScaledVector(d, -1.7).setY(M.y);   /* (talked to from across the huddle, the shot is still a close one) */
+    const r = new THREE.Vector3(-d.z, 0, d.x), pos = M.clone().addScaledVector(d, -0.85).addScaledVector(r, -0.5); pos.y += 0.12; const look = H.clone().addScaledVector(r, -0.55); look.y -= 0.05;
     CAM.cine = { t: 0, dur: 1e9, hold: true, fov: 38, fn: () => ({ pos, look }) }; },
   closePanel() { const p = this.ui && this.ui.querySelector('#lkPanel'); if (!p) return; p.classList.remove('on'); if (CAM.cine && CAM.cine.hold && this.panel) CAM.cine = null; if (this.panel && PLAYER.state === 'cine') PLAYER.state = 'move'; this.panel = false; IN.buf = {}; },
   moodLine(m) {

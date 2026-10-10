@@ -330,7 +330,7 @@ TOUCH.chip = function (key) {
   if (K === 'A' || K === 'D') return { svg: '', t: '' };
   const map = Q ? TOUCH.CHIP.match : fly ? Object.assign({}, TOUCH.CHIP.foot, TOUCH.CHIP.fly) : TOUCH.CHIP.foot, id = map[K]; if (!id) return null;
   const D = TOUCH.DEF[id]; let t = D[1] || { pause: 'MENU', map: 'MAP', journal: 'JOURNAL', bag: 'PACK', broom: 'BROOM', revelio: 'REVELIO', lumos: 'LUMOS', potion: 'WIGGENWELD', skip: 'SKIP', face: 'FACE' }[id] || id.toUpperCase();
-  if (id === 'shoot') t = 'SHOOT'; return { svg: TOUCH.svg(TOUCH.ICON[D[0]] || ''), t };
+  if (id === 'shoot') { if (Q && HL.Q.me && HL.Q.me.role === 'seeker') return { svg: TOUCH.svg(TOUCH.ICON.boost || ''), t: 'BURST' }; t = 'SHOOT'; } return { svg: TOUCH.svg(TOUCH.ICON[D[0]] || ''), t };   // (a Seeker's big button is BURST, and the hint says so)
 };
 TOUCH.PHRASES = [
   [/Click the view to look around with the mouse/g, 'Drag the right side of the screen to look around'], [/look with the mouse \(click to capture\)/g, 'drag the right side of the screen to look'],
