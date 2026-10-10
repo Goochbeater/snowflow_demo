@@ -80,6 +80,15 @@ body.touch .hlSort:has([data-k]) > p:nth-last-of-type(2) { display: none; }   /*
 .qRes .qrRule { margin: 2px 0 8px; font-size: 11.5px; color: #8e8672; letter-spacing: .05em; }
 .qRes .hlBtn[data-a="n"] { background: linear-gradient(#e6c780, #b48c3c); color: #1c1307; border-color: #f7dfa0; text-shadow: none; }
 @media (max-height: 460px) { .qRes .qrBoard { margin: 2px 0; } .qRes .qrSide svg, .qRes .qrSide img { width: 46px; height: 54px; } .qRes .qrScore { font-size: 48px; } .qRes .qrStats { margin: 6px 0 2px; font-size: 12px; padding: 5px 12px; } .qRes .qrStars { font-size: 20px; } }
+/* the match result on a phone: all of it above its two buttons (the level-up line ran under them) */
+@media (max-height: 460px) {
+  #scrCareer .resPanel .verdict { font-size: 20px; margin: 0; line-height: 1.1; }
+  #scrCareer .resPanel .results { margin: 0 0 2px; } #scrCareer .resPanel .results > div { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  #scrCareer .resPanel .results img { width: 24px; height: 30px; margin: 0; } #scrCareer .resPanel .results .big { font-size: 28px; } #scrCareer .resPanel .results .nm { font-size: 11px; flex-basis: 100%; margin-top: -4px; }
+  #scrCareer .resPanel .potm { margin: 0 0 2px; padding: 2px 8px; font-size: 10.5px; } #scrCareer .resPanel .keyRow { margin: 0 0 2px; } #scrCareer .resPanel .key b { font-size: 21px; } #scrCareer .resPanel .key.rate b { font-size: 27px; } #scrCareer .resPanel .key i { font-size: 9.5px; }
+  #scrCareer .resPanel .resLine { margin: 0 0 2px; font-size: 11.5px; } #scrCareer .resPanel .gains { margin-bottom: 2px; font-size: 11.5px; } #scrCareer .resPanel .resGoals { margin: 2px 0; font-size: 11.5px; }
+  #scrCareer .resPanel .lvlUp { margin-top: 4px; padding: 4px 10px; font-size: 11px; } #scrCareer .resPanel .actions { margin-top: 6px; } }
+#scrCareer .resGoals .ok svg.qi { width: 13px; height: 13px; vertical-align: -2px; stroke: #7fd08a; }
 /* the huddle: while you talk to someone, the gate buttons are put away (they showed through the talk panel) */
 body #locker:has(#lkPanel.on) .lkBtns { visibility: hidden; }
 /* on a phone the objective is two lines at most over the view (the whole of it is in the journal) */

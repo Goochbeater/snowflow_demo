@@ -138,6 +138,7 @@ QC.broomArt = function (id) { const W = { star: ['#b8894e', '#c9a46a', 0], clean
   const [h, t, k] = W, band = k ? `<rect x="104" y="13" width="5" height="8" rx="1" fill="${k > 2 ? '#e8c060' : '#c0c4cc'}"/>` : '', foot = k > 1 ? `<path d="M120 17h14" stroke="${k > 2 ? '#e8c060' : '#9aa0aa'}" stroke-width="1.6"/>` : '';
   return `<svg class="bart" viewBox="0 0 200 34" aria-hidden="true"><path d="M10 17c40-2 96-2 100-1" stroke="${h}" stroke-width="4.2" stroke-linecap="round" fill="none"/><path d="M10 15.4c40-2 96-2 100-1" stroke="rgba(255,255,255,.25)" stroke-width="1" fill="none"/>${band}${foot}
     <path d="M108 17c14-9 44-13 84-10-8 4-8 16 0 20-40 3-70-1-84-10z" fill="${t}"/><path d="M114 17c20-5 46-7 70-6 M114 17c20 5 46 7 70 6 M116 17h66" stroke="rgba(40,24,10,.45)" stroke-width="1" fill="none"/></svg>`; };
+QC.ICON.check = 'M5 12.5l4.2 4.2L19 7';
 QC.svg = (k) => `<svg class="qi" viewBox="0 0 24 24" aria-hidden="true"><path d="${QC.ICON[k] || QC.ICON.next}"/></svg>`;
 const hexN = (css) => parseInt(String(css).replace('#', ''), 16);
 const darkerN = (css, k) => { const c = new THREE.Color(css); c.multiplyScalar(k); return c.getHex(); };
