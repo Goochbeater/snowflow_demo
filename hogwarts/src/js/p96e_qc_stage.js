@@ -181,10 +181,10 @@ const STAGES = {
         const front = Math.max(...cs.map(u)), row = cs.filter((q) => u(q) > front - 1), B = row.sort((a, b) => Math.hypot(a[0] - pf[0], a[2] - pf[1]) - Math.hypot(b[0] - pf[0], b[2] - pf[1]))[0];
         const F = Scenes.frame(B[0], P.y, B[2], hy), lc = (wx, wz) => { const dx = wx - F.x, dz = wz - F.z; return [F.c * dx - F.s * dz, F.s * dx + F.c * dz]; };
         const mid = lc(x, z), other = row.filter((q) => q !== B).map((q) => lc(q[0], q[2])).sort((a, b) => Math.abs(a[1]) - Math.abs(b[1]))[0] || [mid[0] * 2, 0], pl = lc(pf[0], pf[1]), sd = Math.sign(mid[0]) || 1;
-        const A = { deskMe: [-0.45, 0, -1.08, 0], deskF: [0.45, 0, -1.08, 0], deskR: [other[0] - 0.45 * sd, 0, other[1] - 1.08, 0], prof: [pl[0] * 0.6, 0, pl[1], Math.atan2(-pl[0] * 0.6, -1.08 - pl[1])] };
+        const A = { deskMe: [-0.45, 0, -1.08, 0], deskF: [0.45, 0, -1.08, 0], deskR: [other[0] - 0.45 * sd, 0, other[1] - 1.08, 0], prof: [0.3, 0, 1.3, PI] };   // (the professor come down from the desk to stand over your cauldron)
         const C = { default: { p: [mid[0], 2.4, -6], l: [0, 1.2, 1], fov: 50 },
           potionsWide: { p: [mid[0] * 0.9, 3.0, -7.5], l: [mid[0] * 0.3, 1.2, 1.2], p2: [mid[0] * 0.8, 2.6, -5.6], fov: 50, dur: 10 },
-          cauldron: { p: [0.2 * sd, 1.5, 1.0], l: [0, 1.22, -1.0], p2: [0.12 * sd, 1.45, 0.75], fov: 44, dur: 10 } };
+          cauldron: { p: [0, 1.72, -2.5], l: [0.15, 1.22, 0.6], p2: [0.05, 1.66, -2.25], fov: 44, dur: 10 } };   // (between your shoulders, down into the cauldron, the professor over it: the shot looked back at you with the cauldron under the subtitles)
         return { F, anchors: A, cams: C, variant, clear: 7 }; } }
     const F = Scenes.frame(x, P.y, z, along ? PI : HALF), D = along ? d : w;
     const A = { deskMe: [-1.0, 0, 0.6, 0], deskF: [0.6, 0, 0.6, 0], deskR: [2.2, 0, -0.8, 0], prof: [0, 0, -D / 2 + 2.4, PI] };
