@@ -186,7 +186,7 @@ CAM.update = function (dt) {
   CAM.pivot.lerp(piv, CAM.snap ? 1 : 1 - Math.exp(-(fly ? 22 : 16) * dt));
   if (Math.abs(CAM.pivot.y - piv.y) > 1.2) CAM.pivot.y = lerp(CAM.pivot.y, piv.y, 0.4);
   const spd = fly ? F.speed : 0, qm = fly && HL.Q && HL.Q.on;   // (in a match the eye sits a little further back and higher: you see the play over your own head)
-  CAM.distT = fly ? (qm ? 5.7 + Math.min(2.3, spd * 0.06) : 4.6 + Math.min(3.2, spd * 0.07)) : HL.P.aimT > 0 ? 2.9 : 3.5;
+  CAM.distT = fly ? (qm ? 5.7 + Math.min(2.3, spd * 0.06) : 4.6 + Math.min(3.2, spd * 0.07)) : HL.P.aimT > 0 ? 2.9 : HL.camNear ? HL.camNear : 3.5;   // (HL.camNear: a closer eye where the place is close — the huddle)
   CAM.dist = damp(CAM.dist, CAM.distT, 4, dt);
   const cp = Math.cos(CAM.pitch), fwd = _v2.set(Math.sin(CAM.yaw) * cp, Math.sin(CAM.pitch), Math.cos(CAM.yaw) * cp);
   CAM.shoulder = damp(CAM.shoulder, fly ? 0 : 0.62, 4, dt);

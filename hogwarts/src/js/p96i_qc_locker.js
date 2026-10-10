@@ -44,13 +44,14 @@ const Locker = {
     { const w = W([1.8, 0, 0.8]); this.uses.push(HL.interact(V3(w.x, HL.gy(w.x, w.z) + 1, w.z), 1.8, 'Look yourself over', () => this.mirror())); }
     { const w = W(set.anchors.pitchMe); this.gate = w; this.uses.push(HL.interact(V3(w.x, HL.gy(w.x, w.z) + 1, w.z), 3.2, 'Take the pitch', () => this.play())); }
     // you, in kit, at your place in the huddle
-    this._hero = CHAR.T.maul; CHAR.T.maul = CHAR.T[meT]; const me = W(set.anchors.lockMe); PLAYER.spawn(me.x, HL.gy(me.x, me.z) + 0.05, me.z, F.yaw + set.anchors.lockMe[3]); CAM.reset(F.yaw + set.anchors.lockMe[3]); CAM.pitch = -0.24; CAM.snap = true;
+    this._hero = CHAR.T.maul; CHAR.T.maul = CHAR.T[meT]; const me = W(set.anchors.lockMe); PLAYER.spawn(me.x, HL.gy(me.x, me.z) + 0.05, me.z, F.yaw + set.anchors.lockMe[3]); CAM.reset(F.yaw + set.anchors.lockMe[3]); CAM.pitch = -0.16; CAM.snap = true; HL.camNear = 2.4;   /* (you stand in the mouth of the ring, the eye close behind you: from outside it the squad was a knot on a lawn) */
     this.on = true; this.ui.classList.add('on'); this.panel = false; MG.state = 'play'; HL.ui.show(true); document.body.classList.add('qclocker'); if (TOUCH.on) TOUCH.layout(); IN.buf = {};
     this.ui.querySelector('#lkTitle').innerHTML = `<b>${ev.label}</b><span>${teamName(team)} v ${teamName(ev.opp)}${ev.home === false ? ' (away)' : ''}</span>`;
     this.ui.querySelector('#lkHint').textContent = TOUCH.on ? 'Walk up to a team-mate and TALK appears under your thumb · TAKE THE PITCH when you are ready' : 'Walk up to a team-mate and press E to talk · walk out through the gate to start';
     this.closePanel(); this.renderGoals(); HL.ui.fade(0);
   },
   exit() {
+    HL.camNear = 0;
     if (!this.on) return; this.on = false; if (this.set && this.set.onLeave) { const l = this.set.onLeave; this.set.onLeave = null; l(); } this.ui.classList.remove('on'); this.closePanel(); document.body.classList.remove('qclocker'); if (TOUCH.on) TOUCH.layout();
     for (const mt of this.mates) mt.a.dispose(); if (this.coach) this.coach.dispose(); this.mates = []; this.coach = null;
     for (const u of this.uses) { const i = HL.uses.indexOf(u); if (i >= 0) HL.uses.splice(i, 1); } this.uses = [];

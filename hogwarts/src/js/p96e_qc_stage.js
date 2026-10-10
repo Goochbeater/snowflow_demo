@@ -228,7 +228,7 @@ const STAGES = {
   locker(variant) {
     // on the grass just inside the players' gate (a gap in the west stands between two braziers), facing the gate: the pitch is behind you
     const C0 = HL.PITCH, Q = HL.Q; const F = Scenes.frame(C0.x - Q.AX + 4, Q.Y0, C0.z - 20, -HALF);
-    const A = { lockMe: [0, 0, -1.7, 0], board: [0, 0, 2.6, PI], pitchMe: [0, 0, -12, 0], me: [0, 0, 0, PI + 0.35] };
+    const A = { lockMe: [0, 0, -0.95, 0], board: [0, 0, 2.6, PI], pitchMe: [0, 0, -12, 0], me: [0, 0, 0, PI + 0.35] };
     for (let i = 0; i < 7; i++) { const a = -1.0 + i * (2.0 / 6), j = [0.12, -0.18, 0.2, -0.1, 0.16, -0.2, 0.08][i]; A['mate' + i] = [Math.sin(a) * 2.0 + j, 0, Math.cos(a) * 2.0 - 0.8 - j * 0.6, a + PI + j * 0.6]; }   // a huddle, not a line-up
     const C = { default: { p: [0.4, 1.9, -6.4], l: [0, 1.2, 0.6], fov: 50 }, lockerWide: { p: [3.4, 2.4, -5.4], l: [0, 1.1, 0.4], p2: [2.4, 2.1, -4.4], fov: 52, dur: 10 }, board: { p: [0.7, 1.7, 0.9], l: [0, 1.4, 2.6], fov: 46 },
       hub: { orbit: { c: [0, 4.6, 0.2], r: 8, h: -2.8, a0: PI - 0.5, w: 0.03 }, p: [0, 2, -6], l: [0, 1.2, 0], fov: 52, dur: 999 } };   // (low, looking up at the stands and the sky)
