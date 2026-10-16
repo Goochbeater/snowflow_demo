@@ -184,7 +184,7 @@ const STAGES = {
         const A = { deskMe: [-0.45, 0, -1.08, 0], deskF: [0.45, 0, -1.08, 0], deskR: [other[0] - 0.45 * sd, 0, other[1] - 1.08, 0], prof: [0.3, 0, 1.3, PI] };   // (the professor come down from the desk to stand over your cauldron)
         const C = { default: { p: [mid[0], 2.4, -6], l: [0, 1.2, 1], fov: 50 },
           potionsWide: { p: [mid[0] * 0.9, 3.0, -7.5], l: [mid[0] * 0.3, 1.2, 1.2], p2: [mid[0] * 0.8, 2.6, -5.6], fov: 50, dur: 10 },
-          cauldron: { p: [0, 1.72, -2.5], l: [0.15, 1.22, 0.6], p2: [0.05, 1.66, -2.25], fov: 44, dur: 10 } };   // (between your shoulders, down into the cauldron, the professor over it: the shot looked back at you with the cauldron under the subtitles)
+          cauldron: { p: [1.6 * sd, 1.55, 1.9], l: [-0.2 * sd, 1.2, -0.6], p2: [1.45 * sd, 1.5, 1.6], fov: 44, dur: 10 } };   // (a three-quarter shot across the cauldron into your faces, the professor at the near edge of the frame: from behind, two backs of heads filled it)
         return { F, anchors: A, cams: C, variant, clear: 7 }; } }
     const F = Scenes.frame(x, P.y, z, along ? PI : HALF), D = along ? d : w;
     const A = { deskMe: [-1.0, 0, 0.6, 0], deskF: [0.6, 0, 0.6, 0], deskR: [2.2, 0, -0.8, 0], prof: [0, 0, -D / 2 + 2.4, PI] };
@@ -244,9 +244,9 @@ const STAGES = {
     if (variant === 'graduation') {
       [[-3.4, -16.6], [-2.1, -16.9], [2.7, -16.5], [3.9, -16.9], [-4.3, -18.2], [-2.8, -18.6], [-1.2, -18.3], [0.5, -18.7], [2.1, -18.2], [3.6, -18.6], [5.1, -18.1]].forEach(([x, z], i) => { A['g' + (i + 1)] = [x, 0, z, (i % 3 - 1) * 0.18]; });
       C.gradWide = { p: [6.5, 2.0, -6.0], l: [0.4, 2.6, -16.5], p2: [5.4, 1.8, -7.2], fov: 50, dur: 9 };
-      const prev = Scenes.F; Scenes.F = F; const M = new THREE.MeshStandardMaterial({ color: 0x15131a, roughness: 0.82 }), hats = [];
-      for (let i = 0; i < 14; i++) { const g = new THREE.Group(), cone = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.36, 10), M), brim = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.015, 14), M); cone.position.y = 0.18; g.add(cone, brim);
-        const o = Scenes.W([-4.5 + (i % 7) * 1.5, 1.7, -16.4 - (i % 2) * 1.8], new THREE.Vector3()); g.userData.tick = (dt, t) => { const T = 2.9, u = ((t + i * 0.37) % T), v = 9 + (i % 4); g.position.set(o.x + Math.sin(i * 2.1) * u * 0.6, o.y + v * u - 4.9 * u * u, o.z + Math.cos(i * 1.7) * u * 0.4);   /* (thrown at nine to twelve metres a second: up four to seven metres and down) */ g.rotation.set(t * (1.5 + i % 3), t * 2 + i, t * (0.8 + i % 2)); g.visible = g.position.y > o.y - 1.6; }; hats.push(g); }
+      const prev = Scenes.F; Scenes.F = F; const M = new THREE.MeshStandardMaterial({ color: 0x3a3446, roughness: 0.6, emissive: 0x1a1420, emissiveIntensity: 0.6 }), hats = [];   // (lit felt: near-black hats against the sky read as holes in it)
+      for (let i = 0; i < 14; i++) { const g = new THREE.Group(), cone = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.36, 10), M), brim = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.015, 14), M); cone.position.y = 0.18; g.add(cone, brim); g.scale.setScalar(1.3);
+        const o = Scenes.W([-4.5 + (i % 7) * 1.5, 1.7, -16.4 - (i % 2) * 1.8], new THREE.Vector3()); g.userData.tick = (dt, t) => { const T = 2.9, u = ((t + i * 0.37) % T), v = 6.5 + (i % 4) * 0.8; g.position.set(o.x + Math.sin(i * 2.1) * u * 0.6, o.y + v * u - 4.9 * u * u, o.z + Math.cos(i * 1.7) * u * 0.4);   /* (thrown at six and a half to nine metres a second: up two to four metres, among the heads, and down) */ g.rotation.set(t * (1.5 + i % 3), t * 2 + i, t * (0.8 + i % 2)); g.visible = g.position.y > o.y - 1.6; }; hats.push(g); }
       Scenes.F = prev; SProps.place(S, hats); }
     return S;
   },
