@@ -350,7 +350,7 @@ Scenes.leave = function (quiet) {
 };
 /* a feast's benches: a few of the castle's students seated near you at your table and the next */
 Scenes.fillHall = function (S) { const n = S.extras || 0, tx = S.tables; let k = 0; const R0 = mulberry(77 + (Career.S ? Career.S.year : 0));
-  for (let i = 0; i < n * 2 && k < n; i++) { const t = i % 2 ? S.house : (S.house + 1) % 4, side = i % 4 < 2 ? -1 : 1, z = -6 + (i >> 1) * 1.9 + R0() * 0.5; if (t === S.house && z > -3.4) continue;   /* (none at your own stretch of table or between it and the lens) */
+  for (let i = 0; i < n * 2 && k < n; i++) { const t = i % 2 ? S.house : (S.house + 1) % 4, side = i % 4 < 2 ? -1 : 1, z = -6 + (i >> 1) * 1.9 + R0() * 0.5; if (t === S.house && z > -5.0) continue;   /* (none at your own stretch of table or between it and the lens) */
     const tpl = HL.student(QC.key(t), R0() < 0.5, 1 + ((i * 5) % 6)); if (!CHAR.T[tpl]) continue; const a = Scenes.actor(tpl, [tx[t] + side * 1.15, 0, z, side < 0 ? PI / 2 : -PI / 2, 'sit']); a.base = 'sit'; this.extras.push(a); k++; } };
 /* ------------------------------------------------------------------ the cast */
 Scenes.actor = function (tpl, at) {
@@ -425,9 +425,10 @@ Scenes.ots = function (who) {
   /* (round 3: 0.85 m behind the listener the lens sat in their hair — on the Fold's cover the frame went 84 % black. The eye
      stands 1.6 m back and 0.95 m out, the listener a soft shoulder at the frame's edge; if any head is still near the lens,
      or a speaker would be hidden, the shot is a two-shot from the side of the pair instead) */
-  const P = L.clone().addScaledVector(d, -1.6).addScaledVector(n, 0.95); P.y = Math.max(L.y, S.y) + 0.05;
-  const look = S.clone().addScaledVector(n, -0.15), ok = Object.values(this.cast).every((c) => this.head(c).distanceTo(P) > 0.8) && this.clearTo(P, S, sp);
-  if (ok) return { world: true, p: P.toArray(), l: look.toArray(), fov: len > 3 ? 32 : 38, dur: 30, blend: 0 };
+  const back = len > 2 ? 1.0 : 1.6, side = len > 2 ? 0.75 : 0.95, P = L.clone().addScaledVector(d, -back).addScaledVector(n, side); P.y = Math.max(L.y, S.y) + 0.05;
+  const look = S.clone().addScaledVector(n, -0.1), D = P.distanceTo(S), fovMCU = clamp(2 * Math.atan(0.55 / D) / D2R, 20, 38);   // (a medium close-up of the speaker: about a metre of frame height at their distance)
+  const ok = Object.values(this.cast).every((c) => this.head(c).distanceTo(P) > 0.8) && this.clearTo(P, S, sp);
+  if (ok) return { world: true, p: P.toArray(), l: look.toArray(), fov: fovMCU, dur: 30, blend: 0 };
   const M = S.clone().add(L).multiplyScalar(0.5), Q2 = M.clone().addScaledVector(n, Math.max(3.2, len * 1.1)); Q2.y = Math.min(S.y, L.y) - 0.05;
   return { world: true, p: Q2.toArray(), l: M.toArray(), fov: 40, dur: 30, blend: 0 };
 };
