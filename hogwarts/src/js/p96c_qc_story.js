@@ -139,7 +139,7 @@ const Story = {
       ] }),
       yule: () => ({ set: 'hall', variant: 'yule', cast: [{ id: ME, at: 'danceMe', anim: 'dance', o: { outfit: 'formal' } }, { id: S.flags.partner === 'capt' ? 'capt' : F, at: 'danceP', anim: 'dance', o: { outfit: 'formal' } }, { id: 'd1', at: 'dance1', anim: 'dance', o: { outfit: 'formal' } }, { id: 'd2', at: 'dance2', anim: 'dance', o: { outfit: 'formal' } }, { id: 'd3', at: 'dance3', anim: 'dance', o: { outfit: 'formal' } }, { id: 'd4', at: 'dance4', anim: 'dance', o: { outfit: 'formal' } }, { id: 'd5', at: 'dance5', anim: 'dance', o: { outfit: 'formal' } }, { id: 'd6', at: 'dance6', anim: 'dance', o: { outfit: 'formal' } }, { id: 'd7', at: 'dance7', anim: 'dance', o: { outfit: 'formal' } }, { id: 'd8', at: 'dance8', anim: 'dance', o: { outfit: 'formal' } }, { id: 'd9', at: 'dance9', anim: 'dance', o: { outfit: 'formal' } }, { id: 'd10', at: 'dance10', anim: 'dance', o: { outfit: 'formal' } }], beats: [
         { title: 'The Yule Ball', sub: 'Christmas night' },
-        { cam: 'yuleWide' }, { wait: 3 }, { cam: 'danceOrbit' },
+        { cam: 'yuleWide' }, { wait: 3 }, { cam: 'danceOrbit' }, { wait: 2.4 },
         { say: [S.flags.partner === 'capt' ? 'capt' : F, `Okay. You can actually dance. Why didn't you tell anyone?`] },
         { choice: [{ t: '"Footwork. Same as flying."', tone: 'gr', fx: { chem: 3 } }, { t: '"Watch this spin."', tone: 'sh', fx: { fame: 2 } }] },
         { cam: 'yuleWide' }, { wait: 2 },
@@ -161,7 +161,7 @@ const Story = {
         { say: [F, `I think I wrote "Quaffle" in my Charms essay. Twice.`] },
       ] }),
       slug: () => ({ set: 'hall', variant: 'gala', cast: [{ id: ME, at: 'danceMe', anim: 'talk', o: { outfit: 'formal' } }, { id: 'prof', at: 'danceP', anim: 'talk', o: { outfit: 'staff' } }, { id: 'd1', at: 'dance1', anim: 'talk', o: { outfit: 'formal' } }, { id: 'd2', at: 'dance2', anim: 'idle', o: { outfit: 'formal' } }], beats: [
-        { cam: 'yuleWide' }, { wait: 2 }, { cam: 'danceOrbit' },
+        { cam: 'yuleWide' }, { wait: 2 }, { cam: 'danceOrbit' }, { wait: 2.4 },
         { say: ['prof', `Ah, our young flyer! I knew Gwenog Jones when she was your age, you know. A word in the right ear can do wonders...`] },
         { choice: [{ t: '"I\'d love an introduction."', tone: 'gr', fx: { fame: 3, trust: 1 } }, { t: '"I\'d rather they saw me fly."', tone: 'fi', fx: { fame: 1 } }] },
       ] }),
@@ -199,7 +199,7 @@ const Story = {
       ] }),
       gala: () => ({ set: 'hall', variant: 'gala', cast: [{ id: ME, at: 'danceMe', anim: 'talk', o: { outfit: 'formal' } }, { id: 'rep', at: 'danceP', anim: 'talk', o: { outfit: 'formal' } }, { id: 'd1', at: 'dance1', anim: 'dance', o: { outfit: 'formal' } }, { id: 'd2', at: 'dance2', anim: 'dance', o: { outfit: 'formal' } }, { id: 'd3', at: 'dance3', anim: 'idle', o: { outfit: 'formal' } }], beats: [
         { title: 'The Witch Weekly Gala', sub: 'Ministry of Magic ballroom' },
-        { cam: 'yuleWide' }, { wait: 2.2 }, { cam: 'danceOrbit' },
+        { cam: 'yuleWide' }, { wait: 2.2 }, { cam: 'danceOrbit' }, { wait: 2.4 },
         { say: ['rep', `${c.first} ${c.last}! Cressida Fang, Witch Weekly. Our readers voted you number ${Math.max(1, 20 - Math.round(S.fame / 5))} in the Most Charming Smile poll. Any comment?`] },
         { choice: [{ t: '"I\'m flattered. Thank the readers."', tone: 'gr', fx: { fame: 2, fans: 2 } }, { t: '"Only number ' + Math.max(1, 20 - Math.round(S.fame / 5)) + '? Recount."', tone: 'sh', fx: { fame: 4, trust: -1 } }, { t: '"No comment."', tone: 'de', fx: {} }] },
       ] }),

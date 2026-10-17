@@ -47,13 +47,15 @@ HL.robe = function (o) {
   HL.SKINS = [0xd8a888, 0xc89878, 0xe0b498, 0x9a6a4c, 0x6e4a34, 0xcfa07e];
   HL.HAIR = [0x2a1c12, 0x5a3a20, 0x8a5a2a, 0x141210, 0xa87838, 0x7a2e16, 0xc8b070];
   const HM = ['Hair_SimpleParted', 'Hair_Buzzed', 'Hair_SimpleParted'], HF = ['Hair_Long', 'Hair_Buns', 'Hair_Long'];
-  /* define a student template name: wiz_<house>_<m|f>_<v>. v picks skin / hair. quid = Quidditch robes (short, house-coloured) */
+  /* define a student template name: wiz_<house>_<m|f>_<v>. v picks skin / hair. quid = Quidditch robes (short, house-coloured).
+     Out of kit the house shows as a tie on the grey jumper (two broad house bands down the chest read as a Quidditch jersey at
+     dinner, and Hufflepuff's as a bee: round 3) */
   HL.student = function (house, witch, v, quid) {
     const name = 'wiz_' + house + (witch ? '_f' : '_m') + v + (quid ? 'q' : ''); if (CAST.SPECS[name]) return name;
     const H = HL.HOUSES[house], hair = [(witch ? HF : HM)[v % 3]], hc = HL.HAIR[(v * 3 + (witch ? 1 : 0)) % HL.HAIR.length], tone = HL.SKINS[v % HL.SKINS.length];
     const robe = quid ? HL.robe({ mat: 'hl_' + house, len: 0.5, flare: 0.5, cape: { len: 0.95, mat: 'hl_' + house, flare: 0.55 } }) : HL.robe({ mat: 'hlRobe', lining: 'hl_' + house, len: 0.8, cape: { len: 1.16, flare: 0.4, mat: 'hlCape_' + house } });
     S(name, { spec: { height: witch ? 0.95 : 1, skin: { tone, brow: hc }, cloth: robe }, qc: { female: witch, hair, hairCol: hc, browCol: hc },
-      qo: { female: witch, hair, hairCol: hc, browCol: hc, glove: quid ? 0x3a2a1c : null, tabard: { col: H.col, x0: 0.028, x1: 0.075 },
+      qo: { female: witch, hair, hairCol: hc, browCol: hc, glove: quid ? 0x3a2a1c : null, tabard: quid ? { col: H.col, x0: 0.028, x1: 0.075 } : { col: new THREE.Color(H.col).multiplyScalar(0.8).getHex(), x0: 0.0001, x1: 0.017 },
         parts: quid ? [P_('Body', g([lea(0.6, 0.9, new THREE.Color(H.col).getHSL({}).h * 360), cream(0.6, 0.9)], 1, 1), MATTE), P_('Arms', g([cream(0.5, 1.0)], 0.6, 0.95), MATTE), P_('Legs', g([lea(1.5, 0.3)], 0.5, 1.1, 0xf0e8d8), MATTE), R_('Feet_Boots', g([], 0.5, 0.5), MATTE), R_('Arms_Bracer', g([], 0.7, 0.8), { metal: 0.2 })] : uniform() } });
     return name;
   };

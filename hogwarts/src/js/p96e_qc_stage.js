@@ -50,7 +50,7 @@ const SProps = {
   /* a feast laid along a stretch of table: platters with roasts, loaves, pies, bowls of fruit, goblets and jugs, instanced
      (round 3: "a feast with flat discs for plates and no food") — tx is the table's centre in the frame, z0..z1 its stretch */
   feast(tx, z0, z1, ty, seed) { const rs = mulberry(seed || 9), Mx = this.M(), out = [], m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), sc = new THREE.Vector3(), w = new THREE.Vector3();
-    if (!Mx.food) { const std = (c, r, m) => new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m || 0 }); Mx.food = { gold: std(0xd9a943, 0.3, 0.9), roast: std(0x8a4a1e, 0.55), crust: std(0xc58a3e, 0.7), bread: std(0xd2a060, 0.8), apple: std(0xb8281e, 0.45), pear: std(0x9fb03a, 0.5), grape: std(0x4a1e4e, 0.35), jug: std(0xd8d0c0, 0.35) }; }
+    if (!Mx.food) { const std = (c, r, m) => new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m || 0 }); Mx.food = { gold: std(0xd9a943, 0.3, 0.9), roast: std(0x8a4a1e, 0.55), crust: std(0xc58a3e, 0.7), bread: std(0xd2a060, 0.8), apple: std(0xb8281e, 0.45), pear: std(0x9fb03a, 0.5), grape: std(0x4a1e4e, 0.35), jug: std(0x7d7568, 0.38, 0.75) };   /* (pewter: a cream jug under the candles read as a white block at the frame's edge) */ }
     const F = Mx.food, kinds = { platter: [new THREE.CylinderGeometry(0.21, 0.19, 0.025, 18), F.gold], roast: [new THREE.SphereGeometry(0.13, 12, 8), F.roast], pie: [new THREE.CylinderGeometry(0.13, 0.12, 0.06, 16), F.crust], loaf: [new THREE.CapsuleGeometry(0.055, 0.14, 4, 8), F.bread], fruit: [new THREE.SphereGeometry(0.034, 8, 6), F.apple], pear: [new THREE.SphereGeometry(0.03, 8, 6), F.pear], grape: [new THREE.SphereGeometry(0.018, 6, 4), F.grape], goblet: [new THREE.CylinderGeometry(0.035, 0.022, 0.12, 10), F.gold], jug: [new THREE.CylinderGeometry(0.05, 0.065, 0.22, 12), F.jug] };
     const put = {}; for (const k in kinds) put[k] = [];
     const add = (k, x, y, z, ry, sx, sy, sz) => { put[k].push([x, y, z, ry || 0, sx || 1, sy || sx || 1, sz || sx || 1]); };
@@ -201,7 +201,21 @@ const STAGES = {
         const C = { default: { p: [mid[0], 2.4, -6], l: [0, 1.2, 1], fov: 50 },
           potionsWide: { p: [mid[0] * 0.9, 3.0, -7.5], l: [mid[0] * 0.3, 1.2, 1.2], p2: [mid[0] * 0.8, 2.6, -5.6], fov: 50, dur: 10 },
           cauldron: { p: [1.6 * sd, 1.55, 1.9], l: [-0.2 * sd, 1.2, -0.6], p2: [1.45 * sd, 1.5, 1.6], fov: 44, dur: 10 } };   // (a three-quarter shot across the cauldron into your faces, the professor at the near edge of the frame: from behind, two backs of heads filled it)
-        return { F, anchors: A, cams: C, variant, clear: 7 }; } }
+        /* the professor's lines from your side of the bench, low, the cauldron's lip and its steam at the foot of the frame and
+           the shelves behind them (round 3: over a pupil's hair, against a bare wall) */
+        C.profMCU = { p: [0.55, 1.3, -0.5], l: [0.3, 1.6, 1.3], p2: [0.5, 1.32, -0.4], fov: 34, dur: 9 }; C.say_prof = C.profMCU;
+        const S = { F, anchors: A, cams: C, variant, clear: 7 };
+        /* and your cauldron brewing: the bench's bowl hides its own brew below the lip, so the hero cauldron gets a surface
+           just under the rim, an iron lip that catches it, a slow pale steam and the brew's light on your faces (round 3:
+           "a black ball", "no cauldron in either frame") */
+        { const col = new THREE.Color(B[3]), Mq = new THREE.MeshStandardMaterial({ color: col.clone().multiplyScalar(0.22), emissive: col, emissiveIntensity: 1.3, roughness: 0.15 });
+          const liq = new THREE.Mesh(new THREE.CircleGeometry(0.205, 26), Mq), rim = new THREE.Mesh(new THREE.TorusGeometry(0.178, 0.02, 6, 24), new THREE.MeshStandardMaterial({ color: 0x2c2a27, metalness: 0.65, roughness: 0.42 }));
+          liq.rotation.x = -HALF; liq.position.set(B[0], B[1] + 0.13, B[2]); rim.rotation.x = HALF; rim.position.set(B[0], B[1] + 0.163, B[2]);
+          const sc = [0.72 + col.r * 0.2, 0.72 + col.g * 0.2, 0.72 + col.b * 0.2]; liq.userData.tick = (dt, t) => { Mq.emissiveIntensity = 1.2 + 0.22 * Math.sin(t * 2.3) + 0.08 * Math.sin(t * 7.1);
+            if (RNG() < dt * 6) FX.puff(V3(B[0] + rnd(-0.08, 0.08), B[1] + 0.16, B[2] + rnd(-0.08, 0.08)), 1, { size: 0.1, grow: 3.2, col: sc, a: 0.16, life: 2.4, spread: 0.06, rise: 0.45 }); };
+          const Lt = HL.sl(B[0], B[1] + 0.45, B[2], B[3], 2.4, 3.4, { flicker: 0.2 }), ci = HL.CAULDRONS.indexOf(B); if (ci >= 0) HL.CAULDRONS.splice(ci, 1);   // (its own bright steam leaves the castle's list for the scene)
+          SProps.place(S, [liq, rim]); const l1 = S.onLeave; S.onLeave = () => { const k = HL.SL.indexOf(Lt); if (k >= 0) HL.SL.splice(k, 1); if (!HL.CAULDRONS.includes(B)) HL.CAULDRONS.push(B); if (l1) l1(); }; }
+        return S; } }
     const F = Scenes.frame(x, P.y, z, along ? PI : HALF), D = along ? d : w;
     const A = { deskMe: [-1.0, 0, 0.6, 0], deskF: [0.6, 0, 0.6, 0], deskR: [2.2, 0, -0.8, 0], prof: [0, 0, -D / 2 + 2.4, PI] };
     const C = { default: { p: [0, 2.4, D / 2 - 1], l: [0, 1.2, -2], fov: 52 }, potionsWide: { p: [-3.5, 3.0, D / 2 - 1.2], l: [0, 1.2, -1.5], p2: [-2.2, 2.6, D / 2 - 2.4], fov: 52, dur: 10 },
@@ -452,16 +466,24 @@ Scenes.clearTo = function (P, H, who) { const v = _v4.copy(H).sub(P), dist = v.l
   return true; };
 /* the shot sees the back of their head (a line spoken away from the lens) */
 Scenes.backOn = function (sp) { const c = this.cam, cp = c ? (c.orbit ? this.cp : c.p1) : this.cp, f = new THREE.Vector3(Math.sin(sp.a.yaw + (sp.a.lookYaw || 0)), 0, Math.cos(sp.a.yaw + (sp.a.lookYaw || 0))), v = new THREE.Vector3(cp.x - sp.a.x, 0, cp.z - sp.a.z).normalize(); return f.dot(v) < -0.25; };
+/* the speaker's head sits out at the frame's edge in the shot on now (a line was played by a face cut by the right side) */
+Scenes.edge = function (sp) { const c = this.cam; if (!c || c.orbit) return false; const P = c.p1, f = new THREE.Vector3().copy(c.l1).sub(P).normalize(), r = new THREE.Vector3(-f.z, 0, f.x).normalize(), u = new THREE.Vector3().crossVectors(r, f), h = this.head(sp).sub(P), z = h.dot(f); if (z <= 0.1) return true;
+  const ty = Math.tan((c.f1 || 45) * D2R / 2), x = h.dot(r) / (z * ty * (R.camera.aspect || 2)), y = h.dot(u) / (z * ty); return Math.abs(x) > 0.74 || Math.abs(y) > 0.85; };
 Scenes.frameSpeaker = function (who) {
   if (Scenes.noAuto || !this.cast || (this.set && this.set.noAutoFrame)) return; const sp = this.cast[who === 'hat' ? 'me' : who]; if (!sp) return;
   if (this.lastAuto === who && this.cam && this.cam.auto) return;   // the same voice goes on in the same shot
-  if (!(this.cam && this.cam.wide) && this.sees(this.head(sp), sp) && !this.backOn(sp)) return;   // (a wide shot establishes; the lines play closer)
+  if (!(this.cam && (this.cam.wide || this.cam.orbit)) && this.sees(this.head(sp), sp) && !this.backOn(sp) && !this.edge(sp)) return;   // (a wide shot establishes; the lines play closer. So does an orbit: it turned on, and a line begun in the clear ended behind your head — round 3's Yule)
   const s = this.ots(who === 'hat' ? 'me' : who); if (!s) return; this.shot(s); this.cam.auto = true; this.lastAuto = who;
 };
 /* in an authored shot the one speaking turns their head a little to the lens (up to 0.6 rad), so a line is never played to
    the side of a face; in an over-the-shoulder shot they keep their eyes on the one they are talking to (round 3) */
 { const f0 = Scenes.frameSpeaker; Scenes.frameSpeaker = function (who) { f0.apply(this, arguments); const sp = this.cast && this.cast[who === 'hat' ? 'me' : who], c = this.cam; if (!sp || !c || c.auto || c.orbit) return;
     const P = c.p2 || c.p1, ty = Math.atan2(P.x - sp.a.x, P.z - sp.a.z); sp.a.lookYaw = clamp(wrapA(ty - sp.a.yaw), -0.6, 0.6); }; }
+/* a set can give one of its people a shot of their own (cams.say_<id>, e.g. the Potions master over your cauldron): their
+   lines always cut to it, whatever was on before */
+{ const f1 = Scenes.frameSpeaker; Scenes.frameSpeaker = function (who) { const k = who === 'hat' ? 'me' : who, own = this.set && this.set.cams && this.set.cams['say_' + k];
+    if (!own || Scenes.noAuto || !this.cast || !this.cast[k]) return f1.apply(this, arguments);
+    if (!(this.lastAuto === who && this.cam && this.cam.auto)) { this.shot(own); this.cam.auto = true; this.lastAuto = who; } }; }
 /* ------------------------------------------------------------------ the frame while a scene plays (MG.state 'scene': the world lives, nobody plays) */
 Scenes.update = function (dt) {
   if (!this.active) return; this.t += dt; if (this.cam) this.cam.t += dt;
