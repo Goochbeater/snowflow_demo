@@ -2,7 +2,10 @@
 /* QUIDDITCH CAREER — the save, the calendar, progression, the House Cup, the league and the World Cup, simulated; ported
    from Quidditch Skybound. A school year is a calendar of events (scenes, drills, matches); the professional years a
    thirteen-club round robin with a World Cup every four seasons. */
-QC.look = (seed, body) => ({ v: 1 + (seed % 7), body });
+/* a look not yet worn by anyone of the same build in the squad (seven drawn at random gave two team-mates one face in the
+   huddle — round 3); professionals draw from the adult set (beards, longer hair) */
+QC.look = (seed, body, adult) => { const base = adult ? 8 : 1, used = new Set(); try { const S = Career.S; if (S && S.mates) for (const m of Object.values(S.mates)) if (!m.gone && m.body === body && m.look) used.add(m.look.v); } catch (e) { /* no career yet */ }
+  for (let k = 0; k < 7; k++) { const v = base + ((seed + k) % 7); if (!used.has(v)) return { v, body }; } return { v: base + (seed % 7), body }; };
 const BROOMS = {
   star:       { name: 'Shooting Star',    spd: 0.93, hnd: 0.94, cost: 0,    desc: 'A school loaner. Slows down in a headwind and pulls to the left.' },
   clean7:     { name: 'Cleansweep Seven', spd: 0.97, hnd: 0.99, cost: 60,   desc: 'Dependable family broom. Smooth in the turns.' },
@@ -335,7 +338,7 @@ const Career = {
     for (const [role, slot] of ROLES7) {
       if (role === (S.profile.pos === 'seeker' ? 'seeker' : 'chaser') && slot === 0) continue;
       let m = keep.find(k => k.role === role && k.slot === slot);
-      if (!m) { const b = CONFIG.teams[S.club].body || (r() < 0.5 ? 'm' : 'f'); m = { id: 'p' + S.season + role + slot, name: makeName(Math.floor(r() * 1e9), b), body: b, look: QC.look(Math.floor(r() * 1e6), b), role, slot, chem: 40 + Math.floor(r() * 15), team: S.club }; }
+      if (!m) { const b = CONFIG.teams[S.club].body || (r() < 0.5 ? 'm' : 'f'); m = { id: 'p' + S.season + role + slot, name: makeName(Math.floor(r() * 1e9), b), body: b, look: QC.look(Math.floor(r() * 1e6), b, true), role, slot, chem: 40 + Math.floor(r() * 15), team: S.club }; }
       roster.push(m); S.mates[m.id] = m;
     }
     for (const id in S.mates) if (!roster.includes(S.mates[id])) S.mates[id].gone = true;
@@ -416,7 +419,7 @@ const Career = {
     for (const [role, slot] of ROLES7) {
       if (role === (S.profile.pos === 'seeker' ? 'seeker' : 'chaser') && slot === 0) continue;
       const b = r() < 0.5 ? 'm' : 'f';
-      const m = { id: 'n' + S.season + role + slot, name: makeName(Math.floor(r() * 1e9), b), body: b, look: QC.look(Math.floor(r() * 1e6), b), role, slot, chem: 45, team: S.nation };
+      const m = { id: 'n' + S.season + role + slot, name: makeName(Math.floor(r() * 1e9), b), body: b, look: QC.look(Math.floor(r() * 1e6), b, true), role, slot, chem: 45, team: S.nation };
       roster.push(m); S.mates[m.id] = m;
     }
     S.clubRoster = S.roster; S.roster = roster;
