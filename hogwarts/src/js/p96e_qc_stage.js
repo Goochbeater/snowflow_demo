@@ -176,7 +176,7 @@ const STAGES = {
         const loc = (q) => { const dx = q.x - mx, dz = q.z - mz; return [c2 * dx - s2 * dz, 0, s2 * dx + c2 * dz, q.yaw - fy, 'sit']; }, fd = Math.hypot(LC.fire[0] - mx, LC.fire[1] - mz);
         const A = { chairL: loc(a1), chairR: loc(a2), standF: [0.9, 0, -1.4, 0.4], fire: [0, 0, fd - 1.2, PI], board: [0, 0, -2.5, PI] };
         // (the fire is ahead, local +z: the faces are lit from it and seen from it)
-        const C = { default: { p: [-1.6, 1.45, fd - 1.4], l: [0.3, 1.0, 0], fov: 46 }, fire: { p: [1.4, 1.35, fd - 1.0], l: [-0.2, 1.0, 0], p2: [1.1, 1.3, fd - 1.5], fov: 42, dur: 12 }, hub: { p: [-1.9, 1.5, fd - 0.9], l: [0.5, 1.05, -0.2], p2: [-1.6, 1.45, fd - 1.3], fov: 44, dur: 40 } };
+        const C = { default: { p: [-1.6, 1.45, fd - 1.4], l: [0.3, 1.0, 0], fov: 46 }, fire: { p: [1.4, 1.35, fd - 1.0], l: [-0.2, 1.0, 0], p2: [1.1, 1.3, fd - 1.5], fov: 42, dur: 12 }, hub: { p: [-1.75, 1.42, fd - 1.1], l: [0.45, 1.0, -0.2], p2: [-1.5, 1.4, fd - 1.45], fov: 36, dur: 40 } };
         return { F, anchors: A, cams: C, variant }; } }
     const c = (HL.COMMONS && HL.COMMONS[hk]) || HL.COMMON; if (!c) return null; const F = Scenes.frame(c[0], c[1], c[2], 0);
     const A = { chairL: [-1.1, 0, -0.6, PI / 2 - 0.5, 'sit'], chairR: [1.1, 0, -0.6, -PI / 2 + 0.5, 'sit'], standF: [0.9, 0, 1.1, PI - 0.4], fire: [0, 0, -3.2, PI], board: [0, 0, -2.5, PI] };

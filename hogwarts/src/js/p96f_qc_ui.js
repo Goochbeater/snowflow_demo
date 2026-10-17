@@ -99,7 +99,7 @@ const CareerUI = {
     if (kind !== 'school' || !Career.S) {
       if (!Career.S) { Scenes.shot(set.cams.hub || { orbit: { c: [0, 1.4, -1], r: 7, h: 1.6, a0: 0.3, w: 0.035 }, p: [0, 2, 6], l: [0, 1.2, 0], fov: 48, dur: 999 }, true); return; }
       /* a professional's hub: you in your club's kit at the players' gate, the stands rising behind (right of the screen; the panels have the left) */
-      Scenes.shot({ p: [-1.7, 1.35, -3.9], l: [0.9, 2.1, 2.2], p2: [-1.45, 1.4, -3.5], fov: 46, dur: 40 }, true);
+      Scenes.shot({ p: [-1.1, 1.3, -2.29], l: [0.45, 1.16, -0.16], p2: [-0.98, 1.3, -2.07], fov: 30, dur: 40 }, true);   /* (round 3: a hero shot, knees up at 2.6 m and FOV 30, you a little right of centre between the panels — from 4 m you were a small figure in b-roll) */
       const pv = this._pv, cast = [{ id: 'me', at: [0.15, 0, 0, PI + 0.5], anim: 'idle', o: { outfit: 'kit' } }];
       Scenes.need(cast).then(() => { if (this._pv !== pv || Scenes.set !== set) return; const a = Scenes.spawn('me', cast[0]); if (a) a.base = 'fold'; }).catch(() => {});
       if (Career.S.phase !== 'school') { const T = Career.myTeam(), k = QC.key(T); QC.inject([k]); QC.dress(k, QC.key(T === CLUB_IDS[0] ? CLUB_IDS[1] : CLUB_IDS[0])); }
