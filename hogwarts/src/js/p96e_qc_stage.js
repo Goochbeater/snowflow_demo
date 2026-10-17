@@ -279,13 +279,29 @@ const STAGES = {
   press(variant) {
     const C0 = HL.PITCH, Q = HL.Q, rx = C0.x - Q.AX - 4, rz = C0.z - 30; const F = Scenes.frame(rx - 2, Q.Y0, rz, HALF);
     const A = { seat: [0, 0, -1.6, 0], rep0: [-2.0, 0, 1.4, PI], rep1: [0.4, 0, 1.6, PI], rep2: [2.3, 0, 1.2, PI], quill: [3.0, 1.2, 1.9] };
-    const C = { default: { p: [0, 1.7, 4.4], l: [0, 1.2, -1.6], fov: 48 }, reporters: { p: [-1.35, 1.78, -3.7], l: [0.6, 1.25, 1.4], fov: 54 }, player: { p: [0.5, 1.55, 0.5], l: [0, 1.45, -1.6], fov: 38 }, quill: { p: [3.0, 1.6, 0.6], l: [3.0, 1.2, 1.9], fov: 34 } };
+    const C = { default: { p: [0, 1.7, 4.4], l: [0, 1.2, -1.6], fov: 48 }, reporters: { p: [-0.75, 1.74, -2.3], l: [0.6, 1.3, 1.4], fov: 54 }, /* (over your shoulder from in front of the board) */ player: { p: [0.5, 1.55, 0.5], l: [0, 1.45, -1.6], fov: 38 }, quill: { p: [3.0, 1.6, 0.6], l: [3.0, 1.2, 1.9], fov: 34 } };
     C.rep = (i) => { const a = A['rep' + i]; return { p: [a[0] * 0.4, 1.55, a[2] - 2.2], l: [a[0], 1.5, a[2]], fov: 36 }; };
     // the Quick-Quotes Quill (acid green, scribbling on its own) and the photographers' flashes
     const quill = new THREE.Group(); { const m = new THREE.MeshStandardMaterial({ color: 0x5cff6a, emissive: 0x1a8a20, emissiveIntensity: 1.4, roughness: 0.4, side: THREE.DoubleSide }), f = new THREE.Mesh(new THREE.PlaneGeometry(0.06, 0.34, 1, 4), m); f.rotation.z = 0.5; f.position.y = 0.12; quill.add(f);
       const pad = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.004, 0.3), new THREE.MeshStandardMaterial({ color: 0xe8dcc0, roughness: 0.9 })); pad.position.y = -0.04; quill.add(pad); } quill.visible = false; R.scene.add(quill);
     const flash = () => { const i = (Math.random() * 3) | 0, a = A['rep' + i], w = Scenes.W([a[0] + (Math.random() - 0.5) * 2, 1.9, a[2] + 0.8]); FX.flashLight(w, [1, 1, 1.05], 26, 9, 0.09); };
-    const S = { F, anchors: A, cams: C, variant, ground: true, quill, flash, update(dt, t) { if (quill.visible) { quill.rotation.y = Math.sin(t * 9) * 0.4; quill.children[0].rotation.x = Math.sin(t * 23) * 0.3; } }, onLeave() { R.scene.remove(quill); } };
+    /* a press room's furniture, pitch-side (round 3: "a line-up on a lawn"): a step-and-repeat board behind you with the two
+       sides' crests, a cloth-draped table before you with three microphones, a light stand either side; flashes go off
+       through the questions */
+    const set = []; { const prev = Scenes.F; Scenes.F = F; const g = new THREE.Group(), w = Scenes.W([0, 0, -2.55], new THREE.Vector3()); g.position.copy(w); g.position.y = HL.gy(w.x, w.z); g.rotation.y = F.yaw;
+      const cv = document.createElement('canvas'); cv.width = 1024; cv.height = 420; const x = cv.getContext('2d'); x.fillStyle = '#141a2c'; x.fillRect(0, 0, 1024, 420); x.fillStyle = 'rgba(217,184,106,.9)'; x.fillRect(0, 404, 1024, 16);
+      const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+      const CS = Career.S, my = Career.myTeam(), opp = CS && CS.last ? CS.last.opp : Career.cur() && Career.cur().opp, ids = [my, opp != null ? opp : my]; let n = 0;
+      ids.forEach((id, k) => { const im = new Image(); im.onload = () => { for (let r = 0; r < 3; r++) for (let c = 0; c < 8; c++) if ((r + c) % 2 === k) x.drawImage(im, 26 + c * 126, 14 + r * 130, 74, 90); x.fillStyle = 'rgba(232,214,170,.55)'; x.font = '600 22px Georgia'; x.textAlign = 'center'; if (++n === 2) { for (let r = 0; r < 3; r++) for (let c = 0; c < 8; c++) if ((r + c) % 2 === 0 && c % 3 === 1) x.fillText('THE DAILY PROPHET', 63 + c * 126, 128 + r * 130); } tex.needsUpdate = true; }; im.src = Tex.crestURL[id]; });
+      const board = new THREE.Mesh(new THREE.PlaneGeometry(6.2, 2.55), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7 })); board.position.set(0, 1.4, 0); g.add(board);
+      const frameM = new THREE.MeshStandardMaterial({ color: 0x1a1a20, roughness: 0.5, metalness: 0.5 }); for (const sx of [-3.12, 3.12]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.06, 2.75, 0.06), frameM); p.position.set(sx, 1.37, -0.03); g.add(p); }
+      const cloth = new THREE.MeshStandardMaterial({ color: 0x23192a, roughness: 0.85 }), tbl = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.76, 0.7), cloth); tbl.position.set(0, 0.38, 1.55); g.add(tbl);
+      const mic = new THREE.MeshStandardMaterial({ color: 0x15151a, roughness: 0.35, metalness: 0.6 }); for (const mx of [-0.35, 0, 0.35]) { const st = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.26, 6), mic); st.position.set(mx, 0.89, 1.82); st.rotation.x = 0.35; g.add(st); const hd = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), mic); hd.position.set(mx, 1.01, 1.86); g.add(hd); }
+      for (const sx of [-3.8, 3.8]) { const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.03, 2.2, 6), frameM); pole.position.set(sx, 1.1, 1.4); g.add(pole); const box = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.42, 0.12), frameM); box.position.set(sx * 0.98, 2.25, 1.45); box.rotation.y = -Math.sign(sx) * 0.5; g.add(box); const lens = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.34), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, 2.1, 1.9) })); lens.position.set(sx * 0.98 - Math.sign(sx) * 0.03, 2.25, 1.52); lens.rotation.y = -Math.sign(sx) * 0.5; g.add(lens); }
+      g.traverse((o) => { if (o.isMesh) o.castShadow = o.receiveShadow = true; }); set.push(g); Scenes.F = prev; }
+    let flT = 0.6;
+    const S = { F, anchors: A, cams: C, variant, ground: true, quill, flash, update(dt, t) { flT -= dt; if (flT <= 0) { flT = 0.4 + Math.random() * 0.8; flash(); } if (quill.visible) { quill.rotation.y = Math.sin(t * 9) * 0.4; quill.children[0].rotation.x = Math.sin(t * 23) * 0.3; } }, onLeave() { R.scene.remove(quill); } };
+    SProps.place(S, set);
     return S;
   },
   studio() { return STAGES.locker('school'); },
