@@ -115,3 +115,36 @@ if (typeof STAGES !== 'undefined' && typeof CareerUI !== 'undefined') {
 html body .hlTitle > div.hlBtn:first-of-type { background: linear-gradient(180deg, #f6dc94, #d6a648 55%, #b9852f); color: #241505; border-color: #fbe6ad; text-shadow: none; font-weight: 400; box-shadow: 0 4px 18px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,250,225,.7); }
 html body .hlTitle > div.hlBtn:first-of-type:hover { filter: brightness(1.06); }`;
   document.head.appendChild(css); }
+/* the huddle is a place, not a lawn (round 3, #22): the coach's chalk board on an easel, kit benches down both sides
+   with bags on them, a rack of brooms where "Your broom" is and a standing glass where "Look yourself over" is; and the
+   eye a little closer and higher, looking over you into the ring */
+if (typeof STAGES !== 'undefined' && typeof SProps !== 'undefined') {
+  const dress = (S) => { const g = new THREE.Group(), w = new THREE.Vector3(), std = (c, r, m) => new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m || 0 });
+    const wood = std(0x6a4426, 0.72), dark = std(0x3a2616, 0.8), iron = std(0x2a2a2c, 0.5, 0.6), leather = std(0x5a3a22, 0.7), straw = std(0xb08a4a, 0.95);
+    const box = (sx, sy, sz, x, y, z, m, ry) => { const me = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), m); me.position.set(x, y, z); if (ry) me.rotation.y = ry; me.castShadow = me.receiveShadow = true; g.add(me); return me; };
+    /* the board: slate in an oak frame on an easel, chalked with the hoops, the runs and the marks */
+    { const cv = document.createElement('canvas'); cv.width = 512; cv.height = 340; const c = cv.getContext('2d'); c.fillStyle = '#1e2622'; c.fillRect(0, 0, 512, 340); for (let i = 0; i < 900; i++) { c.fillStyle = `rgba(255,255,255,${Math.random() * 0.035})`; c.fillRect(Math.random() * 512, Math.random() * 340, 3 + Math.random() * 30, 1 + Math.random() * 3); }
+      c.strokeStyle = 'rgba(240,240,232,.88)'; c.fillStyle = 'rgba(240,240,232,.88)'; c.lineWidth = 4; c.lineCap = 'round';
+      for (const [x, r] of [[420, 18], [462, 24], [504, 18]]) { c.beginPath(); c.arc(x - 30, 70, r, 0, TAU); c.stroke(); c.beginPath(); c.moveTo(x - 30, 70 + r); c.lineTo(x - 30, 120); c.stroke(); }
+      const X = (x, y) => { c.beginPath(); c.moveTo(x - 10, y - 10); c.lineTo(x + 10, y + 10); c.moveTo(x + 10, y - 10); c.lineTo(x - 10, y + 10); c.stroke(); }, O = (x, y) => { c.beginPath(); c.arc(x, y, 11, 0, TAU); c.stroke(); };
+      X(300, 120); X(330, 200); X(250, 260); X(400, 170); O(90, 110); O(120, 210); O(70, 280); O(170, 160);
+      c.setLineDash([12, 10]); c.beginPath(); c.moveTo(120, 210); c.bezierCurveTo(200, 230, 260, 160, 330, 110); c.stroke(); c.beginPath(); c.moveTo(170, 160); c.quadraticCurveTo(250, 60, 380, 72); c.stroke(); c.setLineDash([]);
+      c.beginPath(); c.moveTo(380, 72); c.lineTo(362, 62); c.moveTo(380, 72); c.lineTo(364, 86); c.stroke(); c.beginPath(); c.moveTo(330, 110); c.lineTo(312, 106); c.moveTo(330, 110); c.lineTo(322, 94); c.stroke();
+      c.font = 'italic 30px Georgia, serif'; c.fillText('Their Keeper drifts left', 40, 324);
+      const tx = new THREE.CanvasTexture(cv); tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 4;
+      const slate = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.0), new THREE.MeshStandardMaterial({ map: tx, roughness: 0.9 })); slate.position.set(0, 1.55, 3.28); slate.rotation.y = PI; g.add(slate);
+      box(1.62, 0.07, 0.05, 0, 2.07, 3.3, wood); box(1.62, 0.07, 0.05, 0, 1.03, 3.3, wood); box(0.07, 1.1, 0.05, -0.78, 1.55, 3.3, wood); box(0.07, 1.1, 0.05, 0.78, 1.55, 3.3, wood); box(1.6, 0.05, 0.12, 0, 1.0, 3.25, wood);
+      for (const sx of [-0.62, 0.62]) { const leg = box(0.06, 2.1, 0.06, sx, 1.02, 3.38, dark); leg.rotation.x = -0.12; } { const leg = box(0.06, 2.0, 0.06, 0, 0.95, 3.72, dark); leg.rotation.x = 0.32; } }
+    /* the benches, a bag and a towel or two on each */
+    for (const sx of [-3.1, 3.1]) { box(0.42, 0.06, 3.2, sx, 0.46, 1.0, wood); for (const z of [-0.4, 1.0, 2.4]) { box(0.06, 0.44, 0.06, sx - 0.15, 0.22, z, dark); box(0.06, 0.44, 0.06, sx + 0.15, 0.22, z, dark); }
+      for (const [z, k] of [[-0.1, 0], [1.5, 1]]) { const bag = new THREE.Mesh(new THREE.CapsuleGeometry(0.13, 0.36, 4, 8), leather); bag.rotation.x = HALF; bag.position.set(sx + (k ? 0.04 : -0.04), 0.62, z); bag.castShadow = true; g.add(bag); }
+      box(0.3, 0.025, 0.42, sx, 0.505, 0.6, std(0xd8d0bc, 0.95)); }
+    /* the broom rack */
+    { const rx = -2.35, rz = 1.25; box(0.07, 1.25, 0.07, rx, 0.62, rz - 0.75, dark); box(0.07, 1.25, 0.07, rx, 0.62, rz + 0.75, dark); box(0.06, 0.06, 1.6, rx, 1.2, rz, wood);
+      for (let i = 0; i < 4; i++) { const b = new THREE.Group(), st = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.021, 1.55, 6), wood), br = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.42, 8, 1, true), straw); st.position.y = 0.78; br.position.y = 0.16; br.rotation.x = PI; b.add(st, br); b.position.set(rx + 0.28, 0, rz - 0.55 + i * 0.36); b.rotation.z = 0.2; b.traverse((o) => { o.castShadow = true; }); g.add(b); } }
+    /* the glass */
+    { const mx = 2.4, mz = 1.25; box(0.07, 1.9, 0.07, mx, 0.95, mz - 0.38, dark); box(0.07, 1.9, 0.07, mx, 0.95, mz + 0.38, dark); box(0.06, 1.35, 0.7, mx, 1.12, mz, std(0x9aa6b0, 0.06, 1)); box(0.08, 0.07, 0.84, mx, 1.83, mz, wood); box(0.08, 0.07, 0.84, mx, 0.42, mz, wood); }
+    Scenes.W([0, 0, 0], w); g.position.copy(w); g.position.y = S.F.y; g.rotation.y = S.F.yaw; return [g]; };
+  const l0 = STAGES.locker; STAGES.locker = function (variant) { const S = l0.apply(this, arguments); if (!S || variant) return S; const prev = Scenes.F; Scenes.F = S.F; try { SProps.place(S, dress(S)); } finally { Scenes.F = prev; } return S; };
+}
+if (typeof Locker !== 'undefined') { const e0 = Locker.enter; if (e0) Locker.enter = async function () { const r = await e0.apply(this, arguments); if (this.on) { HL.camNear = 2.0; CAM.pitch = -0.24; CAM.snap = true; } return r; }; }
