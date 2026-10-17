@@ -77,8 +77,8 @@ const Locker = {
   /* face to face: over your shoulder onto the team-mate, who sits in the left of the frame (the panel docks right) */
   ots(a) { const P = PLAYER.a; if (!P || !a) return; const H = a.head ? a.head(new THREE.Vector3()) : new THREE.Vector3(a.x, a.y + 1.6, a.z), M = P.head ? P.head(new THREE.Vector3()) : new THREE.Vector3(P.x, P.y + 1.6, P.z);
     const d = H.clone().sub(M); d.y = 0; const dl = d.length(); d.normalize(); if (dl > 1.7) M.copy(H).addScaledVector(d, -1.7).setY(M.y);   /* (talked to from across the huddle, the shot is still a close one) */
-    const r = new THREE.Vector3(-d.z, 0, d.x), D = Math.min(dl, 1.7), pos = M.clone().addScaledVector(d, -1.15).addScaledVector(r, -0.9); pos.y += 0.1; const look = H.clone().addScaledVector(r, 0.488 * (D + 1.15) - 0.9); look.y -= 0.08;   /* (from behind your left shoulder, aimed so the one you talk to stands 10° left of centre and you fall under the panel docked on the right: they were under it — round 3) */
-    CAM.cine = { t: 0, dur: 1e9, hold: true, fov: 38, fn: () => ({ pos, look }) }; },
+    const r = new THREE.Vector3(-d.z, 0, d.x), D = Math.min(dl, 1.7), pos = M.clone().addScaledVector(d, -1.15).addScaledVector(r, -0.9); pos.y += 0.1; const Lf = D + 1.15, look = H.clone().addScaledVector(r, Lf * Math.tan(Math.atan(0.9 / Lf) + 0.24) - 0.9); look.y -= 0.06; a.yaw = Math.atan2(M.x - H.x, M.z - H.z);   /* (from behind your left shoulder, aimed so the one you talk to stands 10° left of centre and you fall under the panel docked on the right: they were under it — round 3) */
+    CAM.cine = { t: 0, dur: 1e9, hold: true, fov: 27, fn: () => ({ pos, look }) }; },   /* (a medium close-up, the one you address turned to you in the open left: at 38° three team-mates shared the frame and nobody could tell who was talking — round 3) */
   closePanel() { const p = this.ui && this.ui.querySelector('#lkPanel'); if (!p) return; p.classList.remove('on'); if (CAM.cine && CAM.cine.hold && this.panel) CAM.cine = null; if (this.panel && PLAYER.state === 'cine') PLAYER.state = 'move'; this.panel = false; IN.buf = {}; },
   moodLine(m) {
     const c = m.chem, first = Career.first();
