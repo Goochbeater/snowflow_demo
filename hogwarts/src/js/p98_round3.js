@@ -32,3 +32,16 @@ body:has(#lkPanel.on) #hlPrompt, body:has(#lkPanel.on) #lkGate { visibility: hid
   HL.START.push((L) => { const E = HL.ui.el; if (E && E.Quest && !E.Quest._tap) { E.Quest._tap = true; E.Quest.addEventListener('click', () => { E.Quest.classList.add('full'); clearTimeout(E.Quest._ft); E.Quest._ft = setTimeout(() => E.Quest.classList.remove('full'), 5000); }); }
     L.updates.push(() => { if (!TOUCH.on || MG.state !== 'play') return; const H = HL.ui.el.Hint; if (!H || !H.classList.contains('on')) return;
       if (/look around/i.test(H.textContent)) { if (HL.save.looked) { H.classList.remove('on'); HL.ui.hintT = 0; } else if (Math.abs(IN.A.lx) + Math.abs(IN.A.ly) > 0.002) { HL.save.looked = 1; HL.store(); MG.after(0.8, () => { if (/look around/i.test(H.textContent)) { H.classList.remove('on'); HL.ui.hintT = 0; } }, true); } } }); }); }
+/* the World Cup opens as itself: a bumper (QUIDDITCH WORLD CUP in gold on black, the round under it) before the
+   lower-third, and the lower-third at 0.85 on the Fold's cover so its lines do not run into each other (round 3) */
+{ const Q = HL.Q, css = document.createElement('style'); css.textContent = `
+#qcWC { position: absolute; inset: 0; z-index: 40; display: grid; place-content: center; text-align: center; pointer-events: none; background: radial-gradient(ellipse at center, rgba(14,10,4,.92), rgba(0,0,0,.97) 70%); opacity: 0; transition: opacity .45s; }
+#qcWC.on { opacity: 1; } #qcWC b { display: block; font: 400 min(7vw, 15vh, 64px) 'HLA', Georgia, serif; letter-spacing: .22em; padding-left: .22em; background: linear-gradient(#fff6d8, #f0cf7c 50%, #b88a36); -webkit-background-clip: text; background-clip: text; color: transparent; }
+#qcWC i { display: block; margin-top: 12px; font: italic min(2.2vw, 4.4vh, 18px) 'HLB', Georgia, serif; letter-spacing: .1em; color: #e9dcb8; } #qcWC u { display: block; width: min(40vw, 380px); height: 1px; margin: 14px auto 0; background: linear-gradient(90deg, transparent, #e8c56e, transparent); }
+@media (max-height: 380px) { #qcLT { transform-origin: left bottom; } #qcLT.on { transform: scale(.85) !important; } }`;
+  HL.START.push(() => { if (!css.isConnected) document.head.appendChild(css); });
+  const i0 = Q.intro; Q.intro = function () { const r = i0.apply(this, arguments); const M = typeof QC !== 'undefined' && QC.match, ev = M && M.ev;
+    if (ev && ev.comp === 'wc') { let el = document.getElementById('qcWC'); if (!el) { el = document.createElement('div'); el.id = 'qcWC'; (HL.ui.root || document.body).appendChild(el); }
+      el.innerHTML = `<b>QUIDDITCH WORLD CUP</b><u></u><i>${ev.label || ''}</i>`; el.classList.add('on'); const lt = document.getElementById('qcLT'); if (lt) lt.style.visibility = 'hidden';
+      MG.after(2.4, () => { el.classList.remove('on'); if (lt) lt.style.visibility = ''; }, true); }
+    return r; }; }

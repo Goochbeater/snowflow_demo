@@ -57,7 +57,7 @@ const Career = {
       attrs: base, pot: 74, xp: 0, lvl: 1, sp: 2, gal: 25, brooms: ['star'], broom: 'star',
       fame: 3, fans: 20, trust: 45, persona: { gr: 0, tm: 0, sh: 0, fi: 0, de: 0 },
       mates: {}, phase: 'school', year: 1, season: 0, ev: 0, cal: [], trainedAt: -1,
-      cup: null, league: null, club: null, contract: null, nation: p.nation, wc: null,
+      cup: null, league: null, club: null, contract: null, nation: NATION_IDS.includes(p.nation) ? p.nation : NATION_IDS[0], wc: null,
       news: [], inbox: [], flags: {}, hist: [], tot: { apps: 0, goals: 0, assists: 0, steals: 0, finishers: 0, snitch: 0, wins: 0, potm: 0, cups: 0, leagues: 0, wcs: 0 },
       goals: [], tactic: 'hawkshead', last: null, captain: false, rival: null, friend: null, partner: null,
     };

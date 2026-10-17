@@ -122,7 +122,7 @@ body.qcount #hlPop { top: 34% !important; font-family: 'HLA', Georgia, serif; fo
     return { crest: HL.ui.crest ? HL.ui.crest(hk) : '', name: (H.name || '').toUpperCase(), sub: 'Hogwarts', col: H.css }; };
   const show = () => { if (!lt) { lt = document.createElement('div'); lt.id = 'qcLT'; (HL.ui.root || document.body).appendChild(lt); }
     const A = side(0), B = side(1), M = QC.match, comp = M && M.ev ? M.ev.label : M && M.drill ? (M.drill.lesson ? 'First flying lesson' : 'Training') : Q.opt && Q.opt.tut ? 'Flying lesson' : 'House match';
-    const ground = M && Career.S && Career.S.phase !== 'school' ? (M.ev && M.ev.home === false ? side(1).sub : side(0).sub) + ' · the stadium' : 'The Hogwarts Quidditch Pitch';
+    const ground = M && M.ev && M.ev.comp === 'wc' ? 'The World Cup stadium' : M && Career.S && Career.S.phase !== 'school' ? (M.ev && M.ev.home === false ? side(1).sub : side(0).sub) + ' · the stadium' : 'The Hogwarts Quidditch Pitch';
     const role = Q.me && Q.me.role === 'seeker' ? 'You fly Seeker · find the Golden Snitch and close your hand on it' : 'You fly Chaser · take the Quaffle through the far hoops, ten points a goal';
     lt.innerHTML = `<div class="bd"><div class="cr">${A.crest}</div><div class="tn" style="--c:${A.col}"><b>${A.name}</b><span>${A.sub}</span></div><div class="vs">V</div><div class="tn" style="--c:${B.col}"><b>${B.name}</b><span>${B.sub}</span></div><div class="cr">${B.crest}</div></div><div class="meta">${comp} · ${ground}</div><div class="role">${role}</div>`;
     U.el.Toast.classList.remove('on'); U.toastT = 0; requestAnimationFrame(() => lt.classList.add('on')); };
