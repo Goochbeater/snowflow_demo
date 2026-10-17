@@ -188,3 +188,29 @@ if (typeof CareerUI !== 'undefined') {
       <path d="M110 19.4 C130 12.5 160 8.2 194 9 C186 15 186 30 194 36 C160 37 130 32 110 24.6 Z" fill="url(#${u}t)"/><path d="M110 19.4 C130 12.5 160 8.2 194 9 C186 15 186 30 194 36 C160 37 130 32 110 24.6 Z" fill="url(#${u}v)"/>${strands}
       ${k > 1 ? `<path d="M113 27.5 h18 M116 25 v2.5 M128 25.5 v2" stroke="${metal}" stroke-width="1.5" stroke-linecap="round" fill="none"/>` : ''}<rect x="104" y="18.4" width="9" height="7.2" rx="1.6" fill="${k ? metal : sh(h, 0.7)}"/><path d="M106 18.6 v6.8 M109 18.6 v6.8" stroke="rgba(0,0,0,.35)" stroke-width=".8"/><rect x="104" y="18.6" width="9" height="1.4" rx=".7" fill="rgba(255,255,255,.35)"/></g></svg>`; };
 }
+/* the Yule Ball is a ball, not a lunchtime (round 3, #9: "a normal lunchtime layout of feast rows"): the house tables in
+   white linen to the floor with candelabra down them, and a polished inlaid floor under the couples in the aisle */
+if (typeof STAGES !== 'undefined' && typeof SProps !== 'undefined') {
+  const h0 = STAGES.hall; STAGES.hall = function (variant) { const S = h0.apply(this, arguments); if (!S || !(variant === 'yule' || variant === 'gala')) return S;
+    const G = HL.GHR, L = (G.z1 - 6) - (G.z0 + 17), list = [], prev = Scenes.F; Scenes.F = S.F;
+    try { const lin = new THREE.MeshStandardMaterial({ color: 0xece4d4, roughness: 0.92 }), g = new THREE.Group(), w = new THREE.Vector3();
+      const box = (sx, sy, sz, x, y, z, m) => { const me = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), m); me.position.set(x, y, z); me.receiveShadow = true; g.add(me); };
+      for (const tx of S.tables) { box(1.47, 0.004, L + 0.12, tx, 0.864, 0, lin); for (const sd of [-1, 1]) box(0.012, 0.4, L + 0.12, tx + sd * 0.735, 0.665, 0, lin); for (const sd of [-1, 1]) box(1.47, 0.4, 0.012, tx, 0.665, sd * (L / 2 + 0.06), lin); }
+      /* candelabra: a brass stem, three arms, three candles and their flames, every three metres down each table */
+      const pos = []; for (const tx of S.tables) for (let z = -L / 2 + 1.7; z < L / 2 - 1; z += 3.05) pos.push([tx, z]);
+      const n = pos.length, brass = new THREE.MeshStandardMaterial({ color: 0xc9a048, metalness: 0.85, roughness: 0.32 }), wax = new THREE.MeshStandardMaterial({ color: 0xe8dcc0, roughness: 0.7 }), fl = new THREE.MeshBasicMaterial({ color: new THREE.Color(7, 3.9, 1.3), toneMapped: false });
+      const stem = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.016, 0.07, 0.42, 8).translate(0, 0.21, 0), brass, n), arm = new THREE.InstancedMesh(new THREE.BoxGeometry(0.34, 0.018, 0.018).translate(0, 0.42, 0), brass, n);
+      const cand = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.014, 0.014, 0.13, 6).translate(0, 0.495, 0), wax, n * 3), flame = new THREE.InstancedMesh(new THREE.SphereGeometry(0.022, 6, 4).scale(1, 1.9, 1).translate(0, 0.585, 0), fl, n * 3), m4 = new THREE.Matrix4();
+      pos.forEach(([x, z], i) => { m4.makeTranslation(x, 0.866, z); stem.setMatrixAt(i, m4); arm.setMatrixAt(i, m4); for (let k = 0; k < 3; k++) { m4.makeTranslation(x + (k - 1) * 0.16, 0.866, z); cand.setMatrixAt(i * 3 + k, m4); flame.setMatrixAt(i * 3 + k, m4); } });
+      for (const im of [stem, arm, cand, flame]) { im.frustumCulled = false; g.add(im); }
+      /* the dance floor: an oval of polished dark wood in the aisle, a gold band and a star at its heart */
+      { const cv = document.createElement('canvas'); cv.width = cv.height = 512; const c = cv.getContext('2d'), gr = c.createRadialGradient(256, 256, 20, 256, 256, 256); gr.addColorStop(0, '#5a3820'); gr.addColorStop(0.8, '#3a2414'); gr.addColorStop(1, '#2a180c'); c.fillStyle = gr; c.beginPath(); c.arc(256, 256, 254, 0, TAU); c.fill();
+        c.globalAlpha = 0.18; for (let i = 0; i < 40; i++) { c.strokeStyle = i % 2 ? '#1a0e06' : '#7a5232'; c.lineWidth = 2; c.beginPath(); c.moveTo(0, i * 13); c.lineTo(512, i * 13 + 6); c.stroke(); } c.globalAlpha = 1;
+        c.strokeStyle = '#d9b058'; c.lineWidth = 10; c.beginPath(); c.arc(256, 256, 236, 0, TAU); c.stroke(); c.lineWidth = 3; c.beginPath(); c.arc(256, 256, 214, 0, TAU); c.stroke();
+        c.fillStyle = '#d9b058'; c.beginPath(); for (let i = 0; i < 16; i++) { const a = i / 16 * TAU - PI / 2, r = i % 2 ? 26 : 92; c.lineTo(256 + Math.cos(a) * r, 256 + Math.sin(a) * r); } c.closePath(); c.fill();
+        const tx = new THREE.CanvasTexture(cv); tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 4;
+        const fl2 = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshStandardMaterial({ map: tx, roughness: 0.22, metalness: 0.1, transparent: true, polygonOffset: true, polygonOffsetFactor: -2 })); fl2.rotation.x = -HALF; fl2.scale.set(2.7, 6.2, 1); fl2.position.set(0, 0.012, -L * 0.2); fl2.receiveShadow = true; g.add(fl2); }
+      Scenes.W([0, 0, 0], w); g.position.copy(w); g.position.y = S.F.y; g.rotation.y = S.F.yaw; list.push(g);
+    } finally { Scenes.F = prev; }
+    SProps.place(S, list); return S; };
+}
