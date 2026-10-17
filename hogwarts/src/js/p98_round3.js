@@ -52,3 +52,13 @@ body.touch #tc::before { content: ''; position: fixed; right: 0; bottom: 0; widt
 body.touch:not([data-tm="foot"]):not([data-tm="fly"]):not([data-tm="match"]) #tc::before { display: none; }`;
   document.head.appendChild(css);
   HL.START.push(() => { HL._bThr = Math.max(1.32, HL._bThr || 0); }); }
+/* career panels that run past the screen say so (a chevron at the foot that goes when you reach the end), and the type
+   floor rises: nothing that has to be read below 10.5 px (round 3: 9-10 px labels throughout) */
+{ const css = document.createElement('style'); css.textContent = `
+#scrCareer .panel.more::before { content: ''; position: sticky; float: right; top: calc(100% - 26px); width: 14px; height: 14px; margin: -14px 2px 0 0; border-right: 2px solid rgba(240,212,140,.85); border-bottom: 2px solid rgba(240,212,140,.85); transform: rotate(45deg); animation: qcMore 1.4s ease-in-out infinite; z-index: 3; pointer-events: none; }
+@keyframes qcMore { 0%, 100% { opacity: .35; translate: 0 -3px; } 50% { opacity: 1; translate: 0 2px; } }
+html body .hlTitle .cr { font-size: 10.5px !important; } .hlH .tr { font-size: max(11px, 1em) !important; } .hlJ .foot { font-size: 11px !important; opacity: .85; }
+#scrCareer .broomCard .need { font-size: 11px !important; letter-spacing: .04em; }`;
+  document.head.appendChild(css);
+  const mark = () => { const p = document.querySelector('#scrCareer .panel'); if (!p) return; const upd = () => p.classList.toggle('more', p.scrollHeight - p.clientHeight - p.scrollTop > 8); upd(); if (!p._more) { p._more = true; p.addEventListener('scroll', upd, { passive: true }); } };
+  if (typeof CareerUI !== 'undefined') { const s0 = CareerUI.show; CareerUI.show = function () { const r = s0.apply(this, arguments); requestAnimationFrame(mark); setTimeout(mark, 300); return r; }; } }
