@@ -140,9 +140,9 @@ const CareerUI = {
     const icon = QC.svg({ scene: 'scene', match: 'match', drill: 'drill', cup: 'cup', offers: 'quill', awards: 'cup', bye: 'tea', wcKO: 'globe', legacy: 'star' }[ev.t] || 'next');
     let detail = '';
     if (ev.t === 'match') { const st = Career.str(ev.opp); detail = `<div class="vs"><img src="${Tex.crestURL[my]}"><b>v</b><img src="${Tex.crestURL[ev.opp]}"></div><div class="evSub">${teamName(my)} v ${teamName(ev.opp)}${ev.home === false ? ' · away' : ''} · rating ${Math.round(st)}</div>`; }
-    const tab = S.phase === 'school' && S.cup ? Career.sorted(S.cup.t) : S.phase === 'pro' && S.league ? Career.sorted(S.league.t) : null;
-    const mini = tab ? `<div class="miniTable">${tab.slice(0, S.phase === 'school' ? 4 : 5).map((r, i) => `<div class="${r.id === my ? 'me' : ''}"><i>${i + 1}</i><span>${CONFIG.teams[r.id].short}</span><b>${r.pts}</b></div>`).join('')}</div>` : '';
-    return `<div class="evCard"><div class="evWhen">${Career.when(ev)}</div><div class="evLabel"><i>${icon}</i>${ev.label}</div>${detail}
+    const tab = S.phase === 'school' && S.cup ? Career.sorted(S.cup.t) : S.phase === 'pro' && S.league ? Career.sorted(S.league.t) : S.phase === 'wc' && S.wc && S.wc.t ? Career.sorted(S.wc.t) : null;   // (the World Cup's group of four, round 3)
+    const mini = tab ? `<div class="miniTable">${tab.slice(0, S.phase === 'pro' ? 5 : 4).map((r, i) => `<div class="${r.id === my ? 'me' : ''}"><i>${i + 1}</i><span>${CONFIG.teams[r.id].short}</span><b>${r.pts}</b></div>`).join('')}</div>` : '';
+    return `<div class="evCard${ev.comp === 'wc' ? ' wc' : ''}"><div class="evWhen">${Career.when(ev)}</div><div class="evLabel"><i>${icon}</i>${ev.label}</div>${detail}
       <div class="actions"><button class="act go" data-cgo="next">${ev.t === 'match' ? 'TO THE LOCKER ROOM' : 'CONTINUE'}</button>${ev.t === 'match' ? '<button class="act" data-cgo="sim">SIM MATCH</button>' : ''}</div></div>${mini}`;
   },
   // ---------- the flow: run the current calendar event ----------

@@ -99,3 +99,13 @@ if (typeof STAGES !== 'undefined' && typeof CareerUI !== 'undefined') {
     Career.squad().slice(0, 2).forEach((m, k) => cast.push({ id: 'mate_' + m.id, at: k ? 'resB' : 'resA', anim: won ? 'cheer' : k ? 'fold' : 'idle', o: kit }));
     Scenes.need(cast).then(() => { if (this._pv !== pv || Scenes.set !== set) return; for (const c of cast) Scenes.spawn(c.id, c); }).catch(() => {}); };
 }
+/* the World Cup looks like itself (round 3, #12: "indistinguishable from its first league fixture"): its hub card in
+   gold beside the group of four, and its matches open on a crane that comes down from forty metres over the stands */
+{ const css = document.createElement('style'); css.textContent = `
+#scrCareer .evCard.wc { border-color: rgba(240,207,124,.75) !important; background: linear-gradient(160deg, rgba(58,42,14,.9), rgba(14,11,6,.92) 62%) !important; box-shadow: 0 0 0 1px rgba(240,207,124,.22), 0 8px 30px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,240,200,.16); }
+#scrCareer .evCard.wc .evWhen { color: #f0cf7c; letter-spacing: .2em; } #scrCareer .evCard.wc .evLabel { color: #fff3d0; }`;
+  document.head.appendChild(css);
+  const Q = HL.Q, i0 = Q.intro; Q.intro = function () { const r = i0.apply(this, arguments), M = typeof QC !== 'undefined' && QC.match, ev = M && M.ev;
+    if (ev && ev.comp === 'wc' && CAM.cine) { const C = HL.PITCH, Y0 = Q.Y0;
+      CAM.play({ dur: 6.4, fov: 50, hold: false, fn: (t) => { const u = clamp(t / 6.4, 0, 1), e = u * u * (3 - 2 * u), a = PI * 0.82 + e * 0.5, rr = 96 - e * 46; return { pos: _v1.set(C.x + Math.sin(a) * rr * 0.8, Y0 + 46 - e * 32, C.z + Math.cos(a) * rr), look: _v2.set(C.x, Y0 + 14 - e * 5, C.z) }; }, onEnd: () => { CAM.reset(0); } }); }
+    return r; }; }
