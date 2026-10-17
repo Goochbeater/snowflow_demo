@@ -47,6 +47,21 @@ const SProps = {
     { const s = new THREE.Shape(); for (let k = 0; k < 10; k++) { const a = HALF + k * PI / 5, r = k % 2 ? 0.1 : 0.24; s[k ? 'lineTo' : 'moveTo'](Math.cos(a) * r, Math.sin(a) * r); } s.closePath();
       const st = new THREE.Mesh(new THREE.ExtrudeGeometry(s, { depth: 0.05, bevelEnabled: false }), M.star); st.position.set(0, h * 0.96 + 0.22, -0.025); g.add(st); }
     return g; },
+  /* a feast laid along a stretch of table: platters with roasts, loaves, pies, bowls of fruit, goblets and jugs, instanced
+     (round 3: "a feast with flat discs for plates and no food") — tx is the table's centre in the frame, z0..z1 its stretch */
+  feast(tx, z0, z1, ty, seed) { const rs = mulberry(seed || 9), Mx = this.M(), out = [], m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), sc = new THREE.Vector3(), w = new THREE.Vector3();
+    if (!Mx.food) { const std = (c, r, m) => new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m || 0 }); Mx.food = { gold: std(0xd9a943, 0.3, 0.9), roast: std(0x8a4a1e, 0.55), crust: std(0xc58a3e, 0.7), bread: std(0xd2a060, 0.8), apple: std(0xb8281e, 0.45), pear: std(0x9fb03a, 0.5), grape: std(0x4a1e4e, 0.35), jug: std(0xd8d0c0, 0.35) }; }
+    const F = Mx.food, kinds = { platter: [new THREE.CylinderGeometry(0.21, 0.19, 0.025, 18), F.gold], roast: [new THREE.SphereGeometry(0.13, 12, 8), F.roast], pie: [new THREE.CylinderGeometry(0.13, 0.12, 0.06, 16), F.crust], loaf: [new THREE.CapsuleGeometry(0.055, 0.14, 4, 8), F.bread], fruit: [new THREE.SphereGeometry(0.034, 8, 6), F.apple], pear: [new THREE.SphereGeometry(0.03, 8, 6), F.pear], grape: [new THREE.SphereGeometry(0.018, 6, 4), F.grape], goblet: [new THREE.CylinderGeometry(0.035, 0.022, 0.12, 10), F.gold], jug: [new THREE.CylinderGeometry(0.05, 0.065, 0.22, 12), F.jug] };
+    const put = {}; for (const k in kinds) put[k] = [];
+    const add = (k, x, y, z, ry, sx, sy, sz) => { put[k].push([x, y, z, ry || 0, sx || 1, sy || sx || 1, sz || sx || 1]); };
+    for (let z = z0; z < z1; z += 1.1 + rs() * 0.5) { const x = tx + (rs() - 0.5) * 0.5, kd = rs();
+      add('platter', x, ty + 0.012, z);
+      if (kd < 0.35) add('roast', x, ty + 0.085, z, rs() * 3, 1.25, 0.62, 0.9); else if (kd < 0.6) add('pie', x, ty + 0.055, z); else { for (let k = 0; k < 7; k++) add(k % 3 ? 'fruit' : 'pear', x + (rs() - 0.5) * 0.22, ty + 0.06 + (k > 4 ? 0.05 : 0), z + (rs() - 0.5) * 0.22); for (let k = 0; k < 6; k++) add('grape', x + 0.1 + (rs() - 0.5) * 0.06, ty + 0.05 + rs() * 0.04, z - 0.08 + (rs() - 0.5) * 0.06); }
+      add('loaf', tx + (rs() < 0.5 ? -0.32 : 0.32), ty + 0.05, z + 0.45, HALF, 1, 1, 1);
+      for (const sd of [-0.42, 0.42]) if (rs() < 0.8) add('goblet', tx + sd, ty + 0.06, z + (rs() - 0.5) * 0.6);
+      if (rs() < 0.3) add('jug', tx + (rs() - 0.5) * 0.3, ty + 0.11, z + 0.6); }
+    for (const k in put) { const L = put[k]; if (!L.length) continue; const im = new THREE.InstancedMesh(kinds[k][0], kinds[k][1], L.length); L.forEach((p, i) => { Scenes.W([p[0], p[1], p[2]], w); q.setFromEuler(e.set(k === 'loaf' ? HALF : 0, Scenes.WY(p[3]), 0)); m4.compose(w, q, sc.set(p[4], p[5], p[6])); im.setMatrixAt(i, m4); }); im.castShadow = true; im.frustumCulled = false; out.push(im); }
+    return out; },
   /* several geometries (with their matrices) as one, for one draw */
   merge(parts) { const P = [], N = [], C = []; for (const [g0, mx] of parts) { const g = (g0.index ? g0.toNonIndexed() : g0).applyMatrix4(mx); const p = g.attributes.position, n = g.attributes.normal, c = g.attributes.color; for (let i = 0; i < p.count; i++) { P.push(p.getX(i), p.getY(i), p.getZ(i)); N.push(n.getX(i), n.getY(i), n.getZ(i)); if (c) C.push(c.getX(i), c.getY(i), c.getZ(i)); } }
     const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); out.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3)); if (C.length) out.setAttribute('color', new THREE.Float32BufferAttribute(C, 3)); return out; },
@@ -103,10 +118,10 @@ const STAGES = {
       default: { p: [0, 5.5, dz - 2], l: [0, 3.5, -10], fov: 50 },
       hallWide: { p: [0, 8.5, L / 2 + 3], l: [0, 4.2, -L / 2], p2: [0, 6.2, L / 2 - 6], l2: [0, 3.2, -L / 2 - 2], fov: 56, dur: 9 },
       hallDoor: { p: [0.4, 1.7, L / 2 + 4], l: [0, 7, 0], p2: [0.2, 2.2, L / 2 - 2], fov: 60, dur: 7 },
-      stool: { p: [2.4, 1.7, A.stool[2] + 3.6], l: [0, 1.45, A.stool[2]], p2: [1.7, 1.6, A.stool[2] + 2.8], fov: 36, dur: 8 },
+      stool: { p: [1.25, 1.02, A.stool[2] + 2.0], l: [0, 1.32, A.stool[2]], p2: [1.0, 0.98, A.stool[2] + 1.65], fov: 30, dur: 8 },   // (low and close: the Hat on your head with the staff table above it)
       houseTable: { p: [hx + 3.6, 2.1, -2 + 5.4], l: [hx, 0.95, -2], p2: [hx + 2.8, 1.7, -2 + 3.8], fov: 44, dur: 8, wide: true },
       // (from the end of the pair's stretch of table, eye height, easing in: it sat 40 cm over the plates, a gold dish filling the foreground; the lines cut in over the shoulder)
-      tableClose: { p: [hx + 0.25, 1.72, 2.6], l: [hx, 1.05, -1.7], p2: [hx + 0.2, 1.62, 1.6], fov: 38, dur: 9, wide: true },
+      tableClose: { p: [hx + 0.1, 1.32, 1.5], l: [hx - 0.05, 1.12, -1.65], p2: [hx + 0.05, 1.3, 1.1], fov: 40, dur: 9, wide: true },   // (along the table at a seated eye-line: the pair in profile turning to the lens, no one between)
       pumpkins: { p: [hx + 2, 1.5, 2], l: [hx, 5.6, -10], l2: [hx, 2.4, -4], p2: [hx + 1.4, 1.6, 0.6], fov: 54, dur: 6 },   // (tilts down from the lanterns to the table)
       trees: { p: [6, 2, 4], l: [12, 5, -6], p2: [5, 2.4, 0], fov: 50, dur: 8 },
       yuleWide: { p: [3.2, 3.4, L * 0.06], l: [-0.4, 2.2, -L * 0.22], p2: [2.2, 2.9, -L * 0.04], fov: 48, dur: 10 },   // (in among the dancers, the lights strung overhead in the top of the frame: from seven metres up they were dots on an empty floor)
@@ -130,6 +145,7 @@ const STAGES = {
       { const N = 520, im = new THREE.InstancedMesh(new THREE.SphereGeometry(0.05, 6, 4), new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, 1.7, 1.0), toneMapped: false }), N), m4 = new THREE.Matrix4(), W2 = (G.x1 - G.x0) / 2 - 0.6; let k = 0;
         for (let st = 0; st < 13 && k < N; st++) { const lz = -L / 2 + 2 + st * (L / 12), y0 = 8.4 + (st % 2) * 0.6; for (let i = 0; i <= 39 && k < N; i++) { const u = i / 39, lx = -W2 + u * W2 * 2, ly = y0 - Math.sin(u * PI) * 1.6, w = Scenes.W([lx, ly, lz + Math.sin(u * PI * 3) * 0.2], new THREE.Vector3()); m4.makeTranslation(w.x, w.y, w.z); im.setMatrixAt(k++, m4); } }
         im.count = k; im.frustumCulled = false; list.push(im); } }
+    if (/^(sorting|feast|halloween|christmas)$/.test(variant)) for (const t of [h, (h + 1) % 4, (h + 3) % 4]) list.push(...SProps.feast(TX[t], -L / 2 + 3, L / 2 - 6, Y - F.y + 0.87, 31 + t + (variant.length * 7)));   // (food on your table and the two either side)
     if (variant === 'halloween') for (let i = 0; i < 44; i++) { const p = SProps.pumpkin(0.8 + RNG() * 0.45), w = Scenes.W([TX[i % 4] + (RNG() - 0.5) * 5, 3.3 + RNG() * 3.6, -L / 2 + 3 + (i / 44) * (L - 3)], new THREE.Vector3());   /* (low enough over the tables to be in a seated shot: at six to ten metres they were above every frame) */ p.position.copy(w); p.rotation.y = F.yaw + PI + (RNG() - 0.5) * 0.8; p.userData.bob = w.y; p.userData.ph = i; list.push(p); }
     /* the holidays and the balls empty the hall of its everyday diners (the script says "half empty"; a ball has no one eating) */
     if (variant === 'christmas' || variant === 'yule' || variant === 'gala') { const out = HL.npcs.filter((a) => a.x > G.x0 && a.x < G.x1 && a.z > G.z0 && a.z < G.z1 && Math.abs(a.y - Y) < 3); for (const a of out) a.sceneOut = true; HL._nearN = null; HL.stillOut = { x0: G.x0, x1: G.x1, z0: G.z0, z1: G.z1, y: Y };
@@ -247,6 +263,15 @@ const STAGES = {
       const prev = Scenes.F; Scenes.F = F; const M = new THREE.MeshStandardMaterial({ color: 0x3a3446, roughness: 0.6, emissive: 0x1a1420, emissiveIntensity: 0.6 }), hats = [];   // (lit felt: near-black hats against the sky read as holes in it)
       for (let i = 0; i < 14; i++) { const g = new THREE.Group(), cone = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.36, 10), M), brim = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.015, 14), M); cone.position.y = 0.18; g.add(cone, brim); g.scale.setScalar(1.3);
         const o = Scenes.W([-4.5 + (i % 7) * 1.5, 1.7, -16.4 - (i % 2) * 1.8], new THREE.Vector3()); g.userData.tick = (dt, t) => { const T = 2.9, u = ((t + i * 0.37) % T), v = 6.5 + (i % 4) * 0.8; g.position.set(o.x + Math.sin(i * 2.1) * u * 0.6, o.y + v * u - 4.9 * u * u, o.z + Math.cos(i * 1.7) * u * 0.4);   /* (thrown at six and a half to nine metres a second: up two to four metres, among the heads, and down) */ g.rotation.set(t * (1.5 + i % 3), t * 2 + i, t * (0.8 + i % 2)); g.visible = g.position.y > o.y - 1.6; }; hats.push(g); }
+      /* and a graduation's set behind the year: a timber stage with steps, a lectern, the four houses' banners on poles,
+         gold bunting between them (round 3: "students standing on Quidditch grass") */
+      { const wood = new THREE.MeshStandardMaterial({ color: 0x6a4428, roughness: 0.7 }), cloth = new THREE.MeshStandardMaterial({ color: 0x23192a, roughness: 0.85 }), goldM = new THREE.MeshStandardMaterial({ color: 0xd9a943, metalness: 0.85, roughness: 0.3 }), g = new THREE.Group(), w = new THREE.Vector3();
+        const box = (sx, sy, sz, x, y, z, m) => { const me = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), m); me.position.set(x, y, z); me.castShadow = me.receiveShadow = true; g.add(me); return me; };
+        box(12, 0.7, 4.2, 0, 0.35, 0, wood); box(12.1, 0.12, 4.3, 0, 0.72, 0, cloth); for (const k of [0, 1]) box(3.2, 0.24 * (k + 1), 0.45, 0, 0.12 * (k + 1), 2.1 + 0.45 * (2 - k) - 0.2, wood);
+        box(0.7, 1.15, 0.5, 0, 1.35, 0.6, wood); box(0.85, 0.06, 0.62, 0, 1.95, 0.6, goldM);
+        Object.keys(HL.HOUSES).slice(0, 4).forEach((hk, i) => { const H = HL.HOUSES[hk], x = -5.1 + i * 3.4; box(0.1, 5.2, 0.1, x - 0.62, 2.6, -1.7, goldM); box(0.1, 5.2, 0.1, x + 0.62, 2.6, -1.7, goldM); box(1.3, 0.06, 0.06, x, 5.15, -1.7, goldM);
+          const ban = box(1.2, 3.2, 0.04, x, 3.5, -1.7, new THREE.MeshStandardMaterial({ color: H.col, roughness: 0.8, side: THREE.DoubleSide })); ban.material.emissive = new THREE.Color(H.col).multiplyScalar(0.15); box(1.2, 0.18, 0.05, x, 2.0, -1.68, new THREE.MeshStandardMaterial({ color: H.col2, roughness: 0.6, metalness: 0.4 })); });
+        Scenes.W([0, 0, -22.5], w); g.position.copy(w); g.position.y = F.y; g.rotation.y = F.yaw; hats.push(g); }
       Scenes.F = prev; SProps.place(S, hats); }
     return S;
   },
@@ -309,7 +334,7 @@ Scenes.leave = function (quiet) {
 };
 /* a feast's benches: a few of the castle's students seated near you at your table and the next */
 Scenes.fillHall = function (S) { const n = S.extras || 0, tx = S.tables; let k = 0; const R0 = mulberry(77 + (Career.S ? Career.S.year : 0));
-  for (let i = 0; i < n * 2 && k < n; i++) { const t = i % 2 ? S.house : (S.house + 1) % 4, side = i % 4 < 2 ? -1 : 1, z = -6 + (i >> 1) * 1.9 + R0() * 0.5; if (t === S.house && Math.abs(z + 1.6) < 1.6) continue;
+  for (let i = 0; i < n * 2 && k < n; i++) { const t = i % 2 ? S.house : (S.house + 1) % 4, side = i % 4 < 2 ? -1 : 1, z = -6 + (i >> 1) * 1.9 + R0() * 0.5; if (t === S.house && z > -3.4) continue;   /* (none at your own stretch of table or between it and the lens) */
     const tpl = HL.student(QC.key(t), R0() < 0.5, 1 + ((i * 5) % 6)); if (!CHAR.T[tpl]) continue; const a = Scenes.actor(tpl, [tx[t] + side * 1.15, 0, z, side < 0 ? PI / 2 : -PI / 2, 'sit']); a.base = 'sit'; this.extras.push(a); k++; } };
 /* ------------------------------------------------------------------ the cast */
 Scenes.actor = function (tpl, at) {
@@ -381,9 +406,19 @@ Scenes.ots = function (who) {
   const L = this.head(ls), d = S.clone().sub(L); d.y = 0; const len = d.length() || 1; d.multiplyScalar(1 / len);
   // the side of the line: fixed for the pair whichever of them speaks
   const ids = [who, Object.keys(this.cast).find((k) => this.cast[k] === ls)].sort(), sign = ids[0] === who ? 1 : -1, n = new THREE.Vector3(-d.z, 0, d.x).multiplyScalar(sign);
-  const P = L.clone().addScaledVector(d, -0.85).addScaledVector(n, 0.55); P.y = Math.max(L.y, S.y) + 0.16;   // (the listener's head a soft third of the frame, not half of it; a little above the table's clutter)
-  return { world: true, p: P.toArray(), l: S.clone().addScaledVector(n, -0.12).toArray(), fov: len > 3 ? 30 : 36, dur: 30, blend: 0 };
+  /* (round 3: 0.85 m behind the listener the lens sat in their hair — on the Fold's cover the frame went 84 % black. The eye
+     stands 1.6 m back and 0.95 m out, the listener a soft shoulder at the frame's edge; if any head is still near the lens,
+     or a speaker would be hidden, the shot is a two-shot from the side of the pair instead) */
+  const P = L.clone().addScaledVector(d, -1.6).addScaledVector(n, 0.95); P.y = Math.max(L.y, S.y) + 0.05;
+  const look = S.clone().addScaledVector(n, -0.15), ok = Object.values(this.cast).every((c) => this.head(c).distanceTo(P) > 0.8) && this.clearTo(P, S, sp);
+  if (ok) return { world: true, p: P.toArray(), l: look.toArray(), fov: len > 3 ? 32 : 38, dur: 30, blend: 0 };
+  const M = S.clone().add(L).multiplyScalar(0.5), Q2 = M.clone().addScaledVector(n, Math.max(3.2, len * 1.1)); Q2.y = Math.min(S.y, L.y) - 0.05;
+  return { world: true, p: Q2.toArray(), l: M.toArray(), fov: 40, dur: 30, blend: 0 };
 };
+/* nothing of the cast (other than the one looked at) stands within 0.35 m of the line from the eye to that head */
+Scenes.clearTo = function (P, H, who) { const v = _v4.copy(H).sub(P), dist = v.length(); if (dist < 0.3) return false; v.multiplyScalar(1 / dist);
+  for (const id in this.cast) { const o = this.cast[id]; if (o === who) continue; for (const hy of [o.sit ? 1.12 : 1.5, o.sit ? 0.8 : 1.1]) { const q = _v5.set(o.a.x - P.x, o.a.y + hy - P.y, o.a.z - P.z), t = q.dot(v); if (t < 0.2 || t > dist - 0.3) continue; if (q.addScaledVector(v, -t).length() < 0.35) return false; } }
+  return true; };
 /* the shot sees the back of their head (a line spoken away from the lens) */
 Scenes.backOn = function (sp) { const c = this.cam, cp = c ? (c.orbit ? this.cp : c.p1) : this.cp, f = new THREE.Vector3(Math.sin(sp.a.yaw + (sp.a.lookYaw || 0)), 0, Math.cos(sp.a.yaw + (sp.a.lookYaw || 0))), v = new THREE.Vector3(cp.x - sp.a.x, 0, cp.z - sp.a.z).normalize(); return f.dot(v) < -0.25; };
 Scenes.frameSpeaker = function (who) {
@@ -392,6 +427,10 @@ Scenes.frameSpeaker = function (who) {
   if (!(this.cam && this.cam.wide) && this.sees(this.head(sp), sp) && !this.backOn(sp)) return;   // (a wide shot establishes; the lines play closer)
   const s = this.ots(who === 'hat' ? 'me' : who); if (!s) return; this.shot(s); this.cam.auto = true; this.lastAuto = who;
 };
+/* in an authored shot the one speaking turns their head a little to the lens (up to 0.6 rad), so a line is never played to
+   the side of a face; in an over-the-shoulder shot they keep their eyes on the one they are talking to (round 3) */
+{ const f0 = Scenes.frameSpeaker; Scenes.frameSpeaker = function (who) { f0.apply(this, arguments); const sp = this.cast && this.cast[who === 'hat' ? 'me' : who], c = this.cam; if (!sp || !c || c.auto || c.orbit) return;
+    const P = c.p2 || c.p1, ty = Math.atan2(P.x - sp.a.x, P.z - sp.a.z); sp.a.lookYaw = clamp(wrapA(ty - sp.a.yaw), -0.6, 0.6); }; }
 /* ------------------------------------------------------------------ the frame while a scene plays (MG.state 'scene': the world lives, nobody plays) */
 Scenes.update = function (dt) {
   if (!this.active) return; this.t += dt; if (this.cam) this.cam.t += dt;
