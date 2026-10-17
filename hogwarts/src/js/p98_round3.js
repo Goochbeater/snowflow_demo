@@ -26,7 +26,8 @@ body.touch #hlToast { top: 24% !important; } @media (max-height: 380px) { body.t
 body.touch:has(#hlToast.on) :is(#hlPts, #hlGold) { opacity: 0; transition: opacity .3s; }
 body.touch #hlQuest .t { display: none; } body.touch #hlQuest { pointer-events: auto; }
 body.touch #hlQuest:not(.full) .o { -webkit-line-clamp: 1 !important; line-clamp: 1 !important; }
-body.touch #hlQuest .o:after { content: ''; }`;
+body.touch #hlQuest .o:after { content: ''; }
+body:has(#lkPanel.on) #hlPrompt, body:has(#lkPanel.on) #lkGate { visibility: hidden !important; }`;
   document.head.appendChild(css);
   HL.START.push((L) => { const E = HL.ui.el; if (E && E.Quest && !E.Quest._tap) { E.Quest._tap = true; E.Quest.addEventListener('click', () => { E.Quest.classList.add('full'); clearTimeout(E.Quest._ft); E.Quest._ft = setTimeout(() => E.Quest.classList.remove('full'), 5000); }); }
     L.updates.push(() => { if (!TOUCH.on || MG.state !== 'play') return; const H = HL.ui.el.Hint; if (!H || !H.classList.contains('on')) return;

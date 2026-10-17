@@ -141,7 +141,8 @@ QC.CSS = String.raw`#scrCareer, #press, #locker { --night: #0a0c16; --ink: #1215
 #scrCareer .resGoals .chem { display: flex; gap: 14px; flex-wrap: wrap; opacity: .9; }
 #scrCareer .resGoals .chem div { display: flex; gap: 5px; }
 #scrCareer .lvlUp { margin-top: 10px; padding: 8px 12px; border-radius: 10px; text-align: center; background: linear-gradient(90deg, rgba(232,184,74,.35), rgba(232,184,74,.1)); color: var(--gold-hi); font-family: var(--f-head); letter-spacing: .12em; font-size: 13.5px; }
-#scrCareer .actions.sticky, #locker .actions.sticky, #press .actions.sticky { position: sticky; bottom: -16px; padding: 10px 0 2px; background: linear-gradient(180deg, rgba(14,16,28,0), rgba(14,16,28,.95) 40%); }
+#scrCareer .actions.sticky, #locker .actions.sticky, #press .actions.sticky { position: sticky; bottom: -16px; margin-left: -20px; margin-right: -20px; padding: 10px 20px 4px; background: linear-gradient(180deg, rgba(14,11,8,0), rgba(14,11,8,.92) 42%); }   /* (edge to edge in the panel's own warm black: a navy box showed beside the buttons) */
+@media (max-height: 420px) { #scrCareer .actions.sticky { margin-left: -14px; margin-right: -14px; padding-left: 14px; padding-right: 14px; } }
 #scrCareer .lvl b { font-family: var(--f-head); letter-spacing: .12em; color: var(--gold-hi); }
 #scrCareer .lvl span { display: block; font-size: 12px; opacity: .75; margin-top: 4px; }
 #scrCareer .lvl .bar { margin-top: 6px; }
