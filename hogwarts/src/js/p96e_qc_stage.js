@@ -138,7 +138,7 @@ const STAGES = {
       /* the couples turn about each other, stepping, faces to each other (they stood still and cheered) */
       S.noAutoFrame = true; const pairs = [['danceMe', 'danceP'], ['dance1', 'dance2'], ['dance3', 'dance4'], ['dance5', 'dance6'], ['dance7', 'dance8'], ['dance9', 'dance10']], u0 = S.update;
       S.update = (dt, t) => { for (let q = 0; q < pairs.length; q++) { const [ka, kb] = pairs[q], ca = Object.values(Scenes.cast).find((c) => c.spec.at === ka), cb = Object.values(Scenes.cast).find((c) => c.spec.at === kb); if (!ca || !cb || ca.walk || cb.walk) continue;
-          const A0 = A[ka], B0 = A[kb], cx = (A0[0] + B0[0]) / 2, cz = (A0[2] + B0[2]) / 2, th = t * (0.55 + q * 0.04) + q * 1.7, r = 0.38, pa = Scenes.W([cx + Math.cos(th) * r, 0, cz + Math.sin(th) * r], new THREE.Vector3()), pb = Scenes.W([cx - Math.cos(th) * r, 0, cz - Math.sin(th) * r], new THREE.Vector3());
+          const A0 = A[ka], B0 = A[kb], cx = (A0[0] + B0[0]) / 2, cz = (A0[2] + B0[2]) / 2, th = t * (0.55 + q * 0.04) + q * 1.7, r = 0.27, pa = Scenes.W([cx + Math.cos(th) * r, 0, cz + Math.sin(th) * r], new THREE.Vector3()), pb = Scenes.W([cx - Math.cos(th) * r, 0, cz - Math.sin(th) * r], new THREE.Vector3());
           for (const [c, p0, p1] of [[ca, pa, pb], [cb, pb, pa]]) { const a2 = c.a, vx = p0.x - a2.x, vz = p0.z - a2.z; a2.x = p0.x; a2.z = p0.z; a2.yaw = Math.atan2(p1.x - p0.x, p1.z - p0.z); a2.speed = Math.min(1.2, Math.hypot(vx, vz) / Math.max(dt, 1e-3)) * 0.8; a2.mvx = 1; a2.mvz = 0; if (a2.base !== 'calm' && a2.base !== 'talk') a2.setBase('calm', 0.3); } }
         if (u0) u0(dt, t); };
       /* and the hall strung with lights from wall to wall */
@@ -219,7 +219,11 @@ const STAGES = {
   },
   /* the Black Lake: a boat on the open water below the crag, the castle lit on the cliff above (first-years cross by boat) */
   lake() {
-    const x = 322, z = 58, wy = 0.32, Y = Math.atan2(30 - x, 112 - z), F = Scenes.frame(x, wy, z, Y);   // out on the open loch east of the crag, bow to the castle
+    /* out on the open loch, bow to the castle — at a place on the water from which the castle is seen over the bow at a boat's
+       height (round 3: from the old mooring the crag hid it, the eye craned up, and the boat and the water left the shot) */
+    const wy = 0.32, CT = new THREE.Vector3(30, HL.Y0 + 28, 112), sees = (x, z) => { const P = new THREE.Vector3(x, wy + 1.4, z), d = CT.clone().sub(P), L = d.length(); d.multiplyScalar(1 / L); for (let k = 6; k < L - 30; k += 4) { const q = P.clone().addScaledVector(d, k); if (HL.gy(q.x, q.z) > q.y - 1.5) return false; } const hit = PHY.ray(P.x, P.y, P.z, d.x, d.y, d.z, L - 30, 'los'); return !(hit && hit.t < L - 30); };
+    let x = 322, z = 58; if (!sees(x, z)) { let best = null, bd = 1e9; for (let r = 30; r <= 240 && !best; r += 30) for (let a = 0; a < TAU; a += TAU / 16) { const cx = 322 + Math.cos(a) * r, cz = 58 + Math.sin(a) * r; if (HL.gy(cx, cz) > wy - 1.2 || HL.gy(cx + 3, cz) > wy - 0.8 || HL.gy(cx, cz + 3) > wy - 0.8) continue; const dd = Math.hypot(cx - 30, cz - 112); if (dd < 110) continue; if (sees(cx, cz) && r < bd) { bd = r; best = [cx, cz]; } } if (best) { x = best[0]; z = best[1]; } }
+    const Y = Math.atan2(30 - x, 112 - z), F = Scenes.frame(x, wy, z, Y);
     const A = { boatMe: [-0.32, -0.12, 0.35, 0, 'sit'], boatF: [0.32, -0.12, -0.55, 0, 'sit'] };
     const C = { default: { p: [2.5, 1.6, -5], l: [0, 1.2, 2], fov: 50 }, lakeWide: { p: [6, 6.5, -12], l: [0, 34, 240], p2: [3.5, 4.2, -7], l2: [0, 30, 240], fov: 46, dur: 11 }, boats: { p: [1.5, 1.25, 2.4], l: [0, 0.85, -0.1], p2: [1.25, 1.2, 2.0], fov: 40, dur: 9 } };
     // the boat: a clinker hull, two thwarts, a lantern on a crook at the bow
@@ -236,6 +240,10 @@ const STAGES = {
       const at = (h, b) => Scenes.W([1.4, h, b], new THREE.Vector3()); let h = 1.4; while (h < 80 && !clear(at(h, -3))) h += 3;
       const P1 = at(h, -3), P2 = at(h + 2.5, 2), T2 = T.clone(); T2.y -= 4;
       C.castle = { world: true, p: P1.toArray(), l: T.toArray(), p2: P2.toArray(), l2: T2.toArray(), fov: h > 8 ? 42 : 36, dur: 8 };
+      /* over the prow: the two of you and the lantern in the foreground, the castle on its cliff beyond */
+      if (h <= 4.5) { const B1 = Scenes.W([-0.45, 1.3, -2.6], new THREE.Vector3()), B2 = Scenes.W([-0.4, 1.25, -2.2], new THREE.Vector3()), LN = Scenes.W([0, 1.0, 1.5], new THREE.Vector3());
+        const aim = (P) => { const hc = Math.hypot(T.x - P.x, T.z - P.z), hl = Math.hypot(LN.x - P.x, LN.z - P.z), e = (Math.atan2(T.y - 4 - P.y, hc) + Math.atan2(LN.y - P.y, hl)) / 2, k = 40; return new THREE.Vector3(P.x + (T.x - P.x) / hc * k * Math.cos(e), P.y + Math.sin(e) * k, P.z + (T.z - P.z) / hc * k * Math.cos(e)); };   /* (the gaze halfway between the lantern and the towers, so both are in it) */
+        C.castle = { world: true, p: B1.toArray(), l: aim(B1).toArray(), p2: B2.toArray(), l2: aim(B2).toArray(), fov: 40, dur: 8 }; }
       if (!clear(Scenes.W([6, 6.5, -12], new THREE.Vector3()))) C.lakeWide = Object.assign({}, C.castle, { p: at(h + 4, -12).toArray(), p2: at(h + 1, -7).toArray(), fov: 46, dur: 11 }); }
     const lt = R.addLight ? R.addLight({ pos: Scenes.W([0, 1.05, 1.5], new THREE.Vector3()), col: new THREE.Color(1, 0.72, 0.4), i: 3.6, range: 6, prio: 6, on: true, persist: true }) : null;
     return { F, anchors: A, cams: C, boat: g, clampY: true, water: wy, update(dt, t) { g.position.y = wy + Math.sin(t * 1.3) * 0.03; g.rotation.z = Math.sin(t * 0.9) * 0.025; g.rotation.x = Math.sin(t * 1.1) * 0.015; for (const id in Scenes.cast) { const c = Scenes.cast[id]; c.a.sitY = wy - 0.12 + Math.sin(t * 1.3) * 0.03; } }, onLeave() { R.scene.remove(g); if (lt) lt.i = 0; } };
