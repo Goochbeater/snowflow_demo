@@ -109,3 +109,9 @@ if (typeof STAGES !== 'undefined' && typeof CareerUI !== 'undefined') {
     if (ev && ev.comp === 'wc' && CAM.cine) { const C = HL.PITCH, Y0 = Q.Y0;
       CAM.play({ dur: 6.4, fov: 50, hold: false, fn: (t) => { const u = clamp(t / 6.4, 0, 1), e = u * u * (3 - 2 * u), a = PI * 0.82 + e * 0.5, rr = 96 - e * 46; return { pos: _v1.set(C.x + Math.sin(a) * rr * 0.8, Y0 + 46 - e * 32, C.z + Math.cos(a) * rr), look: _v2.set(C.x, Y0 + 14 - e * 5, C.z) }; }, onEnd: () => { CAM.reset(0); } }); }
     return r; }; }
+/* the title's first button is the call to action, filled gold; the others stay outlined (round 3, #20: three equal
+   outlined labels) */
+{ const css = document.createElement('style'); css.textContent = `
+html body .hlTitle > div.hlBtn:first-of-type { background: linear-gradient(180deg, #f6dc94, #d6a648 55%, #b9852f); color: #241505; border-color: #fbe6ad; text-shadow: none; font-weight: 400; box-shadow: 0 4px 18px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,250,225,.7); }
+html body .hlTitle > div.hlBtn:first-of-type:hover { filter: brightness(1.06); }`;
+  document.head.appendChild(css); }
