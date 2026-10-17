@@ -85,3 +85,17 @@ HL.CHARGE = {"gryffindor":{"t":[22.0,21.0,0.92],"L":[["M10 12 C11 9 13 7 15 6 L1
     g.save(); g.translate(cx, cy); g.scale(s / 76, s / 76); g.translate(-51, -58); g.translate(C.t[0], C.t[1]); g.scale(C.t[2], C.t[2]); g.lineCap = 'round'; g.lineJoin = 'round';
     C.L.forEach(([d, ci, w, o], i) => { const p = P2[k + i] || (P2[k + i] = new Path2D(d)), c = ci === 2 ? col : (col2 || '#000'); g.globalAlpha = o || 1; if (w) { g.strokeStyle = c; g.lineWidth = w; g.stroke(p); } else { g.fillStyle = c; g.fill(p); } });
     g.restore(); }; } }
+/* the result is your moment (round 3, #11: "FC and 2K make the result a payoff… a celebrating player"): you knees-up in
+   the open left of the screen at FOV 30, cheering or standing with your arms folded, two team-mates celebrating or not
+   a few metres behind you; the card keeps the right */
+if (typeof STAGES !== 'undefined' && typeof CareerUI !== 'undefined') {
+  const w0 = STAGES.world; STAGES.world = function (variant) { const S = w0.apply(this, arguments);
+    if (S && !variant) { Object.assign(S.anchors, { resA: [1.45, 0, -16.48, -0.12], resB: [-0.21, 0, -17.85, -0.36] }); S.cams.resHero = { p: [-0.59, 1.25, -11.26], l: [0.98, 1.15, -13.79], p2: [-0.5, 1.29, -11.5], fov: 30, dur: 40 }; }
+    return S; };
+  CareerUI.resultScene = function (won) {
+    this.backdrop = 'result'; this._pv = (this._pv || 0) + 1; const pv = this._pv, set = Scenes.enter('world', '', { mode: 'view' }), S = Career.S, kit = { outfit: 'kit' };
+    Scenes.shot(set && set.cams.resHero, true);
+    const cast = [{ id: 'me', at: 'pitchMe', anim: won ? 'cheer' : 'fold', o: kit }];
+    Career.squad().slice(0, 2).forEach((m, k) => cast.push({ id: 'mate_' + m.id, at: k ? 'resB' : 'resA', anim: won ? 'cheer' : k ? 'fold' : 'idle', o: kit }));
+    Scenes.need(cast).then(() => { if (this._pv !== pv || Scenes.set !== set) return; for (const c of cast) Scenes.spawn(c.id, c); }).catch(() => {}); };
+}
