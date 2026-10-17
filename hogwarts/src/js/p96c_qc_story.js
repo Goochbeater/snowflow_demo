@@ -179,7 +179,7 @@ const Story = {
       graduation: () => ({ set: 'world', variant: 'graduation', weather: 'golden', cast: [{ id: ME, at: 'pitchMe', anim: 'idle', o: school }, { id: F, at: 'pitchF', anim: 'talk', o: school }].concat([...Array(11)].map((_, i) => ({ id: 'g' + (i + 1), at: 'g' + (i + 1), anim: i % 3 ? 'cheer' : 'idle', o: { team: i % 4 } }))), beats: [
         { title: 'Graduation', sub: 'Seven years, done' },
         { cam: 'gradWide' }, { fx: 'cheer' }, { wait: 2.6 },
-        { cam: 'pitchLow' },
+        { cam: 'gradF' },
         { say: [F, `Seven years. I can't believe we have to give the brooms back.`] },
         { say: [F, `Whatever team you sign for, I'm buying a scarf. Front row. Loudest one there.`] },
         { choice: [{ t: 'Hug them.', tone: 'tm', fx: { chem: 5 } }, { t: '"Bring a big scarf."', tone: 'gr', fx: { chem: 4 } }] },

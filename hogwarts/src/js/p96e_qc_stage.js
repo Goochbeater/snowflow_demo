@@ -261,13 +261,19 @@ const STAGES = {
   /* the pitch itself */
   world(variant) {
     const C0 = HL.PITCH, Q = HL.Q; const F = Scenes.frame(C0.x, Q.Y0, C0.z, 0);
-    const A = { pitchMe: [0, 0, -14, 0], pitchF: [1.4, 0, -13.2, -0.3], pitchCapt: [-1.2, 0, -12.6, 0.4], standsMe: [-Q.AX - 8, 3.2, -10, HALF], standsF: [-Q.AX - 8, 3.2, -9, HALF] };
-    const C = { default: { p: [0, 6, -40], l: [0, 6, 20], fov: 52 }, pitchLow: { p: [3, 1.4, -8.5], l: [0, 1.3, -14], p2: [2.2, 1.5, -9.5], fov: 44, dur: 9 }, standsView: { p: [-Q.AX - 10, 5, -12], l: [0, 6, 10], p2: [-Q.AX - 9.5, 4.6, -8], fov: 52, dur: 10 }, castle: { p: [0, 30, -60], l: [-210, 60, -300], p2: [0, 26, -50], fov: 48, dur: 10 } };
+    /* (you and the one who comes to talk to you on the grass face each other, opened three-quarters to the low wide, and the
+       lines play closer than it: round 3 found a captain's speech delivered to the lens from five metres) */
+    const A = { pitchMe: [0, 0, -14, -0.21], pitchF: [1.4, 0, -13.2, -0.3], pitchCapt: [-1.2, 0, -12.6, 1.93], standsMe: [-Q.AX - 8, 3.2, -10, HALF], standsF: [-Q.AX - 8, 3.2, -9, HALF] };
+    const C = { default: { p: [0, 6, -40], l: [0, 6, 20], fov: 52 }, pitchLow: { p: [3, 1.4, -8.5], l: [0, 1.3, -14], p2: [2.2, 1.5, -9.5], fov: 44, dur: 9, wide: true }, standsView: { p: [-Q.AX - 10, 5, -12], l: [0, 6, 10], p2: [-Q.AX - 9.5, 4.6, -8], fov: 52, dur: 10 }, castle: { p: [0, 30, -60], l: [-210, 60, -300], p2: [0, 26, -50], fov: 48, dur: 10 } };
     const S = { F, anchors: A, cams: C, variant, ground: true };
     /* graduation: the year on the pitch behind you two, all four houses, and their hats thrown up into the evening */
     if (variant === 'graduation') {
       [[-3.4, -16.6], [-2.1, -16.9], [2.7, -16.5], [3.9, -16.9], [-4.3, -18.2], [-2.8, -18.6], [-1.2, -18.3], [0.5, -18.7], [2.1, -18.2], [3.6, -18.6], [5.1, -18.1]].forEach(([x, z], i) => { A['g' + (i + 1)] = [x, 0, z, (i % 3 - 1) * 0.18]; });
       C.gradWide = { p: [6.5, 2.0, -6.0], l: [0.4, 2.6, -16.5], p2: [5.4, 1.8, -7.2], fov: 50, dur: 9 };
+      /* the two of you turned to each other, three-quarters to the lens, and their lines over your shoulder with the year,
+         the hats and the stage behind them (round 3: the goodbye was played to a figure five metres off in a wide) */
+      A.pitchMe = [-0.35, 0, -12.5, 2.45]; A.pitchF = [0.4, 0, -13.4, -0.69];
+      C.gradF = { p: [-0.2, 1.6, -11.0], l: [0.16, 1.52, -13.46], p2: [-0.12, 1.6, -11.22], fov: 30, dur: 9 };
       const prev = Scenes.F; Scenes.F = F; const M = new THREE.MeshStandardMaterial({ color: 0x3a3446, roughness: 0.6, emissive: 0x1a1420, emissiveIntensity: 0.6 }), hats = [];   // (lit felt: near-black hats against the sky read as holes in it)
       for (let i = 0; i < 14; i++) { const g = new THREE.Group(), cone = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.36, 10), M), brim = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.015, 14), M); cone.position.y = 0.18; g.add(cone, brim); g.scale.setScalar(1.3);
         const o = Scenes.W([-4.5 + (i % 7) * 1.5, 1.7, -16.4 - (i % 2) * 1.8], new THREE.Vector3()); g.userData.tick = (dt, t) => { const T = 2.9, u = ((t + i * 0.37) % T), v = 6.5 + (i % 4) * 0.8; g.position.set(o.x + Math.sin(i * 2.1) * u * 0.6, o.y + v * u - 4.9 * u * u, o.z + Math.cos(i * 1.7) * u * 0.4);   /* (thrown at six and a half to nine metres a second: up two to four metres, among the heads, and down) */ g.rotation.set(t * (1.5 + i % 3), t * 2 + i, t * (0.8 + i % 2)); g.visible = g.position.y > o.y - 1.6; }; hats.push(g); }
