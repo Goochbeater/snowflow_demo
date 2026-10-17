@@ -45,3 +45,10 @@ body:has(#lkPanel.on) #hlPrompt, body:has(#lkPanel.on) #lkGate { visibility: hid
       el.innerHTML = `<b>QUIDDITCH WORLD CUP</b><u></u><i>${ev.label || ''}</i>`; el.classList.add('on'); const lt = document.getElementById('qcLT'); if (lt) lt.style.visibility = 'hidden';
       MG.after(2.4, () => { el.classList.remove('on'); if (lt) lt.style.visibility = ''; }, true); }
     return r; }; }
+/* flight into the sun: the bloom starts higher outdoors, and a soft dark scrim sits behind the right thumb's buttons so cream
+   on a white sky still reads (round 3: "the flight buttons sit on white") */
+{ const css = document.createElement('style'); css.textContent = `
+body.touch #tc::before { content: ''; position: fixed; right: 0; bottom: 0; width: min(46vw, 420px); height: min(78vh, 360px); pointer-events: none; background: radial-gradient(ellipse at 82% 78%, rgba(6,5,8,.38), rgba(6,5,8,.16) 45%, rgba(6,5,8,0) 72%); z-index: -1; }
+body.touch:not([data-tm="foot"]):not([data-tm="fly"]):not([data-tm="match"]) #tc::before { display: none; }`;
+  document.head.appendChild(css);
+  HL.START.push(() => { HL._bThr = Math.max(1.32, HL._bThr || 0); }); }
