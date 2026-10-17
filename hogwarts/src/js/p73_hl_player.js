@@ -197,8 +197,11 @@ CAM.update = function (dt) {
   CAM.curD = CAM.curD === undefined || CAM.snap ? d : (d < CAM.curD ? d : damp(CAM.curD, d, 3, dt));
   const pos = CAM.pos.copy(look).addScaledVector(back, CAM.curD);
   { const g = PHY.hf ? PHY.hf(pos.x, pos.z) : null; if (g !== null && pos.y < g + 0.3) pos.y = g + 0.3; }
+  /* in a match the eye never sinks to the grass unless you dive: from 1.5 m the stands were a wall and the play was out of
+     sight (round 3). It rises to 4.5 m over the turf and looks down past you at the play. */
+  let raised = false; if (qm && HL.Q.phase !== 'over' && !IN.down('down')) { const fl = HL.Q.Y0 + 4.5; if (pos.y < fl) { CAM.raise = damp(CAM.raise || 0, fl - pos.y, 6, dt); pos.y += CAM.raise; raised = true; } else CAM.raise = 0; } else CAM.raise = 0;
   const s = FX.shake * FX.shake * 0.1, t = MG.rt * 31; pos.x += (vnoise2(t, 1.3) - 0.5) * s; pos.y += (vnoise2(t, 7.1) - 0.5) * s; pos.z += (vnoise2(t, 3.7) - 0.5) * s;
-  cam.position.copy(pos); cam.lookAt(_v1.copy(pos).add(fwd));
+  cam.position.copy(pos); if (raised) cam.lookAt(_v1.copy(look).addScaledVector(fwd, 10)); else cam.lookAt(_v1.copy(pos).add(fwd));
   if (fly) cam.rotateZ(-F.roll * 0.35);
   CAM.fovT = fly ? (qm ? 64 + Math.min(14, spd * 0.42) + (F.boosting ? 5 : 0) : 62 + Math.min(26, spd * 0.6) + (F.boosting ? 6 : 0)) : HL.P.sprint ? 64 : 58;
   CAM.fov = damp(CAM.fov, CAM.fovT, 4, dt); if (Math.abs(cam.fov - CAM.fov) > 0.01) { cam.fov = CAM.fov; cam.updateProjectionMatrix(); }

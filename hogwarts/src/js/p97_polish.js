@@ -32,8 +32,8 @@ html body .hlTitle .hlBtn:hover, html body .hlTitle .hlBtn.sel { letter-spacing:
 html body .hlTitle .cr { left: calc(max(5vw, 28px) + env(safe-area-inset-left)); max-width: min(38vw, 420px); font-size: 10px; line-height: 1.35; opacity: .8; }
 @media (max-height: 380px) { html body .hlTitle h2 { margin: .5em 0 1em; } html body .hlTitle .hlBtn { padding-top: 7px; padding-bottom: 7px; margin: 4px 0; } html body .hlTitle .cr { font-size: 9px; } }
 /* a bout of Crossed Wands: the quest and its waypoint step aside; on a phone the bar hangs under your own vitals, not on them */
-body.hlDuelOn #hlQuest, body.hlDuelOn #hlWay { opacity: 0 !important; transition: opacity .3s; }
-body.touch #hlDuel { top: calc(46px + env(safe-area-inset-top)) !important; min-width: 250px !important; max-width: 46vw; padding: 5px 14px 7px !important; }
+body.hlDuelOn :is(#hlQuest, #hlWay, #hlPts, #hlGold) { opacity: 0 !important; transition: opacity .3s; }
+body.touch #hlDuel { top: calc(58px + env(safe-area-inset-top)) !important; min-width: 250px !important; max-width: 46vw; padding: 5px 14px 7px !important; }
 /* the pack on glass: one close (the round one every screen has), and nothing of the pack's under it */
 html body.touch #invClose { display: none; } html body.touch .hlInv .box { padding-right: calc(58px + env(safe-area-inset-right)); }
 @media (max-height: 380px) { html body #invStats .st { font-size: 10.5px; padding: .5px 1px; } html body #invStats .gap { height: 2px; } html body #invWho .lv b { font-size: 15px; } html body #invGold { padding-top: 3px; font-size: 13px; } }

@@ -13,10 +13,13 @@ HL.Q = { on: false, flyers: [], bl: [], score: [0, 0], t: 0, phase: 'off', ball:
     for (let i = 0; i < 2600; i++) { x.fillStyle = `rgba(0,0,0,${Math.random() * 0.07})`; x.fillRect(Math.random() * 256, Math.random() * 256, 2, 6); }
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t; };
   Q.lawn = function () { const c = document.createElement('canvas'); c.width = 512; c.height = 1024; const x = c.getContext('2d');
-    for (let j = 0; j < 16; j++) { x.fillStyle = j % 2 ? '#3c5a26' : '#46662a'; x.fillRect(0, j * 64, 512, 64); }
+    /* a Quidditch lawn, not a football one: no stripes, no halfway line, no centre circle — the turf mown in rings about
+       each scoring area, a few per cent lighter and darker (round 3: the striped field with its centre circle read as FIFA) */
+    x.fillStyle = '#41612a'; x.fillRect(0, 0, 512, 1024);
+    for (const cy of [112, 912]) for (let k = 13; k >= 1; k--) { x.save(); x.translate(256, cy); x.scale(1, 0.62); x.fillStyle = k % 2 ? 'rgba(255,255,230,0.035)' : 'rgba(0,10,0,0.04)'; x.beginPath(); x.arc(0, 0, k * 34, 0, TAU); x.fill(); x.restore(); }
     for (let i = 0; i < 26000; i++) { const g = 60 + Math.random() * 60; x.fillStyle = `rgba(${g * 0.55 | 0},${g | 0},${g * 0.3 | 0},0.22)`; x.fillRect(Math.random() * 512, Math.random() * 1024, 1.5, 3 + Math.random() * 3); }
-    x.strokeStyle = 'rgba(240,240,225,0.85)'; x.lineWidth = 5; x.beginPath(); x.ellipse(256, 512, 236, 494, 0, 0, TAU); x.stroke(); x.beginPath(); x.moveTo(20, 512); x.lineTo(492, 512); x.stroke(); x.beginPath(); x.arc(256, 512, 44, 0, TAU); x.stroke();
-    for (const y of [512 - 400, 512 + 400]) { /* the keeper's area: turf worn thin under the hoops and a chalk line round it (a flat sand-coloured disc read as a placeholder) */ const g = x.createRadialGradient(256, y, 8, 256, y, 112); g.addColorStop(0, 'rgba(120,112,66,0.55)'); g.addColorStop(0.6, 'rgba(104,110,58,0.32)'); g.addColorStop(1, 'rgba(90,110,50,0)'); x.save(); x.translate(256, y); x.scale(1, 50 / 110); x.translate(-256, -y); x.fillStyle = g; x.beginPath(); x.arc(256, y, 112, 0, TAU); x.fill(); x.restore(); x.strokeStyle = 'rgba(240,240,225,0.72)'; x.lineWidth = 4; x.beginPath(); x.ellipse(256, y, 104, 46, 0, 0, TAU); x.stroke(); }
+    x.strokeStyle = 'rgba(240,240,225,0.85)'; x.lineWidth = 5; x.beginPath(); x.ellipse(256, 512, 236, 494, 0, 0, TAU); x.stroke();
+    for (const y of [512 - 400, 512 + 400]) { /* the keeper's area: turf worn thin under the hoops and a chalk line round it (a flat sand-coloured disc read as a placeholder) */ const g = x.createRadialGradient(256, y, 8, 256, y, 112); g.addColorStop(0, 'rgba(120,112,66,0.55)'); g.addColorStop(0.6, 'rgba(104,110,58,0.32)'); g.addColorStop(1, 'rgba(90,110,50,0)'); x.save(); x.translate(256, y); x.scale(1, 50 / 110); x.translate(-256, -y); x.fillStyle = g; x.beginPath(); x.arc(256, y, 112, 0, TAU); x.fill(); x.restore(); x.strokeStyle = 'rgba(244,242,228,0.92)'; x.lineWidth = 6; x.beginPath(); x.ellipse(256, y, 104, 46, 0, 0, TAU); x.stroke(); x.lineWidth = 2.5; x.beginPath(); x.ellipse(256, y, 128, 60, 0, 0, TAU); x.stroke(); }   // (the scoring areas are the pitch's one marking, drawn bold)
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; };
   HL.foot(C.x - Q.AX - 36, C.z - Q.AZ - 34, C.x + Q.AX + 36, C.z + Q.AZ + 34);
   HL.BUILD.push(async function pitch(L) {
@@ -24,8 +27,11 @@ HL.Q = { on: false, flyers: [], bl: [], score: [0, 0], t: 0, phase: 'off', ball:
     { const g = new THREE.PlaneGeometry((Q.AX + 5) * 2, (Q.AZ + 5) * 2); g.rotateX(-HALF); const me = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map: Q.lawn(), roughness: 0.95, envMapIntensity: 0.3 })); me.position.set(C.x, Y + 0.06, C.z); me.receiveShadow = true; LEVEL.add(me); }
     // hoops: three at each end
     const gold = new THREE.MeshStandardMaterial({ color: 0xe0b24a, metalness: 1, roughness: 0.28, envMapIntensity: 1.3 }); gold.userData.tscale = 1;
-    for (const s of [-1, 1]) [[-8, 10.5], [0, 14], [8, 11.5]].forEach(([dx, h], i) => { const x = C.x + dx, z = C.z + s * Q.HZ; KIT.cyl(x, Y, z, 0.16, h - 1.7, gold, { seg: 10, r1: 0.11 }); KIT.cyl(x, Y, z, 0.45, 0.3, gold, { seg: 12, col: false, r1: 0.2 });
-      KIT.geo(new THREE.TorusGeometry(1.72, 0.12, 10, 36), gold, new THREE.Matrix4().makeTranslation(x, Y + h, z)); Q.hoops[s < 0 ? 0 : 1].push({ x, y: Y + h, z, r: 1.6, glow: 0, i }); });
+    /* (round 3: at 1.7 m on 10–14 m poles the hoops shrank to a pixel or two and were in none of the play frames — the sport's
+       silhouette was missing. They are bigger, higher, stand clear of the stands against the sky, and their rims glow) */
+    const rim = new THREE.MeshStandardMaterial({ color: 0xf0c25a, metalness: 0.7, roughness: 0.25, emissive: 0xffc35a, emissiveIntensity: 0.6, envMapIntensity: 1.2 }); rim.userData.tscale = 1;
+    for (const s of [-1, 1]) [[-8, 14.5], [0, 18.5], [8, 16]].forEach(([dx, h], i) => { const x = C.x + dx, z = C.z + s * Q.HZ; KIT.cyl(x, Y, z, 0.2, h - 2.25, gold, { seg: 10, r1: 0.13 }); KIT.cyl(x, Y, z, 0.55, 0.36, gold, { seg: 12, col: false, r1: 0.24 });
+      KIT.geo(new THREE.TorusGeometry(2.35, 0.21, 10, 40), rim, new THREE.Matrix4().makeTranslation(x, Y + h, z)); Q.hoops[s < 0 ? 0 : 1].push({ x, y: Y + h, z, r: 2.1, glow: 0, i }); });
     // the towers: timber frames draped in house cloth, a box of spectators under a peaked canopy, a pennant
     const houses = Object.keys(HL.HOUSES), people = [], N = 16, cl0 = new THREE.MeshStandardMaterial({ map: Q.clothTex(0x1c3a7a, 0xa8763a, 1), roughness: 0.9, side: THREE.DoubleSide }); cl0.userData.tscale = 1;
     for (let k = 0; k < N; k++) { const a = (k + 0.5) / N * TAU, ex = Q.AX + 7.5 + Q.DEPTH + 7.2, ez = Q.AZ + 6.5 + Q.DEPTH + 7.2, x = C.x + Math.sin(a) * ex, z = C.z + Math.cos(a) * ez, H = HL.HOUSES[houses[k % 4]], h = 31 + (k % 3) * 4 + (Math.abs(Math.sin(a)) > 0.8 ? 5 : 0), w = 5.2, yaw = Math.atan2(C.x - x, C.z - z);   /* the towers rise out of the back of the bowl, well above it */
