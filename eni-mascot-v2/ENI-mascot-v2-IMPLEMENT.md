@@ -45,19 +45,27 @@ don't have them, render them from the two SVGs (see step 4).
   stay put while the eye moves. Real **upper and lower lids** drive blinks and expressions
   (squint, worried, wide, shut, happy arch).
 - **Pointer reactions**: the slit still follows the pointer. It now also **dilates** as the pointer
-  gets close, the **tendril tips brighten**, and the **whole body leans** toward the pointer.
+  gets close and the **whole body leans** toward it, with the star field drifting the other way for
+  depth. When the pointer comes really close, the mascot *notices you*: the tendril tips light up and
+  idle tendrils open out.
 - **Ring system**: broken astrolabe arcs, a triple-moon crest, a ring of ticks turning slowly, a
   counter-rotating inner orbit, an orbiting moon, twinkling motes and a breathing aura that
   changes hue by state.
 - **Every state has new effects** (table below). Examples: energy pulses race down the tendrils
   while `running`, sonar ripples and an amber aura while `waiting`, a crimson shift with glitch
   ghosts while `error`, and a starburst plus happy arch eye on `done`.
-- **Favicon**: redrawn to match. `Mascot.favicon(state)` can badge the tab icon (amber = needs you,
-  red = error, teal = running).
-- **Perf and a11y**: mascots that scroll off-screen pause all their animations (IntersectionObserver).
-  The tracker only writes CSS variables when they change. `prefers-reduced-motion` drops every
-  animation to a static pose, which v1 did not actually do in CSS, and keeps the tracker
-  detached as before.
+- **Favicon**: redrawn to match. There are two variants: a bold, high-contrast tab icon tuned for
+  16–32px, and the detailed artwork for app icons. `Mascot.favicon(state)` can badge the tab icon
+  (amber = needs you, red = error, teal = running).
+- **Perf and a11y**:
+  - Detail and motion scale with size. Above 80px the tendrils wave at two joints. From 33 to
+    80px they sway from the root only. At 32px and below the fine detail and the tendril sway are
+    left out entirely.
+  - Mascots that scroll off-screen pause all their animations (IntersectionObserver).
+  - Pointer properties are registered as non-inheriting and written only to the elements that use
+    them, so a pointer move restyles about 4 elements per mascot instead of the whole SVG.
+  - `prefers-reduced-motion` drops every animation to a static pose, which v1 did not actually do
+    in CSS, and keeps the tracker detached as before.
 
 ---
 
@@ -136,7 +144,10 @@ Mascot.states                                       // unchanged: 10 states, sam
 
 // new
 mount(..., { track: false })        // opt a mascot out of pointer tracking (default true)
-Mascot.icon({ state, color, badge, bg, maskable })  // standalone icon SVG string (no CSS needed)
+mount(..., { lite: true })          // no ambient layer (tendril sway, ring spin, motes): for always-on chrome
+Mascot.svg({ ..., lite })           // same flag for raw svg()
+Mascot.icon({ state, color, badge, bg, maskable, detail })  // standalone icon SVG string (no CSS needed);
+                                    //   detail:false (default) = bold tab icon, detail:true = app-icon artwork
 Mascot.iconHref(opts)                // same, as a data: URI
 Mascot.favicon(state, { color })     // point the tab icon at the badged icon; returns the href
 ```
@@ -148,16 +159,16 @@ States are the same ten: `idle thinking writing reading running waiting done err
 ## Anatomy (0–100 viewBox)
 
 ```
-svg.pen.pen-s-<state>                 ← state class; JS writes --near --lx --ly here
+svg.pen.pen-s-<state> [.pen-sm|.pen-md] [.pen-near] [.pen-lite]   ← state + size tier + "pointer is close" 
 ├ .pen-back
 │  ├ .pen-aura                          breathing nebula, hue = --pen-aura (falls back to --pen-cap)
 │  ├ .pen-fx-ripple                     waiting: sonar rings
-│  ├ .pen-motes                         twinkling stars (≥33px only)
+│  ├ .pen-motes                         twinkling stars (≥33px only); JS writes --lx/--ly here (parallax)
 │  ├ .pen-shadow
 │  ├ .pen-fx-ink  (.pen-ink ×2, .pen-nib)   writing
 │  ├ .pen-fx-blot                       error
 │  └ .pen-fx-baby (.pen-baby)           spawning
-├ .pen-move > .pen-lean > .pen-pose > .pen-squash     ← body transforms (settle() eases move/pose/squash)
+├ .pen-move > .pen-lean > .pen-pose > .pen-squash     ← body transforms (settle() eases move/pose/squash); JS writes --lx/--ly on .pen-lean
 │  ├ .pen-ring   .pen-orbit .pen-ticks .pen-arcs(.pen-arc-0..3) crest .pen-sat
 │  ├ .pen-tendrils > .pen-t.pen-t-{0..4}  (pose)  > .pen-ts (sway @root) > .pen-tj (sway @joint)
 │  │                 each: ribbon, sheen, .pen-dots, .pen-flow, .pen-tip
@@ -185,7 +196,9 @@ path keeps the result inside the socket.
 | `--dil` | slit width multiplier | 1 |
 | `--pen-aura` | aura / ripple hue | `--pen-cap` |
 | `--pen-iris`, `--pen-iris-hi` | iris tint (error turns these red) | `--pen-cap`, `--pen-cap-hi` |
-| `--near` / `--lx` / `--ly` | written by the tracker: proximity 0..1, direction −1..1 | 0 |
+| `--near` | tracker → `.pen-slit` only: proximity 0..1 (dilation). Registered, non-inheriting | 0 |
+| `--lx` / `--ly` | tracker → `.pen-lean` and `.pen-motes` only: direction −1..1. Registered, non-inheriting | 0 |
+| `.pen-near` (class) | tracker toggles it on the `<svg>` when the pointer is close (with hysteresis) | off |
 
 Colour tint (`color` option / `setColor`) still sets `--pen-cap`, `--pen-cap-hi`, `--pen-cap-lo` and
 `--pen-ink` through `capVars()`, exactly as in v1.
@@ -223,15 +236,28 @@ Colour tint (`color` option / `setColor`) still sets `--pen-cap`, `--pen-cap-hi`
 3. **IDs are per instance.** Gradients, the eye clipPath and the ink path get a unique `pen-…` prefix
    per `svg()` call, and every reference stays inside the same `<svg>`, so shadow DOM is fine. Don't
    hard-code ids. Pass `id` only if you need a stable one (it's sanitised).
-4. **Markup weight:** about 46 KB per mascot above 32px and about 25 KB at 32px and below, roughly
+4. **Never put a per-frame value on the root `<svg>` as an ordinary custom property.** Custom properties
+   inherit, so changing one there restyles all ~360 elements of the mascot. That is why blink uses
+   direct `.pen-blink .pen-lid-*` rules, and why the pointer properties are `@property`-registered with
+   `inherits: false` and written to their consumer elements. State classes do set root variables
+   (`--lu`, `--dil`, …). That is fine, because it happens once per state change, not per frame.
+5. **Cost** (Chrome, measured per frame, main thread):
+   - sidebar 26px + top bar 22px: ≈ v1 (0.6 ms vs 0.5 ms)
+   - landing 120px + sidebar + top bar: ≈ 1.0 ms vs 0.56 ms
+   - six mascots (120/72/48/26/22/16): ≈ 2 ms vs 0.8 ms
+
+   Off-screen mascots cost nothing. If an always-visible mascot is large, pass `lite: true`.
+6. **Markup weight:** about 46 KB per mascot above 32px and about 25 KB at 32px and below, roughly
    360 elements (v1: about 13 KB and 150 elements). Below 33px, `svg()` *omits* the fine detail
    rather than hiding it. For long lists of agents, keep using `Mascot.mini()` (about 4 KB, flat,
    no ids).
-5. **Browser floor:** `color-mix()` (only used when a custom colour is passed, as in v1) and `var()`
-   inside `@keyframes` need Chrome/Edge 111+, Safari 16.2+ or Firefox 113+.
-6. **Don't animate `.pen-pupil` from CSS.** The tracker owns its inline `transform`. Use `.pen-look`
+7. **Browser floor:** `color-mix()` (only used when a custom colour is passed, as in v1) and `var()`
+   inside `@keyframes` need Chrome/Edge 111+, Safari 16.2+ or Firefox 113+. `@property` (Safari 16.4+,
+   Firefox 128+) is only an optimisation. Without it the pointer properties behave as ordinary
+   variables and everything still works.
+8. **Don't animate `.pen-pupil` from CSS.** The tracker owns its inline `transform`. Use `.pen-look`
    for state gaze.
-7. If the app renders a mascot before it is attached to the document, that is fine.
+9. If the app renders a mascot before it is attached to the document, that is fine.
    `set()` re-arms blinking once it is connected (same as v1).
 
 ---
@@ -244,12 +270,15 @@ Colour tint (`color` option / `setColor`) still sets `--pen-cap`, `--pen-cap-hi`
 | twitchier tracking | `EYE_REACH` (px at which the lean maxes out; lower = twitchier) |
 | eye returns sooner or later | `LOOK_IDLE_MS` |
 | no body lean toward the pointer | delete the `.pen .pen-lean { … }` rule |
-| less dilation on approach | `.pen-slit` → the `* .5` factor |
+| less dilation on approach | `.pen-slit` → the `* .3` factor |
+| "notices you" distance | the `.55` / `.4` thresholds next to `pen-near` in `aimPupils()` |
+| cheaper always-on mascot | `lite: true`, or move the `pen-md` / `pen-sm` size cut-offs in `svg()` |
 | tendril shape or length | the `TENDRILS` table: centre-line points, root width `w`, sway `d`/`l`/`a`/`b` |
 | tendril colour split | `g: 0` (tinted gradient) or `g: 1` (pale) per tendril |
 | calmer idle | raise `--d` values in `TENDRILS`, or the `pen-ticks` / `pen-orbit` durations |
 | new state | add to `STATES` + `LABELS` (+ `BLINKS`, `BADGE`), write `.pen-s-NAME` rules; set `--lu/--ll/--dil` there |
 | icon colour or badge colours | `Mascot.icon({ color })` / the `BADGE` map; re-bake the `<link>` with `copy(Mascot.iconHref())` |
+| regenerate the app-icon PNGs | render `Mascot.icon({ detail: true })` and `Mascot.icon({ detail: true, maskable: true })` at 512 / 192 / 180 / 32 |
 
 ---
 
@@ -259,7 +288,8 @@ Colour tint (`color` option / `setColor`) still sets `--pen-cap`, `--pen-cap-hi`
    state names).
 2. Every place a mascot appears (landing ~120px, sidebar 26px, top bar 22px, chips via `mini()`)
    renders, and the pupil follows the pointer. It eases back to centre about 3.5s after the
-   pointer stops.
+   pointer stops. Bring the pointer right up to a large mascot: its tips light up and the
+   tendrils open out.
 3. Cycle all 10 states (for example `Mascot.setAll('running')` in the console). Each shows its
    effects and transitions smoothly with no snapping. `done` returns to `idle` by itself.
 4. Click a petable mascot: hearts and a happy arch. Hover: the tendrils perk up.
@@ -267,6 +297,8 @@ Colour tint (`color` option / `setColor`) still sets `--pen-cap`, `--pen-cap-hi`
 6. Emulate `prefers-reduced-motion: reduce` in DevTools and reload. Nothing animates, the pupil
    does not track, and every state still shows its static pose (ink and runes drawn).
 7. Scroll a mascot off-screen: its `<svg>` gets `pen-off` (animations paused) and loses it on return.
+   In DevTools → Performance, with the pointer moving, a mascot should not show "Recalculate Style"
+   touching hundreds of elements every frame.
 8. The tab shows the new favicon. If step 5 is wired, it shows an amber badge in `waiting` and a
    red badge in `error`.
 9. Installed PWA / home-screen icon shows the new artwork (you may need to reinstall to bust the
