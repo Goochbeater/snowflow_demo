@@ -3,6 +3,17 @@
    under the Great Hall to the kitchens, with the Slytherin and Hufflepuff common rooms, the potions dungeon and the
    cells opening off it. The crag is hollowed under these rooms (HL.h in the castle part) and the ground floor above
    is its own slab, so this is a real storey below, reached on foot. */
+/* a round woven rug: a field with a weave in it, black bands at the rim, a band of hexagons (cols: field, light, dark, gold) */
+HL.rugDisc = function (x, y, z, r, cols) { const N = 512, cv = document.createElement('canvas'); cv.width = cv.height = N; const g = cv.getContext('2d'), h = N / 2, [cF, cL, cD, cG] = cols, rs = mulberry(919);
+  g.fillStyle = cF; g.beginPath(); g.arc(h, h, h - 2, 0, TAU); g.fill();
+  g.globalAlpha = 0.16; for (let i = 0; i < 2600; i++) { const a = rs() * TAU, rr = Math.sqrt(rs()) * (h - 6); g.fillStyle = rs() < 0.5 ? cL : cD; g.fillRect(h + Math.cos(a) * rr, h + Math.sin(a) * rr, 2 + rs() * 7, 1 + rs() * 1.5); } g.globalAlpha = 1;
+  const ring = (rad, w, c) => { g.strokeStyle = c; g.lineWidth = w; g.beginPath(); g.arc(h, h, rad, 0, TAU); g.stroke(); };
+  ring(h - 10, 14, cD); ring(h - 22, 3, cG); ring(h - 64, 3, cG); ring(h - 74, 10, cD);
+  for (let i = 0; i < 28; i++) { const a = i / 28 * TAU, c0 = h - 43, px = h + Math.cos(a) * c0, py = h + Math.sin(a) * c0; g.beginPath(); for (let k = 0; k < 6; k++) { const b = a + k / 6 * TAU; g.lineTo(px + Math.cos(b) * 12, py + Math.sin(b) * 12); } g.closePath(); g.fillStyle = i % 2 ? cD : cG; g.globalAlpha = 0.85; g.fill(); g.globalAlpha = 1; }
+  ring(70, 4, cG); ring(56, 10, cD); g.fillStyle = cG; g.globalAlpha = 0.9; g.beginPath(); for (let k = 0; k < 6; k++) { const b = k / 6 * TAU + HALF; g.lineTo(h + Math.cos(b) * 30, h + Math.sin(b) * 30); } g.closePath(); g.fill(); g.globalAlpha = 1;
+  const tx = new THREE.CanvasTexture(cv); tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 4;
+  const m = new THREE.Mesh(new THREE.CircleGeometry(r, 56), new THREE.MeshStandardMaterial({ map: tx, roughness: 0.96, transparent: true, alphaTest: 0.5, polygonOffset: true, polygonOffsetFactor: -2 })); m.rotation.x = -HALF; m.position.set(x, y, z); m.receiveShadow = true; LEVEL.add(m);
+  return m; };
 HL.DUN = { d: 7, hole: [-94, 83, -82, 86], holes: [[-94, 83, -82, 86], [-8, 101, -5, 113]], rooms: [] };
 HL.BUILD.push(async function dungeon(L) {
   const G = HL.GK.M(), GK = HL.GK, I = HL.IM(), M = HL.M(), F = HL.F, Y = HL.Y0, yd = Y - HL.DUN.d, yc = Y - 1.4, T = 0.6, flag = I.flagD || I.flag, books = [], rs = mulberry(4141);
@@ -64,7 +75,7 @@ HL.BUILD.push(async function dungeon(L) {
     for (let q = 0; q < 2; q++) { KIT.cyl(S.cx, yd + 4.0, S.z0 + 5 + q * 7.5, 0.3, 0.5, KIT.emis(0x58e0a0, 2.2), { seg: 8, col: false, r1: 0.18 }); KIT.cyl(S.cx, yd + 4.5, S.z0 + 5 + q * 7.5, 0.015, yc - yd - 4.5, M.iron, { seg: 4, col: false }); } HL.DUN.sly = S; }
   // ---- the Hufflepuff common room: round-topped barrels at the door, warm lamps, plants, deep chairs
   { const Hh = room('THE HUFFLEPUFF COMMON ROOM', -90, -82.4, 60, 80.2, [['w', 70, 2.4]], { floor: I.oak });
-    GK.hearth(L, Hh.x0, yd, Hh.cz, 1, 0, 3.2, 4.4); KIT.cyl(Hh.cx, yd + 0.004, Hh.cz, 3.0, 0.014, yellow, { seg: 24, col: false });
+    GK.hearth(L, Hh.x0, yd, Hh.cz, 1, 0, 3.2, 4.4); HL.rugDisc(Hh.cx, yd + 0.012, Hh.cz, 3.0, ['#6e5212', '#8c6a1a', '#17120a', '#b8902e']);   /* (a woven rug, ochre and black with a honeycomb band: a flat yellow disc lit by the fire read as a spill of paint) */
     for (let a = 0; a < 5; a++) { const an = a / 5 * TAU + 0.5, x = Hh.cx - 0.6 + Math.cos(an) * 2.2, z = Hh.cz + Math.sin(an) * 2.6; HL.armchair(x, yd, z, -an + HALF, a % 2 ? yellow : black); }
     KIT.cyl(Hh.cx - 0.6, yd, Hh.cz, 0.7, 0.55, I.oak, { seg: 12 }); HL.candlestick(Hh.cx - 0.6, yd + 0.55, Hh.cz, 5);
     for (const z of [Hh.z0 + 3, Hh.z1 - 3]) { HL.banner(Hh.cx, yd + 4.9, z < Hh.cz ? Hh.z0 + 0.1 : Hh.z1 - 0.1, z < Hh.cz ? 0 : PI, 1.6, 3.4, 'hufflepuff'); for (const x of [Hh.x0 + 1, Hh.x1 - 1]) { KIT.cyl(x, yd, z, 0.36, 0.6, copper, { seg: 10, r1: 0.42 }); for (let q = 0; q < 4; q++) KIT.geo(new THREE.SphereGeometry(0.34 + rs() * 0.2, 7, 5), green, new THREE.Matrix4().makeTranslation(x + (rs() - 0.5) * 0.4, yd + 0.9 + q * 0.3, z + (rs() - 0.5) * 0.4)); } }

@@ -148,7 +148,7 @@ if (typeof STAGES !== 'undefined' && typeof SProps !== 'undefined') {
     /* the glass */
     { const mx = 2.4, mz = 1.25; box(0.07, 1.9, 0.07, mx, 0.95, mz - 0.38, dark); box(0.07, 1.9, 0.07, mx, 0.95, mz + 0.38, dark); box(0.06, 1.35, 0.7, mx, 1.12, mz, std(0x9aa6b0, 0.06, 1)); box(0.08, 0.07, 0.84, mx, 1.83, mz, wood); box(0.08, 0.07, 0.84, mx, 0.42, mz, wood); }
     Scenes.W([0, 0, 0], w); g.position.copy(w); g.position.y = S.F.y; g.rotation.y = S.F.yaw; return [g]; };
-  const l0 = STAGES.locker; STAGES.locker = function (variant) { const S = l0.apply(this, arguments); if (!S || variant) return S; const prev = Scenes.F; Scenes.F = S.F; try { SProps.place(S, dress(S)); } finally { Scenes.F = prev; } return S; };
+  const l0 = STAGES.locker; STAGES.locker = function (variant) { const S = l0.apply(this, arguments); if (!S) return S;   /* (every variant: the huddle is always 'school', 'pro' or 'nation', and a check for none left it bare) */ const prev = Scenes.F; Scenes.F = S.F; try { SProps.place(S, dress(S)); } finally { Scenes.F = prev; } return S; };
 }
 if (typeof Locker !== 'undefined') { const e0 = Locker.enter; if (e0) Locker.enter = async function () { const r = await e0.apply(this, arguments); if (this.on) { HL.camNear = 2.0; CAM.pitch = -0.24; CAM.snap = true; } return r; }; }
 /* the career's screens, finished (round 3, #15: "text forms with empty states"):

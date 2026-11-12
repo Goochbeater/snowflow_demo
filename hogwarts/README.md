@@ -44,6 +44,11 @@ The modules added for this version:
 - `p99d_declutter.js` — the phone HUD pared to what you act on: stats when they change, contextual Wiggenweld, the
   errand as the journal's door, tabbed pause, slim duel bar, short match status line, trimmed pack and map
 - `p99e_touch_tests.js` — with `?test&touch=1`, regression tests for the touch layer after the main run
+- `p99f_career.js` — the career between events: its screens' own music and room tone (the scene loop never ran the
+  sound, so the match's crowd and theme played on under the hub), FREE TIME (walk the castle or the stadium as your
+  player, talk to team-mates, practise, fly the rings, find galleons for your purse), the hub's shot solved for each
+  screen (you in the open gap between the panels, clear of the room's furniture, re-aimed when the Fold opens or
+  closes), and what comes next under the event card
 
 ## Credits
 

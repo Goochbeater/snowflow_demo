@@ -153,7 +153,7 @@ HL.AU = { on: true, ctx: null, buf: {}, pend: {}, played: {}, last: {}, beds: {}
     else if (Q.on) m = Q.phase === 'over' ? null : 'mus_match';
     else if (play || st === 'pause' || st === 'map' || st === 'inv' || st === 'journal') { let foe = false; if (a) for (const f of HL.foes || []) if (f.alive && Math.hypot(f.x - a.x, f.z - a.z) < 28) { foe = true; break; }
       if ((HL.duel && HL.duel.on) || (foe && HL.P.combatT > 0)) S.comb = 7; else S.comb = Math.max(0, S.comb - dt);
-      const z = a ? HL.zoneAt(a.x, a.y + 1, a.z) : null, inside = !!a && (!!z || a.y < HL.Y0 - 4), vil = !!a && HL.VIL && (Math.hypot(a.x - HL.VIL.x, a.z - HL.VIL.z) < 78 || (z && /BROOMSTICKS|HONEYDUKES/.test(z.name || ''))); S.inside = inside; S.zone = z; S.vil = vil; const deep = !!a && a.y < HL.Y0 - 4, hall = z && /GREAT HALL/.test(z.name || '');
+      const below = !!a && a.y < HL.Y0 - 4 && (!HL.inFoot || HL.inFoot(a.x, a.z, 4)), z = a ? HL.zoneAt(a.x, a.y + 1, a.z) : null, inside = !!a && (!!z || below), vil = !!a && HL.VIL && (Math.hypot(a.x - HL.VIL.x, a.z - HL.VIL.z) < 78 || (z && /BROOMSTICKS|HONEYDUKES/.test(z.name || ''))); S.inside = inside; S.zone = z; S.vil = vil; S.below = below; const deep = below, hall = z && /GREAT HALL/.test(z.name || '');
       S.flyT = PLAYER.state === 'fly' ? (S.flyT || 0) + dt : 0;
       if (!inside && S.wasIn) S.alt = !S.alt; S.wasIn = inside;   /* (each time you come out of doors the grounds take the other of their two themes) */
       m = S.comb > 0 ? 'mus_duel' : S.flyT > 2.5 ? 'mus_fly' : vil ? 'mus_village' : deep && AU.has('mus_dark') ? 'mus_dark' : hall && AU.has('mus_feast') ? 'mus_feast' : inside ? 'mus_hall' : S.alt && AU.has('mus_castle2') ? 'mus_castle2' : 'mus_castle'; }
@@ -168,7 +168,7 @@ HL.AU = { on: true, ctx: null, buf: {}, pend: {}, played: {}, last: {}, beds: {}
     // ---- beds: the grounds, the Great Hall, wind on a broom, the stands
     if (!Q.on) { const zn = S.zone ? S.zone.name || '' : '', stn = HL.STN && HL.STN.plat && Math.abs(a.z - HL.STN.z) < 26 && a.x > HL.STN.x0 - 20 && a.x < HL.STN.x1 + 20;
       if (!S.inside) { AU.bed('amb_out', stn ? 0.25 : 0.55); if (stn) AU.bed('amb_station', 0.75); else if (S.vil) AU.bed('amb_village', 0.55); if (PLAYER.state !== 'fly' && a.y > HL.Y0 + 34) AU.bed('amb_high', 0.6); if (HL.lake && a.y < 6 && HL.lake(a.x, a.z) > 0.2) AU.bed('amb_lake', 0.7); }
-      else if (/GREAT HALL/.test(zn)) AU.bed('amb_hall', 0.7); else if (/THREE BROOMSTICKS/.test(zn)) { AU.bed('amb_hall', 0.5); AU.bed('amb_fire', 0.5); } else if (/COMMON ROOM/.test(zn)) AU.bed('amb_fire', 0.7); else if (/LIBRARY/.test(zn)) AU.bed('amb_library', 0.7); else if (a.y < HL.Y0 - 4) AU.bed('amb_dungeon', 0.7); }
+      else if (/GREAT HALL/.test(zn)) AU.bed('amb_hall', 0.7); else if (/THREE BROOMSTICKS/.test(zn)) { AU.bed('amb_hall', 0.5); AU.bed('amb_fire', 0.5); } else if (/COMMON ROOM/.test(zn)) AU.bed('amb_fire', 0.7); else if (/LIBRARY/.test(zn)) AU.bed('amb_library', 0.7); else if (S.below) AU.bed('amb_dungeon', 0.7); }   /* (below the castle's floor and under the castle: the pitch and the lake shore lie lower than it too, and played the dungeons' drip and the dark theme) */
     if (PLAYER.state === 'fly') AU.bed('wind_loop', clamp(F.speed / 42, 0.06, 1) * 0.8);
     if (Q.on) AU.bed('crowd_loop', clamp(0.4 + (Q.excite || 0) * 0.3, 0, 1));
     if (Q.on && Q.snitch) { const d = Q.snitch.p.distanceTo(R.camera.position); if (d < 30) AU.bed('snitch', clamp(1 - d / 30, 0, 1) * 0.9); }
