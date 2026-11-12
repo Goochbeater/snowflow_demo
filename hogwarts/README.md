@@ -37,6 +37,13 @@ The modules added for this version:
 - `p96a`–`p96j` — the Quidditch career: teams, clubs and nations; the career save, calendar and sim; story scenes
   staged in the real castle (Great Hall, common rooms, classrooms, Hogsmeade, the lake); the career screens; the
   bridge to the castle's match engine; the walkable pre-match huddle; the press conference
+- `p97_polish.js`, `p98_round3.js`, `p99_round4.js` — fixes from the outside reviews (cameras, sets, HUD, World Cup,
+  crests, results); on touch, the spell wheel (out of a fight the four spells, the set swap and Lumos fold into SPELLS)
+- `p99b_touch_layout.js` — PAUSE → CONTROLS → CUSTOMISE: drag and size every button per mode, set the layer's opacity
+- `p99c_touch_aim.js` — tap a foe to swing the view onto them; CAST with nobody under the reticle turns to the nearest
+- `p99d_declutter.js` — the phone HUD pared to what you act on: stats when they change, contextual Wiggenweld, the
+  errand as the journal's door, tabbed pause, slim duel bar, short match status line, trimmed pack and map
+- `p99e_touch_tests.js` — with `?test&touch=1`, regression tests for the touch layer after the main run
 
 ## Credits
 

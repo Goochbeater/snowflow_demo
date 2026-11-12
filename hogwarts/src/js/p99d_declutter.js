@@ -35,7 +35,11 @@ body.touch #hlFly .al { order: 2; margin: 0; font-size: 10.5px; letter-spacing: 
 #tc .tcB[data-id="journal"] { display: none !important; }
 body.touch #hlQuest { cursor: pointer; } body.touch #hlQuest .n::after { content: ''; display: inline-block; width: .42em; height: .42em; margin: 0 0 .12em .45em; border-right: 1.5px solid #e8c56e; border-bottom: 1.5px solid #e8c56e; transform: rotate(-45deg); opacity: .85; }`;
   document.head.appendChild(css2);
-  (TOUCH.baseFix = TOUCH.baseFix || []).push(() => { const B = TOUCH.btn; if (!B.journal) return; const jx = B.journal.style.left, bx = B.bag.style.left; B.bag.style.left = jx; B.potion.style.left = bx; });
+  /* the tools re-seated 50 px apart (at 44 their 46-px touch areas overlapped): menu · map · pack · Wiggenweld along the top,
+     the broom and Revelio down the right */
+  (TOUCH.baseFix = TOUCH.baseFix || []).push(() => { const B = TOUCH.btn; if (!B.journal) return; const W = window.innerWidth, H = window.innerHeight, u = TOUCH.u, st = Math.max(50, 50 * u), ty = 24 * u, x0 = W - 24 * u, colTop = H > 700 ? Math.round(H * 0.3) : ty + st;
+    const at = (id, x, y) => { const b = B[id]; if (b) { b.style.left = x.toFixed(1) + 'px'; b.style.top = y.toFixed(1) + 'px'; } };
+    ['pause', 'map', 'bag', 'potion'].forEach((id, i) => at(id, x0 - i * st, ty)); at('broom', x0, colTop); at('revelio', x0, colTop + st); });
   const journal = () => { TOUCH.key('KeyJ', true); setTimeout(() => TOUCH.key('KeyJ', false), 70); TOUCH.buzz(5); };
   HL.START.push(() => { const Q = HL.ui.el && HL.ui.el.Quest; if (!Q || Q._jr) return; Q._jr = true;
     Q.addEventListener('click', (e) => { if (!TOUCH.on || MG.state !== 'play') return; e.stopImmediatePropagation(); journal(); }, true); });
@@ -134,5 +138,10 @@ body.touch .hlInv .islot .lab { font-size: 9.5px; letter-spacing: .06em; overflo
         if (B.holder === me) return snitch + 'You have the Quaffle'; if (B.holder && B.holder.team === 0) return snitch + 'Your Chaser has it — CALL for it'; if (B.holder) return snitch + 'Rivals have it — TACKLE the carrier'; return snitch + 'Loose Quaffle — fly at it'; }
       return s0; };
     const c9 = document.createElement('style'); c9.textContent = `body.touch.tq:has(#hlHint.on) #hlQs { visibility: hidden; }`; document.head.appendChild(c9); }
+  /* one name for one action: with the USE button up and naming what it does ("TALK · PERSEPHONE"), the same words floating in
+     the view go; and the huddle's how-to line fades after eight seconds */
+  { const c10 = document.createElement('style'); c10.textContent = `body.touch:has(#tc[data-mode="foot"] .tcB[data-id="use"].on) #hlPrompt { display: none !important; }
+body.touch #locker .lkHint.gone { opacity: 0 !important; }`; document.head.appendChild(c10);
+    if (typeof Locker !== 'undefined' && Locker.enter) { const e1 = Locker.enter; Locker.enter = async function () { const r = await e1.apply(this, arguments); const h = this.ui && this.ui.querySelector('#lkHint'); if (h) { h.classList.remove('gone'); clearTimeout(h._t); h._t = setTimeout(() => h.classList.add('gone'), 8000); } return r; }; } }
 }
 
