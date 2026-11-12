@@ -25,8 +25,11 @@ Ignore everything outside the markers in the demo. That is page chrome only.
 | `ENI-mascot-v2-IMPLEMENT.md` | this brief |
 | `icons/eni-icon.svg` | vector app icon (rounded tile), from `Mascot.icon()` |
 | `icons/eni-icon-maskable.svg` | full-bleed version with the content inside the 80% safe zone |
-| `icons/icon-512.png`, `icon-192.png`, `icon-32.png` | raster icons (rounded tile, transparent corners) |
-| `icons/maskable-512.png`, `apple-touch-icon-180.png` | full-bleed rasters for the manifest `maskable` slot and for iOS |
+| `icon-512.png`, `icon-192.png`, `icon-32.png` | raster icons (rounded tile, transparent corners) |
+| `maskable-512.png`, `apple-touch-icon-180.png` | full-bleed rasters for the manifest `maskable` slot and for iOS |
+
+The PNGs are supplied with this brief rather than kept in git (that repo is source-only). If you
+don't have them, render them from the two SVGs (see step 4).
 
 ---
 
@@ -84,11 +87,12 @@ Line numbers come from the v1 note and will have drifted. **Find the blocks by t
   demo page.
 
 ### 4. PWA icons
-- Copy `icons/*.png` over the files in `eni-netlify-drop/icons/`. **Keep the existing filenames.**
+- Copy the PNGs over the files in `eni-netlify-drop/icons/`. **Keep the existing filenames.**
   Map them by size: 512 → 512, 192 → 192, 180 → `apple-touch-icon-180.png`, 32 → 32, and the
   maskable 512 → `maskable-512.png`.
 - In `manifest.json`, confirm the `"purpose": "maskable"` entry points at the full-bleed file.
-- Alternatively, run `build_icons.py` with `icons/icon-512.png` (or `icons/eni-icon.svg`) as the source.
+- Alternatively, run `build_icons.py` with `icon-512.png` as the source. Use `icons/eni-icon-maskable.svg`
+  for the maskable and apple-touch sizes, because it keeps the artwork inside the safe zone.
 
 ### 5. Optional: live state favicon
 Wherever the app changes the agent's state (where it calls `Mascot.setAll(...)` or `h.set(...)`), add:
