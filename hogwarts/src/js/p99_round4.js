@@ -6,7 +6,7 @@
 { TOUCH.ICON.wheel = 'M12 2.8 l2.3 6.9 l6.9 2.3 l-6.9 2.3 l-2.3 6.9 l-2.3 -6.9 l-6.9 -2.3 l6.9 -2.3 z';
   TOUCH.DEF.wheel = ['wheel', 'SPELLS', 'foot', 'tap', ['wheel']];
   const W = TOUCH.wheel = { open: false, pid: null, hot: -1, fight: false, calmT: 0, stick: 0, moved: false, c: [0, 0], k: '' };
-  const DIRS = [30, 85, 140, 195], SWAP = 250, PET = ['s0', 's1', 's2', 's3', 'swap'];
+  const DIRS = [30, 85, 140, 195], SWAP = 250, LUM = 342, PET = ['s0', 's1', 's2', 's3', 'swap', 'lumos'];   // (Lumos joins the wheel: the column at the right keeps the broom and Revelio)
   const mark = (h) => { if (h === W.hot) return; W.hot = h; PET.forEach((id, i) => TOUCH.btn[id] && TOUCH.btn[id].classList.toggle('hot', i === h)); if (h >= 0) TOUCH.buzz(4); };
   const close = () => { if (!W.open) return; W.open = false; W.pid = null; W.stick = 0; mark(-1); };
   const css = document.createElement('style'); css.textContent = `
@@ -19,21 +19,22 @@
 #tc .tcB.petal.on { animation: tcPetal .17s cubic-bezier(.2,.9,.3,1.25); }
 @keyframes tcPetal { from { opacity: 0; transform: scale(.35); } }
 #tc .tcB.petal.hot { transform: scale(1.16); border-color: #fff1c4; box-shadow: 0 0 16px var(--c, #e8c56e), inset 0 0 0 1px rgba(0,0,0,.5); }
-#tc.wheelOn .tcB.sp b.sn { display: block !important; }`;
+#tc.wheelOn .tcB.sp b.sn { display: block !important; } #tc .tcB[data-id="lumos"] b.pl { display: none; } #tc.wheelOn .tcB[data-id="lumos"].petal b.pl { display: block; bottom: calc(var(--r) * -0.66); }
+#tc .tcB[data-id="lumos"].petal { background: radial-gradient(circle at 50% 38%, rgba(46,38,24,0.62), rgba(8,7,10,0.66) 70%); border-color: rgba(217,184,106,0.55); }`;
   document.head.appendChild(css);
   /* the button's rim carries the four spells' colours, so the set on it shows before it opens */
   const si0 = TOUCH.spellIcons; TOUCH.spellIcons = function () { const r = si0.apply(this, arguments); const B = TOUCH.btn.wheel; if (B) { const c = []; for (let i = 0; i < 4; i++) { const S = HL.SPELLS[HL.BAR[TOUCH.set * 4 + i]]; c.push(S ? `rgb(${S.col.map((v) => Math.round(Math.min(1, v * 0.7 + 0.3) * 255)).join(',')})` : '#d9b86a'); }
     B.style.setProperty('--w', c.map((x, i) => `${x} ${i * 25}% ${i * 25 + 25}%`).join(', ')); } return r; };
   /* where things stand: the button in the middle of the old arc, the spells round it while the wheel is the way to cast */
   const l0 = TOUCH.layout; TOUCH.layout = function () { const r = l0.apply(this, arguments); if (!TOUCH.root || !TOUCH.btn.wheel) return r;
-    const u = TOUCH.u, cx = window.innerWidth - 74 * u, cy = window.innerHeight - 74 * u, a = 131 * D2R, wx = cx + Math.cos(a) * 176 * u, wy = cy - Math.sin(a) * 176 * u;
+    const u = TOUCH.u, cx = window.innerWidth - 74 * u, cy = window.innerHeight - 74 * u, a = 128 * D2R, wx = cx + Math.cos(a) * 204 * u, wy = cy - Math.sin(a) * 204 * u;   // (clear of JUMP by a thumb's width: at 176 px their rims were 7 px apart)
     const put = (id, x, y, rr) => { const b = TOUCH.btn[id]; b.style.left = x.toFixed(1) + 'px'; b.style.top = y.toFixed(1) + 'px'; b.style.setProperty('--r', Math.max(rr * u, 19).toFixed(1) + 'px'); };
     put('wheel', wx, wy, 28);
-    if (!W.fight) { DIRS.forEach((d, i) => put('s' + i, wx + Math.cos(d * D2R) * 78 * u, wy - Math.sin(d * D2R) * 78 * u, 25)); put('swap', wx + Math.cos(SWAP * D2R) * 68 * u, wy - Math.sin(SWAP * D2R) * 68 * u, 17); }
+    if (!W.fight) { DIRS.forEach((d, i) => put('s' + i, wx + Math.cos(d * D2R) * 78 * u, wy - Math.sin(d * D2R) * 78 * u, 25)); put('swap', wx + Math.cos(SWAP * D2R) * 68 * u, wy - Math.sin(SWAP * D2R) * 68 * u, 17); put('lumos', wx + Math.cos(LUM * D2R) * 76 * u, wy - Math.sin(LUM * D2R) * 76 * u, 21); }
     return r; };
   const show = () => { const foot = TOUCH.mode === 'foot', calm = foot && !W.fight, k = TOUCH.mode + (W.fight ? 'F' : 'C') + (W.open ? 'O' : ''); if (k === W.k) return; W.k = k;
     const B = TOUCH.btn.wheel; B.classList.toggle('on', calm); B.classList.toggle('open', calm && W.open); B.classList.toggle('glow', calm && !TOUCH.cfg.wheel);
-    for (const id of PET) { TOUCH.btn[id].classList.toggle('on', foot && (!calm || W.open)); TOUCH.btn[id].classList.toggle('petal', calm); }
+    for (const id of PET) { TOUCH.btn[id].classList.toggle('on', foot && (id === 'lumos' ? calm && W.open : !calm || W.open)); TOUCH.btn[id].classList.toggle('petal', calm); }
     if (calm && TOUCH.held.protego !== undefined) TOUCH.release('protego'); TOUCH.btn.protego.classList.toggle('on', foot && !calm); TOUCH.root.classList.toggle('wheelOn', calm && W.open); };
   /* a fight is near: a foe within 28 m, a dummy within 14, a duel; and it is over three seconds after the last of them */
   const f0 = TOUCH.frame; TOUCH.frame = function () { const r = f0.apply(this, arguments); if (!TOUCH.btn.wheel) return r;
@@ -48,7 +49,7 @@
     if (id === 'wheel') { TOUCH.held.wheel = pid; TOUCH.btn.wheel.classList.add('dn'); if (W.open && W.pid === null) { W.closing = true; return; }
       W.open = true; W.pid = pid; W.moved = false; mark(-1); TOUCH.buzz(5); if (!TOUCH.cfg.wheel) { TOUCH.cfg.wheel = 1; TOUCH.save(); } show(); return; }
     const r = p0.apply(this, arguments);
-    if (!W.fight && W.open) { if (/^s\d$/.test(id)) setTimeout(close, 150); else if (id === 'swap') W.stick = 3; }
+    if (!W.fight && W.open) { if (/^s\d$/.test(id) || id === 'lumos') setTimeout(close, 150); else if (id === 'swap') W.stick = 3; }
     return r; };
   TOUCH.release = function (id, pid) {
     if (id !== 'wheel') return r0.apply(this, arguments);
@@ -57,14 +58,16 @@
     const h = W.hot; mark(-1);
     if (h >= 0 && h < 4) { p0('s' + h, -7); r0('s' + h, -7); setTimeout(close, 150); }
     else if (h === 4) { p0('swap', -7); r0('swap', -7); W.stick = 3; }
+    else if (h === 5) { p0('lumos', -7); r0('lumos', -7); setTimeout(close, 150); }
     else if (W.moved) close(); else W.stick = 3; };
   /* sliding off the button picks the spell in that direction (more than 34 px out, within 40° of it) */
   const b0 = TOUCH.build; TOUCH.build = function () { const had = !!TOUCH.root, r = b0.apply(this, arguments); const B = TOUCH.btn.wheel; if (had || !B) return r;
     B.addEventListener('pointerdown', (e) => { const q = B.getBoundingClientRect(); W.c = [q.left + q.width / 2, q.top + q.height / 2]; W.x0 = e.clientX; W.y0 = e.clientY; });
     B.addEventListener('pointermove', (e) => { if (!W.open || W.pid !== e.pointerId) return; const dx = e.clientX - W.c[0], dy = e.clientY - W.c[1], u = TOUCH.u;
       if (Math.hypot(e.clientX - W.x0, e.clientY - W.y0) > 10) W.moved = true;
-      let h = -1; if (Math.hypot(dx, dy) > 34 * u) { const ang = Math.atan2(-dy, dx) / D2R; let best = 40; DIRS.concat([SWAP]).forEach((g, i) => { const df = Math.abs(((ang - g + 540) % 360) - 180); if (df < best) { best = df; h = i; } }); }
+      let h = -1; if (Math.hypot(dx, dy) > 34 * u) { const ang = Math.atan2(-dy, dx) / D2R; let best = 40; DIRS.concat([SWAP, LUM]).forEach((g, i) => { const df = Math.abs(((ang - g + 540) % 360) - 180); if (df < best) { best = df; h = i; } }); }
       mark(h); });
+    { const L = TOUCH.btn.lumos; if (L && !L.querySelector('b')) L.insertAdjacentHTML('beforeend', '<b class="pl">LUMOS</b>'); }
     TOUCH.spellIcons(); return r; };
 }
 
