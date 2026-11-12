@@ -346,7 +346,7 @@ TOUCH.fixEl = function (el) {
   const RX = /press J to|ress E again|mouse|[Cc]lick|LMB|RMB|wheel to|hold <kbd>SHIFT|PRESS ANY KEY|ESC TO CLOSE|TO SKIP|<kbd>1<\/kbd>\s*(?:–|-|&ndash;)/;
   if (el.querySelector && (el.innerHTML.indexOf('<kbd') >= 0 || RX.test(el.innerHTML)) && !el.closest('[data-tf]')) {
     const fix = (e) => { const h = TOUCH.fixText(e.innerHTML); if (h !== e.innerHTML) e.innerHTML = h; }, live = 'input,canvas,.view';
-    if (RX.test(el.innerHTML)) { if (el.children.length < 60 && !el.querySelector(live)) fix(el);
+    if (RX.test(el.innerHTML)) { if (el.children.length < 60 && !el.querySelector(live) && !el.querySelector('.hlBtn, button, input, select, a, [data-a], [data-go], [data-k], [data-h]')) fix(el);   /* (a screen with buttons is never rewritten whole: that dropped their handlers — the Quidditch setup's TAKE THE FIELD did nothing on a phone) */
       /* a screen with a live canvas in it (the pack's figure) is left whole; its plain lines of text are rewritten one by one */
       else for (const d of el.querySelectorAll('div,p,li')) if (RX.test(d.innerHTML) && [...d.querySelectorAll('*')].every((x) => /^(B|I|EM|KBD|SPAN|BR|SMALL|STRONG)$/.test(x.tagName) || (!x.textContent.trim() && !x.matches(live + ',button')))) fix(d); }
     /* a separator never starts a line ("MAP the map ·" | "JOURNAL…"): it is bound to the word before it */

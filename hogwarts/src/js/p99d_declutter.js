@@ -25,6 +25,8 @@ body.touch #hlFly .al { order: 2; margin: 0; font-size: 10.5px; letter-spacing: 
   HL.START.push(() => { warm = 0; pts = null; });
   { let pl = null; const L0 = HL.ui.update; HL.ui.update = function () { const r = L0.apply(this, arguments), on = MG.state === 'play'; if (on !== pl) { pl = on; document.body.classList.toggle('hlPlaying', on); } return r; }; }
   const f0 = TOUCH.frame; TOUCH.frame = function () { const r = f0.apply(this, arguments); const B = TOUCH.btn.potion; if (!B || (TOUCH.editor && TOUCH.editor.on)) return r;
+    if (TOUCH.mode === 'match') { const sk = !!(HL.Q.me && HL.Q.me.role === 'seeker'), P2 = TOUCH.btn.pass; if (P2 && P2.classList.contains('on') === sk) P2.classList.toggle('on', !sk); }   /* (a Seeker has no Quaffle to pass or call for: the button did nothing) */
+    { const fg = TOUCH.mode === 'foot' && !!(TOUCH.wheel && TOUCH.wheel.fight); if (fg !== document.body.classList.contains('tcFight')) document.body.classList.toggle('tcFight', fg); }
     if (TOUCH.mode === 'foot') { const a = PLAYER.a, pots = typeof LOOTH !== 'undefined' && LOOTH.pots ? LOOTH.pots.wiggen || 0 : 0, hurt = a && a.hpMax && a.hp < a.hpMax * 0.9, fight = TOUCH.wheel && TOUCH.wheel.fight;
       const want = pots > 0 && !!(hurt || fight); if (want !== B.classList.contains('on')) B.classList.toggle('on', want); }
     return r; };
@@ -90,7 +92,8 @@ body.touch:has(#hlScreen .hlPause) #hlHud { visibility: hidden; }
 body.touch #hlDuel.slim { min-width: 200px !important; padding: 4px 12px 6px !important; } body.touch #hlDuel.slim > div:first-child { display: none; }
 body.touch #hlDuel.slim > div { margin-top: 2px !important; font-size: 12.5px !important; } body.touch.hlDuelOn #hlTgt { display: none !important; }
 body.touch.hlDuelOn #tc .tcB:is([data-id="jump"], [data-id="broom"], [data-id="revelio"]) { display: none !important; }
-body:not(.hlPlaying) #hlDuel { visibility: hidden; }   /* (the bar is the fight's: it stood over the map) */   /* (in the ring: no broom, nothing hidden to reveal, nothing to jump) */`;
+body:not(.hlPlaying) #hlDuel { visibility: hidden; }
+body.touch.tcFight #tc .tcB:is([data-id="broom"], [data-id="revelio"]) { display: none !important; }   /* (with a foe at hand, no broom and nothing to reveal: two fewer targets in a fight) */   /* (the bar is the fight's: it stood over the map) */   /* (in the ring: no broom, nothing hidden to reveal, nothing to jump) */`;
     document.head.appendChild(c5);
     HL.START.push(() => { if (!D.show || D.show._slim) return; const s0 = D.show;   /* (the bar's show is made when the level starts) */
       D.show = function () { const r = s0.apply(this, arguments), el = document.getElementById('hlDuel'); if (el) el.classList.toggle('slim', D.phase === 'fight' && MG.rt >= (D.lineT || 0)); return r; }; D.show._slim = true; }); }
@@ -110,5 +113,26 @@ body.touch .hlSort.qs > p:last-child { display: none; } body.touch .hlSort.qs .h
       for (const r of rows) { let g = null; for (const c of [...r.childNodes]) { if (c.nodeType === 1 && c.classList.contains('rl')) { g = document.createElement('div'); g.className = 'qg'; grid.appendChild(g); } if (g) g.appendChild(c); } }
       rows[0].before(grid); for (const r of rows) r.remove(); box.classList.add('qs'); };
     const sc0 = HL.ui.screen; HL.ui.screen = function (html) { const S = sc0.apply(this, arguments); if (TOUCH.on && html && S && S.querySelector('.hlSort [data-go]') && S.querySelector('.hlSort .rl')) try { tidy(S); } catch (e) { console.warn('setup layout', e); } return S; }; }
+  /* the pack on a phone: the statistics are the ones that say something (health, and any your things raise: eleven rows of
+     "+0%" were most of the left column), the house name fits its column, the hint is one line */
+  if (typeof LOOTH !== 'undefined' && LOOTH.render) { const c7 = document.createElement('style'); c7.textContent = `
+body.touch #invWho .lv b { font-size: min(26px, 2.6vw) !important; white-space: nowrap; } body.touch #invStats .st.z { display: none; } body.touch #invStats .gap:has(+ .gap), body.touch #invStats .gap:last-child { display: none; }
+body.touch .hlInv .islot .lab { font-size: 9.5px; letter-spacing: .06em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }`;
+    document.head.appendChild(c7);
+    const r0 = LOOTH.render; LOOTH.render = function () { const r = r0.apply(this, arguments); if (!TOUCH.on) return r; const S = HL.ui.el.Screen;
+      S.querySelectorAll('#invStats .st').forEach((d, i) => { const v = (d.querySelector('b') || {}).textContent || ''; if (i > 0 && /^[+−-]?0(%| \/s)$/.test(v.trim())) d.classList.add('z'); });
+      const st = S.querySelector('#invStats'); if (st) { let prev = true; for (const c of [...st.children]) { const gap = c.classList.contains('gap'), shown = !c.classList.contains('z'); if (gap) { c.style.display = prev ? 'none' : ''; prev = true; } else if (shown) prev = false; } }
+      const h = S.querySelector('.hlInv .hint'); if (h) h.innerHTML = '<b>Tap</b> to wear or take off · <b>hold</b> to sell · tap a potion to drink'; return r; }; }
+  /* the map on a phone: the card is your errand and what you have found; the legend and the how-to were a third of the screen */
+  { const c8 = document.createElement('style'); c8.textContent = `body.touch .hlMap .card .lg, body.touch .hlMap .card .how { display: none; } body.touch .hlMap .card b:has(+ .lg), body.touch .hlMap .card b:has(+ .how) { display: none; }`; document.head.appendChild(c8); }
+  /* the match on a phone: the line under the score says what is happening, in a few words (the buttons already say what
+     to press: "— LMB shoot (hold to wind up) · E pass" doubled them, and the keys were left as letters); and while the
+     opening controls line is up, it is the only line under the score */
+  { const Q = HL.Q, st1 = Q.status; Q.status = function () { const s0 = st1.apply(this, arguments); if (!TOUCH.on || typeof s0 !== 'string') return s0;
+      if (Q.me && Q.me.role === 'seeker') return s0.replace(/ — stay on its tail/, ' ·');
+      const B = Q.ball, me = Q.me; if (Q.on && Q.phase === 'play' && B) { const snitch = Q.snitch ? '<b>SNITCH LOOSE</b> · ' : '';
+        if (B.holder === me) return snitch + 'You have the Quaffle'; if (B.holder && B.holder.team === 0) return snitch + 'Your Chaser has it — CALL for it'; if (B.holder) return snitch + 'Rivals have it — TACKLE the carrier'; return snitch + 'Loose Quaffle — fly at it'; }
+      return s0; };
+    const c9 = document.createElement('style'); c9.textContent = `body.touch.tq:has(#hlHint.on) #hlQs { visibility: hidden; }`; document.head.appendChild(c9); }
 }
 
