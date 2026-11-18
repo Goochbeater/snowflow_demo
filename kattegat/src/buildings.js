@@ -1,12 +1,12 @@
 // Static settlement construction, era by era, into merged meshes.
 import * as THREE from 'three';
 import { Builder, M, col } from './builder.js';
-import { RNG, catmull, resample } from './util.js';
+import { RNG, catmull, resample, fbm, lerp } from './util.js';
 import { stdMat } from './materials.js';
 
 const C = {
-  wattle: 0xa38b67, daub: 0xb59d77, tar: 0x2b2018, timber: 0x6b4c30, plank: 0x7d5a3a, oldwood: 0x8a7458, turf: 0x55662f, turfDry: 0x6c6a38,
-  shingle: 0x5e4a36, shingle2: 0x75604a, stone: 0x7b7a74, stoneD: 0x5a5953, hide: 0xa7865f, hideD: 0x7c5d3e, clay: 0x8f6a4a, straw: 0xc8ad62,
+  wattle: 0xa68e6a, daub: 0xc4ae88, tar: 0x2e241c, timber: 0x765639, plank: 0x8a6745, oldwood: 0x8a7458, turf: 0x5a6e32, turfDry: 0x7a7642,
+  shingle: 0x6a5c4e, shingle2: 0x80705f, stone: 0x7b7a74, stoneD: 0x5a5953, hide: 0xa7865f, hideD: 0x7c5d3e, clay: 0x8f6a4a, straw: 0xc8ad62,
   iron: 0x3c3b3a, rust: 0x6e4630, red: 0x8e2a1e, blue: 0x2c4a6e, ochre: 0xb58a36, white: 0xd8d0bc, green: 0x3e5a32, black: 0x1c1a18, rope: 0xa58b5c, fish: 0xc9c2a8, bone: 0xe1d8c1,
 };
 
@@ -99,7 +99,7 @@ export function buildSettlement(L, grid, seed) {
       for (let r = 0; r < rows; r++) for (let k = 0; k < cols; k++) {
         const a = grid2[r][k], bb = grid2[r][k + 1], cc = grid2[r + 1][k + 1], d = grid2[r + 1][k];
         let colr;
-        if (turf) colr = c(R() < 0.25 ? C.turfDry : C.turf, 0.14);
+        if (turf) { const q = F(...a); const tn = fbm(q[0] * 0.18, q[2] * 0.18, 2) * 0.5 + 0.5; const c1 = col(C.turf), c2 = col(C.turfDry); const jj = 0.94 + R() * 0.08; colr = [lerp(c1[0], c2[0], tn) * jj, lerp(c1[1], c2[1], tn) * jj, lerp(c1[2], c2[2], tn) * jj]; }
         else colr = c((r + k) % 5 === 0 ? C.shingle2 : C.shingle, 0.16);
         if (!turf) { // stepped shingle course
           const st = 0.09;
@@ -270,8 +270,22 @@ export function buildSettlement(L, grid, seed) {
         // open-sided smithy: shingle roof on tarred posts
         const Bd = bk(1); const F = frame(b);
         for (const sx of [-1, -0.33, 0.33, 1]) for (const sz of [-1, 1]) Bd.pole(F(sx * b.len / 2, -0.5, sz * b.wid / 2), F(sx * b.len / 2, 3.2, sz * b.wid / 2), 0.16, c(C.tar));
-        Bd.quad(F(-b.len / 2 - 0.6, 3.0, -b.wid / 2 - 0.8), F(b.len / 2 + 0.6, 3.0, -b.wid / 2 - 0.8), F(b.len / 2 + 0.6, 4.8, 0), F(-b.len / 2 - 0.6, 4.8, 0), c(C.shingle, 0.12));
-        Bd.quad(F(-b.len / 2 - 0.6, 3.0, b.wid / 2 + 0.8), F(-b.len / 2 - 0.6, 4.8, 0), F(b.len / 2 + 0.6, 4.8, 0), F(b.len / 2 + 0.6, 3.0, b.wid / 2 + 0.8), c(C.shingle2, 0.12));
+        // stepped shingle courses, sooty near the smoke vent
+        for (const sd of [-1, 1]) for (let k = 0; k < 7; k++) {
+          const v0 = k / 7, v1 = (k + 1) / 7, L2 = b.len / 2 + 0.6, W2 = b.wid / 2 + 0.8;
+          const cols2 = 10;
+          for (let j = 0; j < cols2; j++) {
+            const x0 = -L2 + (j / cols2) * 2 * L2, x1 = -L2 + ((j + 1) / cols2) * 2 * L2;
+            const P0 = (x, v, d) => F(x, 3.0 + v * 1.8 - d, sd * W2 * (1 - v) * (1 + d * 0.15));
+            const soot = Math.abs((x0 + x1) / 2 + 3) < 2.5 ? 0.55 : 1;
+            const cc = c(j % 3 ? C.shingle : C.shingle2, 0.15).map((q) => q * soot);
+            Bd.quad(P0(x0, v0, 0.1), P0(x1, v0, 0.1), P0(x1, v1, 0), P0(x0, v1, 0), cc, sd > 0);
+          }
+        }
+        { const r0 = F(0, 4.85, 0); Bd.box(r0[0], r0[1], r0[2], b.len + 1.4, 0.25, 0.5, b.rot, c(C.tar)); }
+        // glowing coal beds (emissive look comes from the flame billboards and fire light)
+        { const hc = F(1.5, 0, -1.5); Bd.add('box', M(hc[0], H(hc[0], hc[2]) + 0.92, hc[2], b.rot, 0, 0, 1.6, 0.06, 1.0), [1.6, 0.45, 0.08]); }
+        { const fc = F(-3, 0, 0); Bd.add('cyl', M(fc[0], H(fc[0], fc[2]) + 0.5, fc[2] + 0.0, b.rot, 0, 0, 0.6, 0.6, 0.6), [1.8, 0.5, 0.1]); }
         const fx = F(-3, 0, 0); // bloomery furnace & hearth
         Bd.add('cone', M(fx[0], H(fx[0], fx[2]) + 1.1, fx[2], 0, 0, 0, 1.8, 2.4, 1.8), c(C.clay, 0.1));
         Bd.add('cyl', M(fx[0], H(fx[0], fx[2]) + 2.6, fx[2], 0, 0, 0, 0.5, 1.2, 0.5), c(C.clay, 0.1));
@@ -360,9 +374,11 @@ export function buildSettlement(L, grid, seed) {
     // stone footing ring (era 3)
     for (let i = 0; i < pts.length; i += 2) { const [x, z] = pts[i]; if (L.gates.some((g) => Math.hypot(g[0] - x, g[1] - z) < 3.2)) continue; P3.add('rock', M(x * 1.003, H(x, z) + 0.1, z * 1.001, R() * 6, 0, 0, 1.3, 0.8, 1.1), c(C.stone, 0.15)); }
     // watchtowers on the shore (era 3)
-    for (const [x, z] of [[-210, 118], [260, 122], [-30, 112], [120, 112]]) {
+    for (const [x, z] of [[-210, 118], [262, 124], [-150, 112]]) {
       const y = H(x, z);
-      for (const ox of [-1.5, 1.5]) for (const oz of [-1.5, 1.5]) P3.pole([x + ox, y - 0.5, z + oz], [x + ox * 0.8, y + 9, z + oz * 0.8], 0.17, c(C.tar));
+      for (const ox of [-1.5, 1.5]) for (const oz of [-1.5, 1.5]) P3.pole([x + ox * 1.2, y - 0.5, z + oz * 1.2], [x + ox * 0.85, y + 9, z + oz * 0.85], 0.3, c(C.tar));
+      for (const hh of [3, 6]) P3.add('box', M(x, y + hh, z, 0.3, 0, 0, 3.4, 0.2, 3.4), c(C.timber));
+      for (let k = 0; k < 4; k++) P3.add('box', M(x + Math.cos(0.3 + k * 1.57) * 1.75, y + 9.5, z - Math.sin(0.3 + k * 1.57) * 1.75, 0.3 + k * 1.57, 0, 0, 3.6, 1.0, 0.15), c(C.plank));
       P3.add('box', M(x, y + 8.8, z, 0.3, 0, 0, 3.6, 0.3, 3.6), c(C.plank));
       P3.add('cone', M(x, y + 10.4, z, 0.7, 0, 0, 4.8, 2.6, 4.8), c(C.shingle));
     }

@@ -64,7 +64,7 @@ export function patch(mat, opts = {}) {
     if (opts.overlay) colorExtra += `
       vec2 ovUv = (kWP.xz - uOvBounds.xy) / uOvBounds.zw;
       if (ovUv.x > 0. && ovUv.y > 0. && ovUv.x < 1. && ovUv.y < 1.) {
-        vec4 ov = texture2D(uOverlay, ovUv);
+        vec4 ov = texture2D(uOverlay, ovUv); ov.a *= smoothstep(0.78, 0.93, kWN.y);
         float grain = 0.82 + 0.36 * kNoise(kWP.xz * 1.7);
         diffuseColor.rgb = mix(diffuseColor.rgb, ov.rgb * grain, ov.a);
       }
@@ -84,7 +84,7 @@ export function patch(mat, opts = {}) {
       float kSt = 1.0 - smoothstep(0.55, 0.85, kWN.y);
       float strata = kNoise(vec2(kWP.y * 0.09 + kNoise(kWP.xz * 0.03) * 6.0, (kWP.x + kWP.z) * 0.02));
       diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * (0.9 + 0.2 * strata) * (0.85 + 0.3 * kNoise(kWP.xz * 0.08)), kSt);
-      float moss = smoothstep(0.6, 0.9, kWN.y) * (1.0 - smoothstep(150.0, 320.0, kWP.y));
+      float moss = smoothstep(0.6, 0.9, kWN.y) * (1.0 - smoothstep(150.0, 320.0, kWP.y)) * smoothstep(7.0, 14.0, kWP.y);
       diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.85, 1.08, 0.8), moss * 0.6);
     `;
     if (opts.peaks) colorExtra += `

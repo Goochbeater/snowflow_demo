@@ -255,7 +255,7 @@ function siteNode(S, L, GR, a, key) {
 // ===================================================================================
 export class Sim {
   constructor(L, GR, grid) { this.L = L; this.GR = GR; this.G = GR.G; this.grid = grid; this.hash = new Map(); }
-  setState(S) { this.S = S; }
+  setState(S) { this.S = S; const sm = S.agents.find((a) => a.role === 'smith' && a.fate === 'home'); this.masterSmith = sm ? sm.id : -1; }
   nodeY(n) { return this.G.y[n]; }
   remember(a, txt) { if (a.mem.length > 10) a.mem.splice(2, 1); a.mem.push(`[${clock(this.S.t)}] ${txt}`); }
   // ---------------------------------------------------------------- movement
@@ -535,6 +535,8 @@ export class Sim {
     if (kF) duty *= 0.55 + 0.4 * (1 - a.curiosity);
     if (feastOn) duty *= 0.35;
     if (lateNight) duty *= 0.3;
+    // the master smith will not leave his fire while there is iron in it
+    if (role === 'smith' && a.id === this.masterSmith && S.t < 1300) duty = 1.25;
     if (!a.wounded && a.fate !== 'raider') add(duty, 'work');
     // --- the fleet
     const kinAtSea = a.kin.some((k) => A[k].aboard && A[k].alive);

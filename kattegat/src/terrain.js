@@ -48,7 +48,9 @@ export function heightAt(x, z) {
     // mountains everywhere but the village shelf
     const n = ridged(x * 0.0021 + 7.1, z * 0.0021 - 3.3, 6);
     const cliff = smoothstep(4, 230, dw);
-    let mtn = Math.pow(cliff, 0.62) * (260 + 380 * n) + fbm(x * 0.01, z * 0.01, 4) * 18 * cliff;
+    const apron = smoothstep(2, 160, dw) * (40 + 34 * n);
+    const wall = Math.pow(smoothstep(70, 430, dw), 0.75) * (300 + 440 * n);
+    let mtn = apron + wall + fbm(x * 0.01, z * 0.01, 4) * 18 * cliff;
     // terrace knees
     mtn += smoothstep(0, 1, cliff) * fbm(x * 0.004, z * 0.004, 3) * 60;
     // gullies and buttresses
@@ -102,3 +104,17 @@ export function fjordLine() {
   return pts;
 }
 export { vnoise };
+
+// Shared forest density: drives both tree placement and the dark forest-floor colour,
+// so wooded slopes read as solid spruce forest at any distance.
+export function forestDensity(x, z, h, slope) {
+  if (h < 3 || h > 420) return 0;
+  const vm = villageMask(x, z);
+  if (vm > 0.6) return 0;
+  const n = fbm(x * 0.0065 + 20, z * 0.0065, 3) * 0.5 + 0.5;
+  let d = smoothstep(0.2, 0.5, n);
+  d *= 1 - smoothstep(1.25, 1.95, slope);
+  d *= 1 - smoothstep(250, 400, h + (n - 0.5) * 120);
+  d *= 1 - smoothstep(0.3, 0.6, vm);
+  return d;
+}

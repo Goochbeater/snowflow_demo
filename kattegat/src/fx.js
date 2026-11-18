@@ -4,6 +4,18 @@ import { U, GLSL_NOISE } from './materials.js';
 import { WU } from './env.js';
 import { hash2, RNG, clamp, lerp } from './util.js';
 
+function makePuff() {
+  const N = 128, cv = document.createElement('canvas'); cv.width = cv.height = N; const g = cv.getContext('2d');
+  let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let i = 0; i < 26; i++) {
+    const a = rnd() * 6.283, d = Math.sqrt(rnd()) * N * 0.22, r = N * (0.12 + rnd() * 0.16);
+    const x = N / 2 + Math.cos(a) * d, y = N / 2 + Math.sin(a) * d;
+    const gr = g.createRadialGradient(x, y, 0, x, y, r); const v = 200 + Math.floor(rnd() * 55);
+    gr.addColorStop(0, `rgba(${v},${v},${v},0.32)`); gr.addColorStop(1, `rgba(${v},${v},${v},0)`);
+    g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+  }
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.NoColorSpace; return t;
+}
 export class Emitters {
   constructor() { this.list = []; }
   add(pos, kind, size = 1, n = 20) { const i = this.list.length; this.list.push({ pos, kind, size, n, s: 0, heat: 0 }); return i; }
@@ -15,19 +27,19 @@ export class FX {
     const nE = E.list.length; this.nE = nE;
     this.emData = new Uint8Array(nE * 4);
     this.emTex = new THREE.DataTexture(this.emData, nE, 1, THREE.RGBAFormat); this.emTex.needsUpdate = true;
-    const common = { uEm: { value: this.emTex }, uEmN: { value: nE }, uSmoke: { value: 1 }, uPx: { value: 600 } };
+    const common = { uEm: { value: this.emTex }, uEmN: { value: nE }, uSmoke: { value: 1 }, uPx: { value: 600 }, uPuff: { value: makePuff() } };
     this.common = common;
     // ---------------- smoke
     let total = 0; for (const e of E.list) total += e.n;
     const org = new Float32Array(total * 3), sd = new Float32Array(total * 4);
     let k = 0;
-    E.list.forEach((e, ei) => { for (let j = 0; j < e.n; j++, k++) { org.set(e.pos, k * 3); sd.set([j / e.n + hash2(ei, j) * 0.05, (e.kind === 'pyre' ? 22 : e.kind === 'beacon' ? 18 : 14) * (0.8 + hash2(j, ei) * 0.4), e.size, ei], k * 4); } });
+    E.list.forEach((e, ei) => { for (let j = 0; j < e.n; j++, k++) { org.set(e.pos, k * 3); sd.set([j / e.n + hash2(ei, j) * 0.05, (e.kind === 'pyre' ? 22 : e.kind === 'beacon' ? 18 : 18) * (0.8 + hash2(j, ei) * 0.4), e.size, ei], k * 4); } });
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(org, 3)); g.setAttribute('aSeed', new THREE.BufferAttribute(sd, 4));
     this.smoke = new THREE.Points(g, new THREE.ShaderMaterial({
       uniforms: Object.assign({}, U, WU, common), transparent: true, depthWrite: false,
       vertexShader: `uniform sampler2D uEm; uniform float uEmN; uniform float uTime; uniform vec2 uWind; uniform float uSmoke; uniform float uPx;
-        attribute vec4 aSeed; varying float vA; varying float vAge; varying float vHeat; varying vec3 vW;
+        attribute vec4 aSeed; varying float vA; varying float vAge; varying float vHeat; varying vec3 vW; varying float vRot;
         ${GLSL_NOISE}
         void main(){
           vec4 em = texture2D(uEm, vec2((aSeed.w + 0.5) / uEmN, 0.5));
@@ -35,25 +47,27 @@ export class FX {
           float on = step(kHash(vec2(aSeed.x * 91.0, aSeed.w)), em.r * uSmoke);
           float sz = aSeed.z * (1.0 + em.b * 2.0);
           vec3 p = position;
-          float rise = age * life * (1.6 + em.g * 2.5) * (0.6 + sz * 0.4);
+          float rise = age * life * (1.5 + em.g * 1.0) * (0.6 + sz * 0.25);
           vec2 drift = uWind * age * age * life * 1.6 * (0.6 + 0.4 * sz);
           p += vec3(drift.x, rise, drift.y);
           p.x += (kNoise(vec2(aSeed.x * 40.0, uTime * 0.3 + aSeed.w)) - 0.5) * age * 6.0 * sz;
           p.z += (kNoise(vec2(uTime * 0.3 + aSeed.w, aSeed.x * 40.0)) - 0.5) * age * 6.0 * sz;
           vec4 mv = modelViewMatrix * vec4(p, 1.0);
           gl_Position = projectionMatrix * mv;
-          float size = sz * (2.2 + age * 9.0);
-          gl_PointSize = min(on * size * uPx / max(1.0, -mv.z), 260.0);
-          vA = on * smoothstep(0.0, 0.08, age) * (1.0 - age) * (0.16 + 0.2 * em.r) * smoothstep(6.0, 30.0, -mv.z);
+          float size = sz * (2.0 + age * 8.5);
+          gl_PointSize = min(on * size * uPx / max(1.0, -mv.z), 420.0);
+          vA = on * smoothstep(0.0, 0.12, age) * pow(1.0 - age, 1.4) * (0.16 + 0.18 * em.r) * smoothstep(14.0, 75.0, -mv.z);
+          vRot = aSeed.x * 40.0 + age * (kHash(vec2(aSeed.x, 7.0)) - 0.5) * 3.0;
           vAge = age; vHeat = em.g; vW = p;
         }`,
-      fragmentShader: `uniform vec3 uSunCol; uniform float uDark; uniform vec3 uFogCol; uniform float uFogD; varying float vA; varying float vAge; varying float vHeat; varying vec3 vW;
+      fragmentShader: `uniform vec3 uSunCol; uniform float uDark; uniform vec3 uFogCol; uniform float uFogD; uniform sampler2D uPuff; varying float vA; varying float vAge; varying float vHeat; varying vec3 vW; varying float vRot;
         ${GLSL_NOISE}
-        void main(){ vec2 c = gl_PointCoord - 0.5; float d = length(c); if (d > 0.5) discard;
-          float n = kNoise(gl_PointCoord * 4.0 + vAge * 3.0);
-          float a = smoothstep(0.5, 0.05, d) * smoothstep(0.0, 0.5, 0.5 - d + 0.2) * vA * (0.6 + 0.5 * n) * (1.0 - uDark * 0.45);
-          vec3 base = mix(vec3(0.42, 0.4, 0.38), vec3(0.3, 0.3, 0.32), vAge) * (0.3 + 0.6 * uSunCol * (1.0 - uDark * 0.88)) * (1.0 - uDark * 0.6);
-          base += vec3(1.0, 0.45, 0.15) * vHeat * pow(1.0 - vAge, 6.0) * 1.6 * (0.3 + uDark);
+        void main(){ vec2 c = gl_PointCoord - 0.5; float cs = cos(vRot), sn = sin(vRot); vec2 uv = vec2(c.x * cs - c.y * sn, c.x * sn + c.y * cs) + 0.5;
+          vec4 pf = texture2D(uPuff, uv);
+          float a = pf.a * vA * (1.0 - uDark * 0.4);
+          if (a < 0.003) discard;
+          vec3 base = mix(vec3(0.5, 0.48, 0.46), vec3(0.38, 0.39, 0.42), vAge) * (0.75 + 0.35 * pf.r) * mix(0.35 + 0.6 * uSunCol, vec3(0.05, 0.06, 0.09), uDark);
+          base += vec3(1.0, 0.42, 0.12) * vHeat * pow(1.0 - vAge, 16.0) * 0.9 * (0.2 + uDark);
           float fd = length(cameraPosition - vW); base = mix(base, uFogCol, clamp(1.0 - exp(-uFogD*uFogD*fd*fd), 0., 1.));
           gl_FragColor = vec4(base, a);
           #include <colorspace_fragment>

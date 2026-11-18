@@ -4,6 +4,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { HeightGrid } from './terrain.js';
 import { makeLayout } from './layout.js';
 import { buildGraph } from './graph.js';
@@ -17,6 +18,7 @@ import { FX, Emitters } from './fx.js';
 import { Forest } from './trees.js';
 import { clamp, lerp, smoothstep, hash2 } from './util.js';
 import { buildUI } from './ui.js';
+import { Grass } from './grass.js';
 
 const qs = new URLSearchParams(location.search);
 const P = {
@@ -57,13 +59,18 @@ async function boot() {
   let S = S0; sim.setState(S);
 
   setLoad('Cutting turf and timber…'); await frameYield();
-  const sky = buildSky(); scene.add(sky);
+  const SK = buildSky(); scene.add(SK.sky, SK.stars);
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const envScene = new THREE.Scene(); envScene.add(SK.envSky);
+  let envRT = null, envKey = -1, envT = 0;
+  const updateEnv = () => { const old = envRT; envRT = pmrem.fromScene(envScene, 0, 0.1, 1000); scene.environment = envRT.texture; if (old) old.dispose(); };
   const [terrIn, terrOut] = buildTerrain(L, grid); scene.add(terrIn, terrOut);
   const water = buildWater(grid); scene.add(water);
   const falls = buildFalls(grid); scene.add(falls.group);
   const settle = buildSettlement(L, grid, P.seed); for (const m of settle.meshes) scene.add(m);
   setLoad('Planting the forests…'); await frameYield();
   const forest = new Forest(scene, L, grid, P.seed);
+  const grass = new Grass(scene, L, grid);
   setLoad('Caulking the longships…'); await frameYield();
   const fleet = new Fleet(scene, S, grid);
   const crowd = new Crowd(scene, S, grid, sim);
@@ -71,7 +78,7 @@ async function boot() {
 
   // ------------------------------------------------------------- lights
   const sun = new THREE.DirectionalLight(0xffffff, 3); sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048); const sc = sun.shadow.camera; sc.left = -240; sc.right = 240; sc.top = 240; sc.bottom = -240; sc.near = 10; sc.far = 2200; sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.6;
+  sun.shadow.mapSize.set(3072, 3072); const sc = sun.shadow.camera; sc.left = -240; sc.right = 240; sc.top = 240; sc.bottom = -240; sc.near = 10; sc.far = 2200; sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.6;
   scene.add(sun, sun.target);
   const hemi = new THREE.HemisphereLight(0xaaccff, 0x443322, 0.8); scene.add(hemi);
   const fillPts = Array.from({ length: 4 }, () => { const l = new THREE.PointLight(0xff8833, 0, 40, 1.6); scene.add(l); return l; });
@@ -80,11 +87,11 @@ async function boot() {
   const E = new Emitters();
   const src = []; // every light/flame source: {kind, pos, em, idx, delay}
   for (const b of L.B) {
-    if (b.smoke) { const em = E.add(b.smoke, 'house', b.kind === 'hall' ? 2.2 : 1.2, b.kind === 'hall' ? 60 : 34); src.push({ kind: 'hearth', b, em, pos: b.doorGlow || b.smoke, delay: hash2(b.id, 3) * 0.7, eraMin: b.kind === 'pit' ? 0 : 1 }); }
+    if (b.smoke) { const em = E.add(b.smoke, 'house', b.kind === 'hall' ? 2.2 : 1.2, b.kind === 'hall' ? 90 : 56); src.push({ kind: 'hearth', b, em, pos: b.doorGlow || b.smoke, delay: hash2(b.id, 3) * 0.7, eraMin: b.kind === 'pit' ? 0 : 1 }); }
     if (b.tentSmoke) { const em = E.add(b.tentSmoke, 'cook', 0.9, 12); src.push({ kind: 'cook', b, em, pos: b.tentSmoke, delay: hash2(b.id, 4) * 0.6, eraMin: 0, eraMax: 1 }); }
     if (b.forgeFire) { const em = E.add(b.forgeFire, 'fire', 1.4, 26); src.push({ kind: 'forgeFire', em, pos: b.forgeFire, delay: 0 }); const em2 = E.add(b.anvil, 'forge', 0.5, 4); src.push({ kind: 'anvil', em: em2, pos: b.anvil, delay: 0 }); const em3 = E.add(b.hearth, 'fire', 0.8, 10); src.push({ kind: 'forgeHearth', em: em3, pos: b.hearth, delay: 0 }); }
   }
-  L.bonfires.forEach((bf, i) => { const p = [bf.x, grid.get(bf.x, bf.z) + 0.6, bf.z]; const em = E.add(p, 'fire', 1.6, 36); src.push({ kind: 'bonfire', i, em, pos: p, delay: 0.1 + i * 0.05 }); });
+  L.bonfires.forEach((bf, i) => { const p = [bf.x, grid.get(bf.x, bf.z) + 0.6, bf.z]; const em = E.add(p, 'fire', 1.6, 80); src.push({ kind: 'bonfire', i, em, pos: p, delay: 0.1 + i * 0.05 }); });
   { const p = [L.S.pyre[0], grid.get(L.S.pyre[0], L.S.pyre[1]) + 1.5, L.S.pyre[1]]; const em = E.add(p, 'pyre', 3.4, 150); src.push({ kind: 'pyre', em, pos: p, delay: 0 }); }
   L.beacons.forEach((b, i) => { const p = [b.x, b.fireY + 1, b.z]; const em = E.add(p, 'beacon', 2.6, 40); src.push({ kind: 'beacon', i, em, pos: p, delay: 0.15 + i * 0.07, eraMin: b.village || b.lookout ? 2 : 3 }); });
   L.torches.forEach((t, i) => { const pal = i < L.nPalTorches; const y = grid.get(t.x, t.z) + (pal ? 5.4 : 2.6); src.push({ kind: 'torch', i, pos: [t.x, y, t.z], delay: 0.25 + (i / L.torches.length) * 0.55, eraMin: pal ? 2 : 1 }); });
@@ -101,13 +108,64 @@ async function boot() {
   const lanternMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(0.28, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffb050, toneMapped: false }), 64);
   lanternMesh.frustumCulled = false; scene.add(lanternMesh);
 
-  const ropes = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x8a7454 }));
+  const ropes = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0x3a2e22 }));
   ropes.frustumCulled = false; scene.add(ropes);
   // ------------------------------------------------------------- post
-  const composer = new EffectComposer(renderer);
+  const crt = new THREE.WebGLRenderTarget(innerWidth * renderer.getPixelRatio(), innerHeight * renderer.getPixelRatio(), { type: THREE.HalfFloatType, samples: 4 });
+  const composer = new EffectComposer(renderer, crt);
   composer.addPass(new RenderPass(scene, camera));
   const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), 0.5, 0.6, 0.85); composer.addPass(bloom);
+  const grade = new ShaderPass({
+    uniforms: { tDiffuse: { value: null }, uVig: { value: 0.32 }, uSat: { value: 1.12 }, uCon: { value: 1.08 }, uWarm: { value: 0.5 } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: `uniform sampler2D tDiffuse; uniform float uVig; uniform float uSat; uniform float uCon; uniform float uWarm; varying vec2 vUv;
+      void main(){ vec4 c = texture2D(tDiffuse, vUv); vec3 col = max(c.rgb, 0.0);
+        float l = dot(col, vec3(0.2126, 0.7152, 0.0722));
+        col = mix(vec3(l), col, uSat);
+        col = 0.18 * pow(col / 0.18 + 1e-5, vec3(uCon));
+        // split-tone: cool shadows, warm highlights
+        float t = smoothstep(0.02, 0.6, l);
+        col *= mix(vec3(0.94, 0.98, 1.06), vec3(1.0 + 0.05 * uWarm, 1.0, 0.96 - 0.04 * uWarm), t);
+        vec2 d = vUv - 0.5; col *= 1.0 - uVig * pow(length(d) * 1.35, 2.4);
+        gl_FragColor = vec4(col, c.a); }`,
+  });
+  composer.addPass(grade);
   composer.addPass(new OutputPass());
+  // ---------------- planar reflection of the fjord
+  const reflRT = new THREE.WebGLRenderTarget(512, 512, { type: THREE.HalfFloatType });
+  WU.uRefl.value = reflRT.texture;
+  const reflCam = new THREE.PerspectiveCamera();
+  const _n = new THREE.Vector3(0, 1, 0), _rp = new THREE.Vector3(), _cp = new THREE.Vector3(), _rm = new THREE.Matrix4(), _la = new THREE.Vector3(), _tg = new THREE.Vector3(), _vw = new THREE.Vector3();
+  const _pl = new THREE.Plane(), _cl = new THREE.Vector4(), _q = new THREE.Vector4();
+  const hideInRefl = [];
+  const renderReflection = () => {
+    const pr = renderer.getPixelRatio() * 0.5;
+    const w = Math.floor(innerWidth * pr), h = Math.floor(innerHeight * pr);
+    if (reflRT.width !== w || reflRT.height !== h) reflRT.setSize(w, h);
+    _cp.setFromMatrixPosition(camera.matrixWorld);
+    _rp.set(_cp.x, P.tide, _cp.z);
+    _vw.subVectors(_rp, _cp); if (_vw.dot(_n) > 0) { WU.uReflOn.value = 0; return; }
+    _vw.reflect(_n).negate().add(_rp);
+    _rm.extractRotation(camera.matrixWorld);
+    _la.set(0, 0, -1).applyMatrix4(_rm).add(_cp);
+    _tg.subVectors(_rp, _la).reflect(_n).negate().add(_rp);
+    reflCam.position.copy(_vw); reflCam.up.set(0, 1, 0).applyMatrix4(_rm).reflect(_n); reflCam.lookAt(_tg);
+    reflCam.far = camera.far; reflCam.updateMatrixWorld(); reflCam.projectionMatrix.copy(camera.projectionMatrix);
+    WU.uRMat.value.set(0.5, 0, 0, 0.5, 0, 0.5, 0, 0.5, 0, 0, 0.5, 0.5, 0, 0, 0, 1).multiply(reflCam.projectionMatrix).multiply(reflCam.matrixWorldInverse);
+    _pl.setFromNormalAndCoplanarPoint(_n, _rp).applyMatrix4(reflCam.matrixWorldInverse);
+    _cl.set(_pl.normal.x, _pl.normal.y, _pl.normal.z, _pl.constant);
+    const pm = reflCam.projectionMatrix.elements;
+    _q.x = (Math.sign(_cl.x) + pm[8]) / pm[0]; _q.y = (Math.sign(_cl.y) + pm[9]) / pm[5]; _q.z = -1.0; _q.w = (1.0 + pm[10]) / pm[14];
+    _cl.multiplyScalar(2.0 / _cl.dot(_q));
+    pm[2] = _cl.x; pm[6] = _cl.y; pm[10] = _cl.z + 1.0 - 0.003; pm[14] = _cl.w;
+    const vis = hideInRefl.map((o) => o.visible); hideInRefl.forEach((o) => (o.visible = false));
+    const au = renderer.shadowMap.autoUpdate; renderer.shadowMap.autoUpdate = false;
+    const prevRT = renderer.getRenderTarget();
+    renderer.setRenderTarget(reflRT); renderer.clear(); renderer.render(scene, reflCam);
+    renderer.setRenderTarget(prevRT); renderer.shadowMap.autoUpdate = au;
+    hideInRefl.forEach((o, i) => (o.visible = vis[i]));
+    WU.uReflOn.value = 1;
+  };
 
   // ------------------------------------------------------------- timeline & snapshots
   const SNAP = 20;
@@ -145,15 +203,15 @@ async function boot() {
   const beachShip = () => { let b = null; for (const s of S.ships) if (s.state >= 1 && (!b || s.tState > b.tState)) b = s; return b || lead(); };
   const jarl = S.agents.find((a) => a.role === 'jarl');
   const presets = {
-    'The return': () => ({ pos: [168, 92, 352], tgt: [-25, 0, -110] }),
+    'The return': () => ({ pos: [168, 36, 182], tgt: [-30, 2, -170] }),
     'The beaching': () => { const s = beachShip(); return { pos: [s.x + 34, 14, s.z + 30], tgt: [s.x, 2, s.z], follow: () => { const q = beachShip(); return [q.x, 2, q.z]; } }; },
     'The procession': () => { const j = S.agents[jarl.id]; return { pos: [j.x + 16, grid.get(j.x, j.z) + 11, j.z + 20], tgt: [j.x, grid.get(j.x, j.z) + 1.5, j.z], follow: () => { const a = S.agents[jarl.id]; return [a.x, grid.get(a.x, a.z) + 1.5, a.z]; } }; },
-    'Great hall feast': () => ({ pos: [36, 16, 128], tgt: [0, 2, 92] }),
+    'Great hall feast': () => ({ pos: [38, 11, 122], tgt: [-4, 2, 88] }),
     'Wrestling ring': () => ({ pos: [L.S.ring[0] + 9, 6.5, L.S.ring[1] + 12], tgt: [L.S.ring[0], 1.6, L.S.ring[1]] }),
-    'Forge face': () => { const f = L.B.find((b) => b.kind === 'forge'); const sx = Math.sin(f.rot), cz = Math.cos(f.rot); return { pos: [f.anvil[0] + sx * 11 + cz * 3, f.anvil[1] + 1.8, f.anvil[2] + cz * 11 - sx * 3], tgt: [f.anvil[0], f.anvil[1] + 0.2, f.anvil[2]] }; },
+    'Forge face': () => { const f = L.B.find((b) => b.kind === 'forge'); const sx = Math.sin(f.rot), cz = Math.cos(f.rot); return { pos: [f.anvil[0] + sx * 7 + cz * 2.5, f.anvil[1] + 0.9, f.anvil[2] + cz * 7 - sx * 2.5], tgt: [f.anvil[0], f.anvil[1] + 0.2, f.anvil[2]] }; },
     'The pyre': () => ({ pos: [L.S.pyre[0] + 26, 12, L.S.pyre[1] + 34], tgt: [L.S.pyre[0], 3, L.S.pyre[1]] }),
-    'The godswood': () => ({ pos: [L.S.godswood[0] - 34, grid.get(L.S.godswood[0], L.S.godswood[1]) + 16, L.S.godswood[1] - 42], tgt: [L.S.godswood[0], grid.get(L.S.godswood[0], L.S.godswood[1]) + 4, L.S.godswood[1] + 4] }),
-    'Ridge god-view': () => ({ pos: [330, 560, 520], tgt: [20, 0, -900] }),
+    'The godswood': () => { const g = L.S.godswood, gy = grid.get(g[0], g[1]); return { pos: [g[0] + 30, gy + 9, g[1] - 24], tgt: [g[0], gy + 5, g[1] + 6] }; },
+    'Ridge god-view': () => ({ pos: [150, 430, 420], tgt: [0, 0, -900] }),
     'Longship bow': () => ({ bow: true }),
     'Fjord-rim sunset': () => ({ pos: [-560, 420, -1480], tgt: [20, 20, 160], sunset: true }),
   };
@@ -181,6 +239,7 @@ async function boot() {
   intentLines.frustumCulled = false; intentLines.renderOrder = 19; scene.add(intentLines);
   const rumorPts = new THREE.Points(new THREE.BufferGeometry(), new THREE.PointsMaterial({ size: 5, sizeAttenuation: false, vertexColors: true, depthTest: false, transparent: true }));
   rumorPts.frustumCulled = false; rumorPts.renderOrder = 22; scene.add(rumorPts);
+  hideInRefl.push(water, pathLine, ring, destRing, intentLines, rumorPts, fx.snow, ...fx.fogBanks);
   const pick = (cx, cy) => {
     let best = -1, bd = 22 * 22; const v = new THREE.Vector3();
     for (let i = 0; i < crowd.N; i++) {
@@ -226,6 +285,7 @@ async function boot() {
   };
 
   // ------------------------------------------------------------- loop
+  let lowQ = false;
   let last = performance.now(), frames = 0, fpsT = 0, fps = 60, uiT = 0;
   const clockT = { t: 0 };
   loading.style.opacity = 0; setTimeout(() => loading.remove(), 900);
@@ -260,7 +320,9 @@ async function boot() {
     const ext = clamp(camDist * 1.4, 120, 700); sc.left = sc.bottom = -ext; sc.right = sc.top = ext; sc.updateProjectionMatrix();
     hemi.color.setRGB(...lk.sky); hemi.groundColor.setRGB(...lk.gnd); hemi.intensity = lk.hi * (1 + P.season * 0.2);
     WU.uZen.value.setRGB(...lk.zen); WU.uHor.value.setRGB(...lk.hor);
-    sky.material.uniforms.uGlow.value.setRGB(...lk.glow);
+    { const su = SK.sky.material.uniforms; su.sunPosition.value.copy(sd); su.turbidity.value = lk.tb; su.rayleigh.value = lk.ry; su.mieCoefficient.value = 0.005; su.mieDirectionalG.value = 0.82; }
+    envT += rawDt; if (Math.abs(envKey - P.sun) > 0.004 && envT > 0.2) { envKey = P.sun; envT = 0; updateEnv(); }
+    scene.environmentIntensity = lk.env * (1 - P.season * 0.1);
     const fogD = lk.fd * (1 + P.season * 0.6) * (P.sun < 0.15 ? 1 : 1);
     scene.fog.color.setRGB(...lk.fog); scene.fog.density = fogD;
     WU.uFogCol.value.setRGB(...lk.fog); WU.uFogD.value = fogD;
@@ -281,8 +343,9 @@ async function boot() {
     if (P.era < 2) for (const a of S.agents) if (!isNaN(a.ey)) a.ey = NaN;
     crowd.update(S, alpha, t, dt, camera, P, fleet);
     forest.update(camera);
+    grass.update(controls.target, P.season);
     { const rp = []; const bv = new THREE.Vector3();
-      for (const a of S.agents) { if (a.act !== 'haul' || a.moving || !a.alive) continue; const Lk = crowd.look[a.id]; if (!Lk.vis) continue; const fs = fleet.ships[a.p]; bv.set((a.id % 2 ? 0.6 : -0.6), 2.6, 11.4).applyMatrix4(fs.g.matrixWorld); rp.push(Lk.wx, Lk.wy + 1.15, Lk.wz, bv.x, bv.y, bv.z); }
+      for (const a of S.agents) { if (a.act !== 'haul' || a.moving || !a.alive) continue; const Lk = crowd.look[a.id]; if (!Lk.vis) continue; const fs = fleet.ships[a.p]; bv.set((a.id % 2 ? 0.6 : -0.6), 2.6, 11.4).applyMatrix4(fs.g.matrixWorld); if (Math.hypot(bv.x - Lk.wx, bv.z - Lk.wz) > 24) continue; rp.push(Lk.wx, Lk.wy + 1.15, Lk.wz, bv.x, bv.y, bv.z); }
       ropes.geometry.setAttribute('position', new THREE.Float32BufferAttribute(rp, 3)); }
     // gulls scatter where keels grind and crowds rush
     const scat = []; for (const sh of S.ships) if (sh.state === 1) scat.push([sh.x, sh.z]);
@@ -298,7 +361,7 @@ async function boot() {
       if (s.eraMax !== undefined && P.era >= s.eraMax) { if (s.em !== undefined) fx.setEmitter(s.em, 0, 0, 0); continue; }
       let on = 0, heat = 0, size = 0, rad = 0, fl = 0;
       switch (s.kind) {
-        case 'hearth': { const h = S.hearth[s.b.id] ?? 0.4; on = 0.55 + 0.45 * h; fx.setEmitter(s.em, on, 0.0, s.b.kind === 'hall' ? 0.6 : 0.2); if (kf(s.delay) > 0.01) lights.push([s.pos[0], s.pos[1], s.pos[2], 5 * h * kf(s.delay), 0.9 * h, s.kind]); continue; }
+        case 'hearth': { const h = S.hearth[s.b.id] ?? 0.4; on = 0.55 + 0.45 * h; fx.setEmitter(s.em, on, 0.0, s.b.kind === 'hall' ? 0.6 : 0.2); if (kf(s.delay) > 0.01) lights.push([s.pos[0], s.pos[1], s.pos[2], 8 * h * kf(s.delay), 1.1 * h, s.kind]); continue; }
         case 'cook': { on = 0.9; fx.setEmitter(s.em, on, 0.6, 0.1); flames.push([s.pos[0], s.pos[1] - 0.5, s.pos[2], 0.8 * flick(s.b.id)]); lights.push([s.pos[0], s.pos[1] + 0.5, s.pos[2], 5, 0.8 * kf(s.delay) + 0.1, s.kind]); continue; }
         case 'bonfire': { const b = S.bonfires[s.i]; on = b.lit > 0 ? 0.5 + b.fuel * 0.5 : 0; heat = on; size = on * (0.4 + 0.3 * heatV); rad = 7 + 6 * on; fl = on * (1.4 + 1.0 * b.fuel) * (0.7 + 0.3 * heatV); break; }
         case 'pyre': { const py = S.pyre; if (py.lit >= 0) { const age = S.t - py.lit; on = clamp(age / 20, 0, 1) * clamp(1 - (age - 280) / 260, 0.08, 1); } heat = on; size = on; rad = 26 * on; fl = on * 5.5; break; }
@@ -332,7 +395,7 @@ async function boot() {
     for (const b of L.B) {
       if (!b.doorGlow || (b.kind !== 'hall' && P.era < 1)) continue;
       const g = (S.hearth[b.id] ?? 0.4) * smoothstep(0.2, 0.6, kindle) * kf(hash2(b.id, 3) * 0.7);
-      dq.setFromAxisAngle(new THREE.Vector3(0, 1, 0), b.rot); dv.set(...b.doorGlow); ds.set(b.kind === 'hall' ? 2.2 : 1, b.kind === 'hall' ? 1.6 : 1, 1).multiplyScalar(g > 0.02 ? 1 : 0);
+      dq.setFromAxisAngle(new THREE.Vector3(0, 1, 0), b.rot); dv.set(...b.doorGlow); ds.set(b.kind === 'hall' ? 2.4 : 1.25, b.kind === 'hall' ? 1.8 : 1.15, 1).multiplyScalar(g > 0.02 ? 1 : 0);
       dm.compose(dv, dq, ds); doorMesh.setMatrixAt(di++, dm);
     }
     doorMesh.count = di; doorMesh.instanceMatrix.needsUpdate = true; doorMesh.material.color.setRGB(1, 0.55, 0.2).multiplyScalar(0.6 + 1.2 * kindle);
@@ -394,6 +457,8 @@ async function boot() {
       for (let i = 0; i < crowd.N; i++) { const a = S.agents[i], Lk = crowd.look[i]; if (!Lk.vis) continue; pos.push(Lk.wx, Lk.wy + 2.3 * Lk.scale, Lk.wz); const k = a.know; const col = a.grief > 0.3 ? [0.4, 0.6, 1] : k & KBITS.K_PYRE ? [0.9, 0.9, 0.9] : k & KBITS.K_FEAST ? [1, 0.45, 0.1] : k & KBITS.K_FLEET ? [1, 0.85, 0.2] : [0.35, 0.35, 0.35]; cols.push(...col); }
       rumorPts.geometry.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); rumorPts.geometry.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3)); rumorPts.visible = true;
     } else rumorPts.visible = false;
+    if (!lowQ && fps < 28 && t > 10) { lowQ = true; renderer.setPixelRatio(1); composer.setPixelRatio(1); composer.setSize(innerWidth, innerHeight); }
+    if (P.refl !== false) { if (!lowQ || (frames & 1) === 0) renderReflection(); } else WU.uReflOn.value = 0;
     composer.render();
     // ---------------- UI refresh
     uiT += dt; if (uiT > 0.2) { uiT = 0; ui.tick(S, { fps, ahead: AS.t, marks, catching: target !== null, rendered: crowd.rendered, selected: selected >= 0 ? S.agents[selected] : null }); }

@@ -44,8 +44,8 @@ export function makeLayout(seed, grid) {
   S.pigs = [160, 268];
   S.horses = [292, 300];
   S.byre = [-70, 432];
-  S.fieldE = [270, 450];
-  S.fieldW = [-300, 330];
+  S.fieldE = [-157, 425];
+  S.fieldW = [-273, 207];
   S.shoreWatch = [20, 70];
 
   const shore = road('shore', 5, [[-345, 118], [-260, 112], [-200, 106], [-100, 102], [0, 100], [100, 102], [200, 108], [290, 112], [340, 122]]);
@@ -89,9 +89,8 @@ export function makeLayout(seed, grid) {
   for (const k of ['feast', 'ring', 'pyre', 'lootPile', 'thing', 'godswood', 'woodlot', 'shipyard', 'practice', 'fishRacks', 'lookout', 'villageBeacon', 'sheep', 'goats', 'pigs', 'horses', 'byre', 'waterDraw', 'woodpile', 'hides', 'netShore', 'shoreWatch'])
     reserved.push([S[k][0], S[k][1], k === 'sheep' || k === 'godswood' ? 34 : k === 'feast' ? 60 : k === 'shipyard' ? 40 : 18]);
   const fieldsRect = [
-    { x0: 225, x1: 330, z0: 410, z1: 520, rot: 0.15 },
-    { x0: -330, x1: -255, z0: 280, z1: 370, rot: -0.2 },
-    { x0: -40, x1: 90, z0: 470, z1: 540, rot: 0.05 },
+    { x0: -315, x1: -232, z0: 168, z1: 246, rot: 0.05 },
+    { x0: -192, x1: -122, z0: 398, z1: 452, rot: -0.08 },
   ];
   const fits = (b, gap = 3) => {
     const cs = circlesOf(b);
