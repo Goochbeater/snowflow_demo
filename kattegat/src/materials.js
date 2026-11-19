@@ -93,7 +93,7 @@ export function patch(mat, opts = {}) {
     `;
     f = f.replace('#include <color_fragment>', '#include <color_fragment>\n' + colorExtra);
     f = f.replace('#include <opaque_fragment>', `
-      vec3 kN2 = normalize(kWN);
+      vec3 kN2 = ${opts.flat ? 'normalize(cross(dFdx(kWP), dFdy(kWP)))' : 'normalize(kWN)'};
       ${glowLoop(!!opts.wet)}
       outgoingLight += diffuseColor.rgb * kGlow;
       ${opts.wet ? `

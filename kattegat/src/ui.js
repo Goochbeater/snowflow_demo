@@ -50,6 +50,9 @@ const CSS = `
 .photo #mark,.photo #bar,.photo .pop,.photo #tick,.photo #insp,.photo #hint{display:none!important}
 #lb1,#lb2{position:fixed;left:0;right:0;height:0;background:#000;transition:height .6s;pointer-events:none}#lb1{top:0}#lb2{bottom:0}
 .photo #lb1,.photo #lb2{height:9vh}
+#xh{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px;border-radius:50%;background:rgba(255,245,225,.85);box-shadow:0 0 0 1px rgba(0,0,0,.4);display:none}
+#fphint{position:absolute;left:50%;top:16px;transform:translateX(-50%);color:#e9dcc6;font-size:11px;text-shadow:0 1px 6px #000;display:none}
+.fp #xh,.fp #fphint{display:block}.fp #hint{display:none}
 @media (max-width:640px){#mark .p{font-size:12px}#tick{bottom:62px;font-size:12px}}
 `;
 const ICON = {
@@ -60,6 +63,7 @@ const ICON = {
   cam: '<svg viewBox="0 0 24 24"><path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/></svg>',
   world: '<svg viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>',
   eye: '<svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+  walk: '<svg viewBox="0 0 24 24"><circle cx="13" cy="4.5" r="2"/><path d="M11 21l2-6-2.5-2 1-5 3 3 3 1M10.5 8L7 10l-1 3M13 15l3 6"/></svg>',
   photo: '<svg viewBox="0 0 24 24"><path d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4"/></svg>',
 };
 
@@ -82,6 +86,7 @@ export function buildUI(o) {
     <button data-p="cam" title="Camera">${ICON.cam}</button>
     <button data-p="world" title="World">${ICON.world}</button>
     <button data-p="eye" title="Overlays">${ICON.eye}</button>
+    <button id="walk" title="Walk the village in first person (F)">${ICON.walk}</button>
     <button id="photo" title="Photo mode (P)">${ICON.photo}</button>
   </div>
   <div class="pop g" id="pop-sun"><h4>Light</h4><label>Time of day<input type="range" id="sun" min="0" max="1" step="0.005"></label>
@@ -100,6 +105,7 @@ export function buildUI(o) {
     <label>Boats<input type="range" id="traffic" min="0" max="1" step="0.01"></label>
     <label>Seed<span style="display:flex;gap:6px"><input id="seed" style="width:64px;background:#0005;color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:3px 6px"><span class="tog"><button id="reseed">New raid</button></span></span></label></div>
   <div class="pop g" id="pop-eye"><h4>Overlays</h4><div class="tog"><button id="ovl">Paths &amp; intent</button><button id="rum">Rumor map</button><button id="refl">Reflections</button></div></div>
+  <div id="xh"></div><div id="fphint">WASD walk · Shift run · Space jump · E look at someone · F or Esc leave · click to capture the mouse</div>
   <div id="insp" class="g"><span class="x" id="ix">✕</span><div id="ib"></div><div class="act"><button id="ifollow">Follow</button></div></div>`;
   const $ = (id) => document.getElementById(id);
   // popovers
@@ -142,6 +148,7 @@ export function buildUI(o) {
   $('seed').value = P.seed; $('reseed').onclick = () => { const v = parseInt($('seed').value, 10); o.newSeed(v === P.seed || isNaN(v) ? Math.floor(Math.random() * 99999) : v); };
   const photo = (on) => { P.photo = on; ui.classList.toggle('photo', on); };
   $('photo').onclick = () => photo(true);
+  $('walk').onclick = () => o.toggleFP();
   // arc scrubber
   const arcI = $('arcI'); let dragging = false;
   arcI.addEventListener('pointerdown', () => (dragging = true)); addEventListener('pointerup', () => (dragging = false));
@@ -153,7 +160,7 @@ export function buildUI(o) {
     if (e.target.tagName === 'INPUT' && e.target.type !== 'range') return;
     if (e.key === 'r' || e.key === 'R') o.reset();
     if (e.key === 'p' || e.key === 'P') photo(!P.photo);
-    if (e.key === 'Escape') { photo(false); showAgent(null); }
+    if (e.key === 'Escape') { photo(false); showAgent(null); if (ui.classList.contains('fp')) o.toggleFP(); }
     if (e.key === ' ') { $('play').onclick(); e.preventDefault(); }
   });
   setTimeout(() => ($('hint').style.opacity = 0), 9000);
@@ -191,6 +198,7 @@ export function buildUI(o) {
   let lastLog = -1, tickT = 0;
   return {
     setSun: (v) => { P.sun = v; sunEl.value = v; },
+    setFP: (on) => { ui.classList.toggle('fp', on); $('walk').classList.toggle('on', on); },
     setActiveCam: (n) => { [...camList.children].forEach((c) => c.classList.toggle('on', c.dataset.n === n)); },
     showAgent,
     tick: (S, info) => {

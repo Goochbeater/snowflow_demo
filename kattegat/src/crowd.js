@@ -244,7 +244,7 @@ export class Crowd {
 }
 
 // --------------------------------------------------------------------- items
-class ItemRenderer {
+export class ItemRenderer {
   constructor(scene, S) {
     const N = S.agents.length;
     const kinds = {};
@@ -264,9 +264,12 @@ class ItemRenderer {
     kinds[CA.log] = B((b) => { for (let k = 0; k < 3; k++) b.add('cyl', M((k - 1) * 0.2, k === 1 ? 0.15 : 0, 0, 0, 0, Math.PI / 2, 0.2, 1.6, 0.2), c(0x6b4c30)); });
     kinds[CA.bucket] = B((b) => { b.add('cyl', M(0, -0.18, 0, 0, 0, 0, 0.3, 0.3, 0.3), c(0x7d5a3a)); b.add('disc', M(0, -0.04, 0, 0, 0, 0, 0.27, 0.01, 0.27), c(0x3a5a6a)); });
     kinds[CA.fish] = B((b) => { for (let k = 0; k < 4; k++) b.box((k - 1.5) * 0.08, -0.3, 0, 0.06, 0.45, 0.12, 0, c(0xb8b8a8)); });
-    kinds[CA.horn] = B((b) => { b.add('cone', M(0, 0.05, 0.08, 0, -1.2, 0, 0.09, 0.32, 0.09), c(0xd8c8a0)); });
-    kinds[CA.torch] = B((b) => { b.add('cyl', M(0, 0.15, 0, 0, 0, 0, 0.06, 0.8, 0.06), c(0x5a3e24)); b.add('cyl', M(0, 0.55, 0, 0, 0, 0, 0.12, 0.2, 0.12), c(0x1a1410)); });
-    kinds[CA.stick] = B((b) => { b.add('box', M(0, -0.05, 0.3, 0, 1.2, 0, 0.05, 0.8, 0.05), c(0x8a6a48)); b.box(0, -0.05, 0.05, 0.2, 0.04, 0.04, 0, c(0x5a3e24)); });
+    kinds[CA.horn] = B((b) => { for (let k = 0; k < 5; k++) b.add('cyl', M(0, 0.03 + k * 0.06, -k * k * 0.006, 0, -0.1 * k, 0, 0.05 + k * 0.012, 0.07, 0.05 + k * 0.012), c(k === 4 ? 0x8a6a30 : 0xd8c8a0)); b.add('cyl', M(0, 0.0, 0, 0, 0, 0, 0.055, 0.03, 0.055), c(0xb58a36)); });
+    kinds[CA.torch] = B((b) => { b.add('cyl', M(0, 0.2, 0, 0, 0, 0, 0.05, 0.75, 0.05), c(0x5a3e24)); b.add('cyl', M(0, 0.6, 0, 0, 0, 0, 0.1, 0.18, 0.1), c(0x1a1410)); b.add('cyl', M(0, 0.53, 0, 0, 0, 0, 0.11, 0.03, 0.11), c(0x3c3b3a)); });
+    kinds[CA.stick] = B((b) => { b.add('box', M(0, 0.35, 0, 0, 0, 0, 0.04, 0.72, 0.03), c(0x8a6a48)); b.box(0, 0.08, 0, 0.16, 0.035, 0.035, 0, c(0x5a3e24)); });
+    kinds[19] = B((b) => { b.add('box', M(0, 0.47, 0, 0, 0, 0, 0.05, 0.72, 0.012), c(0xb8bcc2)); b.add('cone5', M(0, 0.86, 0, 0, 0, 0, 0.05, 0.08, 0.012), c(0xb8bcc2)); b.box(0, 0.1, 0, 0.17, 0.03, 0.035, 0, c(0x6a5020)); b.add('cyl', M(0, 0.0, 0, 0, 0, 0, 0.032, 0.17, 0.032), c(0x3a2618)); b.add('sphere', M(0, -0.1, 0, 0, 0, 0, 0.05, 0.05, 0.05), c(0xb58a36)); });
+    kinds[20] = B((b) => { b.add('cyl', M(0, 0.12, 0, 0, 0, 0, 0.03, 0.42, 0.03), c(0x6a4a2a)); b.box(0, 0.33, 0, 0.16, 0.06, 0.06, 0, c(0x3c3b3a)); });
+    kinds[21] = B((b) => { b.add('cyl', M(0, 0.15, 0, 0, 0, 0, 0.03, 0.62, 0.03), c(0x6a4a2a)); b.add('box', M(0.05, 0.42, 0, 0, 0, 0, 0.12, 0.13, 0.015), c(0xa8acb2)); });
     kinds[CA.net] = B((b) => { b.add('sphere', M(0, 0, 0, 0, 0, 0, 0.6, 0.35, 0.4), c(0x4a4436)); });
     const mat = patch(new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8, metalness: 0.05 }));
     this.meshes = {}; this.counts = {};
@@ -278,6 +281,7 @@ class ItemRenderer {
     this.fireLogs = new THREE.InstancedMesh(kinds[CA.log], mat, 200); this.fireLogs.frustumCulled = false; scene.add(this.fireLogs);
   }
   begin() { for (const k in this.meshes) this.counts[k] = 0; }
+  putM(kind, e) { const m = this.meshes[kind]; if (!m) return; const i = this.counts[kind]++; if (i >= m.instanceMatrix.count) return; m.instanceMatrix.array.set(e, i * 16); }
   put(kind, x, y, z, yaw, s = 1, pitch = 0, roll = 0) {
     const m = this.meshes[kind]; if (!m) return;
     const i = this.counts[kind]++; if (i >= m.instanceMatrix.count) return;
@@ -334,7 +338,7 @@ class ItemRenderer {
 }
 
 // --------------------------------------------------------------------- animals
-class Animals {
+export class Animals {
   constructor(scene, grid, S) {
     const B = (fn) => { const b = new Builder(); fn(b); return b.geometry(); };
     const c = (h) => col(h);

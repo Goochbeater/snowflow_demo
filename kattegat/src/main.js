@@ -13,12 +13,14 @@ import { U, MAXL } from './materials.js';
 import { buildTerrain, buildWater, buildFalls, buildSky, lightAt, WU } from './env.js';
 import { buildSettlement } from './buildings.js';
 import { Fleet } from './ships.js';
-import { Crowd } from './crowd.js';
+import { Villagers } from './villagers.js';
 import { FX, Emitters } from './fx.js';
 import { Forest } from './trees.js';
 import { clamp, lerp, smoothstep, hash2 } from './util.js';
 import { buildUI } from './ui.js';
 import { Grass } from './grass.js';
+import { Flora } from './flora.js';
+import { FirstPerson } from './fp.js';
 
 const qs = new URLSearchParams(location.search);
 const P = {
@@ -71,10 +73,12 @@ async function boot() {
   setLoad('Planting the forests…'); await frameYield();
   const forest = new Forest(scene, L, grid, P.seed);
   const grass = new Grass(scene, L, grid);
+  const flora = new Flora(scene, L, grid, P.seed);
   setLoad('Caulking the longships…'); await frameYield();
   const fleet = new Fleet(scene, S, grid);
-  const crowd = new Crowd(scene, S, grid, sim);
-  crowd.animals.setPens(L.pens);
+  setLoad('Dressing the villagers…'); await frameYield();
+  const crowd = new Villagers(scene, S, grid, sim);
+  crowd.animals.setLayout(L, grid);
 
   // ------------------------------------------------------------- lights
   const sun = new THREE.DirectionalLight(0xffffff, 3); sun.castShadow = true;
@@ -87,7 +91,7 @@ async function boot() {
   const E = new Emitters();
   const src = []; // every light/flame source: {kind, pos, em, idx, delay}
   for (const b of L.B) {
-    if (b.smoke) { const em = E.add(b.smoke, 'house', b.kind === 'hall' ? 2.2 : 1.2, b.kind === 'hall' ? 90 : 56); src.push({ kind: 'hearth', b, em, pos: b.doorGlow || b.smoke, delay: hash2(b.id, 3) * 0.7, eraMin: b.kind === 'pit' ? 0 : 1 }); }
+    if (b.smoke) { const em = E.add(b.smoke, 'house', b.kind === 'hall' ? 1.6 : 0.85, b.kind === 'hall' ? 80 : 46); src.push({ kind: 'hearth', b, em, pos: b.doorGlow || b.smoke, delay: hash2(b.id, 3) * 0.7, eraMin: b.kind === 'pit' ? 0 : 1 }); }
     if (b.tentSmoke) { const em = E.add(b.tentSmoke, 'cook', 0.9, 12); src.push({ kind: 'cook', b, em, pos: b.tentSmoke, delay: hash2(b.id, 4) * 0.6, eraMin: 0, eraMax: 1 }); }
     if (b.forgeFire) { const em = E.add(b.forgeFire, 'fire', 1.4, 26); src.push({ kind: 'forgeFire', em, pos: b.forgeFire, delay: 0 }); const em2 = E.add(b.anvil, 'forge', 0.5, 4); src.push({ kind: 'anvil', em: em2, pos: b.anvil, delay: 0 }); const em3 = E.add(b.hearth, 'fire', 0.8, 10); src.push({ kind: 'forgeHearth', em: em3, pos: b.hearth, delay: 0 }); }
   }
@@ -217,6 +221,7 @@ async function boot() {
   };
   let camAnim = null, follow = null, bowShip = -1, bowMode = false;
   const goPreset = (name) => {
+    if (fp.active) toggleFP();
     const p = presets[name](); follow = null; bowMode = false;
     if (p.bow) { const s = S.ships.find((q) => q.state === 0) || S.ships[0]; bowShip = s.id; bowMode = true; return; }
     if (p.sunset && P.sun < 0.55) ui.setSun(0.66);
@@ -227,6 +232,16 @@ async function boot() {
   const initial = presets['The return']();
   camera.position.set(...initial.pos); controls.target.set(...initial.tgt);
   controls.addEventListener('start', () => { camAnim = null; if (bowMode) { bowMode = false; } });
+  const fp = new FirstPerson(camera, renderer.domElement, grid, L, P, GR);
+  const toggleFP = () => {
+    if (fp.active) {
+      fp.exit(); controls.enabled = true;
+      const d = new THREE.Vector3(); camera.getWorldDirection(d);
+      controls.target.copy(camera.position).addScaledVector(d, 12); camera.position.addScaledVector(d, -8).add(new THREE.Vector3(0, 5, 0));
+    } else { camAnim = null; follow = null; bowMode = false; controls.enabled = false; fp.enter(controls.target); }
+    ui.setFP(fp.active);
+  };
+  addEventListener('keydown', (e) => { if ((e.key === 'f' || e.key === 'F') && e.target.tagName !== 'INPUT') toggleFP(); if (e.key === 'e' || e.key === 'E') { if (fp.active) { const id = pick(innerWidth / 2, innerHeight / 2, 60); selected = id; ui.showAgent(id >= 0 ? S.agents[id] : null); } } });
 
   // ------------------------------------------------------------- inspect & overlays
   let selected = -1;
@@ -240,8 +255,8 @@ async function boot() {
   const rumorPts = new THREE.Points(new THREE.BufferGeometry(), new THREE.PointsMaterial({ size: 5, sizeAttenuation: false, vertexColors: true, depthTest: false, transparent: true }));
   rumorPts.frustumCulled = false; rumorPts.renderOrder = 22; scene.add(rumorPts);
   hideInRefl.push(water, pathLine, ring, destRing, intentLines, rumorPts, fx.snow, ...fx.fogBanks);
-  const pick = (cx, cy) => {
-    let best = -1, bd = 22 * 22; const v = new THREE.Vector3();
+  const pick = (cx, cy, rad = 22) => {
+    let best = -1, bd = rad * rad; const v = new THREE.Vector3();
     for (let i = 0; i < crowd.N; i++) {
       const Lk = crowd.look[i]; if (!Lk.vis) continue;
       v.set(Lk.wx, Lk.wy + 1.0 * Lk.scale, Lk.wz).project(camera); if (v.z > 1) continue;
@@ -253,6 +268,7 @@ async function boot() {
   let downAt = null;
   renderer.domElement.addEventListener('pointerdown', (e) => { downAt = [e.clientX, e.clientY, performance.now()]; });
   renderer.domElement.addEventListener('pointerup', (e) => {
+    if (fp.active) return;
     if (!downAt) return; const moved = Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]);
     if (moved < 5 && performance.now() - downAt[2] < 400) { const id = pick(e.clientX, e.clientY); selected = id; ui.showAgent(id >= 0 ? S.agents[id] : null); }
     downAt = null;
@@ -262,7 +278,8 @@ async function boot() {
   const ui = buildUI({
     P, presets: Object.keys(presets), goPreset, scrubTo, ARC_END,
     getT: () => S.t, invalidate: () => invalidateFuture(),
-    reset: () => goPreset('The return'),
+    reset: () => { if (fp.active) toggleFP(); goPreset('The return'); },
+    toggleFP: () => toggleFP(),
     followAgent: (id) => { follow = () => { const a = S.agents[id]; return [a.x, (isNaN(a.ey) ? grid.get(a.x, a.z) : a.ey) + 1.4, a.z]; }; const t = follow(); camAnim = { t: 0, dur: 1.5, p0: camera.position.clone(), t0: controls.target.clone(), p1: new THREE.Vector3(t[0] + 9, t[1] + 6, t[2] + 11), t1: new THREE.Vector3(...t) }; },
     deselect: () => { selected = -1; },
     newSeed: (sd) => { location.search = '?seed=' + sd; },
@@ -343,7 +360,7 @@ async function boot() {
     if (P.era < 2) for (const a of S.agents) if (!isNaN(a.ey)) a.ey = NaN;
     crowd.update(S, alpha, t, dt, camera, P, fleet);
     forest.update(camera);
-    grass.update(controls.target, P.season);
+    grass.update(fp.active ? fp.pos : controls.target, P.season);
     { const rp = []; const bv = new THREE.Vector3();
       for (const a of S.agents) { if (a.act !== 'haul' || a.moving || !a.alive) continue; const Lk = crowd.look[a.id]; if (!Lk.vis) continue; const fs = fleet.ships[a.p]; bv.set((a.id % 2 ? 0.6 : -0.6), 2.6, 11.4).applyMatrix4(fs.g.matrixWorld); if (Math.hypot(bv.x - Lk.wx, bv.z - Lk.wz) > 24) continue; rp.push(Lk.wx, Lk.wy + 1.15, Lk.wz, bv.x, bv.y, bv.z); }
       ropes.geometry.setAttribute('position', new THREE.Float32BufferAttribute(rp, 3)); }
@@ -414,24 +431,29 @@ async function boot() {
     U.uNL.value = nl;
     for (let i = 0; i < 4; i++) { const l = lights[i]; if (l && lk.dark > 0.2) { fillPts[i].position.set(l[0], l[1] + 1, l[2]); fillPts[i].intensity = l[4] * 60 * lk.dark; fillPts[i].distance = l[3] * 4; } else fillPts[i].intensity = 0; }
     // ---------------- camera
-    if (camAnim) {
-      camAnim.t += rawDt; const k = smoothstep(0, 1, camAnim.t / camAnim.dur);
-      if (follow) { const f = follow(); camAnim.t1.set(...f); }
-      camera.position.lerpVectors(camAnim.p0, camAnim.p1, k); controls.target.lerpVectors(camAnim.t0, camAnim.t1, k);
-      if (camAnim.t >= camAnim.dur) camAnim = null;
-    } else if (follow) {
-      const f = follow(); tv.set(...f).sub(controls.target); camera.position.add(tv); controls.target.add(tv);
+    if (fp.active) {
+      fp.update(Math.min(0.05, rawDt));
+      controls.target.copy(fp.look);
+    } else {
+      if (camAnim) {
+        camAnim.t += rawDt; const k = smoothstep(0, 1, camAnim.t / camAnim.dur);
+        if (follow) { const f = follow(); camAnim.t1.set(...f); }
+        camera.position.lerpVectors(camAnim.p0, camAnim.p1, k); controls.target.lerpVectors(camAnim.t0, camAnim.t1, k);
+        if (camAnim.t >= camAnim.dur) camAnim = null;
+      } else if (follow) {
+        const f = follow(); tv.set(...f).sub(controls.target); camera.position.add(tv); controls.target.add(tv);
+      }
+      if (bowMode) {
+        const s = fleet.ships[bowShip]; const m = s.g.matrixWorld;
+        const p = new THREE.Vector3(0, 6.5, 8.5).applyMatrix4(m); const look = new THREE.Vector3(0, 3, 70).applyMatrix4(m);
+        camera.position.lerp(p, Math.min(1, dt * 4)); controls.target.lerp(look, Math.min(1, dt * 4));
+        if (S.ships[bowShip].state >= 2) { const nx = S.ships.find((q) => q.state === 0); if (nx) bowShip = nx.id; }
+      }
+      controls.update();
+      // keep the camera above ground
+      const gy = grid.get(camera.position.x, camera.position.z);
+      if (camera.position.y < gy + 1.2) camera.position.y = gy + 1.2;
     }
-    if (bowMode) {
-      const s = fleet.ships[bowShip]; const m = s.g.matrixWorld;
-      const p = new THREE.Vector3(0, 6.5, 8.5).applyMatrix4(m); const look = new THREE.Vector3(0, 3, 70).applyMatrix4(m);
-      camera.position.lerp(p, Math.min(1, dt * 4)); controls.target.lerp(look, Math.min(1, dt * 4));
-      if (S.ships[bowShip].state >= 2) { const nx = S.ships.find((q) => q.state === 0); if (nx) bowShip = nx.id; }
-    }
-    controls.update();
-    // keep the camera above ground
-    const gy = grid.get(camera.position.x, camera.position.z);
-    if (camera.position.y < gy + 1.2) camera.position.y = gy + 1.2;
     // ---------------- overlays
     if (selected >= 0) {
       const a = S.agents[selected], Lk = crowd.look[selected];
@@ -464,7 +486,7 @@ async function boot() {
     uiT += dt; if (uiT > 0.2) { uiT = 0; ui.tick(S, { fps, ahead: AS.t, marks, catching: target !== null, rendered: crowd.rendered, selected: selected >= 0 ? S.agents[selected] : null }); }
   };
   addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight); });
-  window.__k = { S: () => S, P, camera, controls, goPreset, scrubTo, ui, renderer, scene };
+  window.__k = { S: () => S, P, camera, controls, goPreset, scrubTo, ui, renderer, scene, fp, toggleFP, fpAt: (x, z, yaw, pitch = 0) => { if (!fp.active) toggleFP(); fp.pos.set(x, grid.get(x, z), z); fp.yaw = yaw; fp.pitch = pitch; } };
   loop();
 }
 boot().catch((e) => { console.error(e); setLoad('Error: ' + e.message); });

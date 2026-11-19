@@ -54,9 +54,9 @@ export class FX {
           p.z += (kNoise(vec2(uTime * 0.3 + aSeed.w, aSeed.x * 40.0)) - 0.5) * age * 6.0 * sz;
           vec4 mv = modelViewMatrix * vec4(p, 1.0);
           gl_Position = projectionMatrix * mv;
-          float size = sz * (2.0 + age * 8.5);
+          float size = sz * (1.5 + age * 6.0);
           gl_PointSize = min(on * size * uPx / max(1.0, -mv.z), 420.0);
-          vA = on * smoothstep(0.0, 0.12, age) * pow(1.0 - age, 1.4) * (0.16 + 0.18 * em.r) * smoothstep(14.0, 75.0, -mv.z);
+          vA = on * smoothstep(0.0, 0.12, age) * pow(1.0 - age, 1.4) * (0.12 + 0.13 * em.r) * smoothstep(18.0, 90.0, -mv.z);
           vRot = aSeed.x * 40.0 + age * (kHash(vec2(aSeed.x, 7.0)) - 0.5) * 3.0;
           vAge = age; vHeat = em.g; vW = p;
         }`,
@@ -173,7 +173,7 @@ export class FX {
       uniforms: Object.assign({}, U, WU, this.common), transparent: true, depthWrite: false,
       vertexShader: `uniform float uTime; uniform vec2 uWind; uniform float uPx; attribute vec4 aSeed; varying float vA;
         void main(){ float age = fract(uTime / aSeed.y + aSeed.x); vec3 p = position + vec3(uWind.x, 0.5, uWind.y) * age * 12.0 + vec3(0., -age * 4.0 * step(aSeed.z, 2.0), 0.);
-          vec4 mv = modelViewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = aSeed.z * (2.0 + age * 4.0) * uPx / max(1.0, -mv.z); vA = (1.0 - age) * smoothstep(0.0, 0.15, age) * 0.22; }`,
+          vec4 mv = modelViewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = min(aSeed.z * (1.5 + age * 3.0) * uPx / max(1.0, -mv.z), 160.0); vA = (1.0 - age) * smoothstep(0.0, 0.15, age) * 0.09 * smoothstep(10.0, 60.0, -mv.z); }`,
       fragmentShader: `uniform vec3 uSunCol; uniform float uDark; varying float vA; void main(){ float d = length(gl_PointCoord - 0.5); if (d > 0.5) discard; gl_FragColor = vec4(vec3(0.85, 0.88, 0.9) * (0.3 + 0.7 * uSunCol) * (1.0 - uDark * 0.8), vA * smoothstep(0.5, 0.0, d));
         #include <colorspace_fragment>
       }`,

@@ -1,7 +1,7 @@
 // Static settlement construction, era by era, into merged meshes.
 import * as THREE from 'three';
 import { Builder, M, col } from './builder.js';
-import { RNG, catmull, resample, fbm, lerp } from './util.js';
+import { RNG, catmull, resample, fbm, lerp, polyDist } from './util.js';
 import { stdMat } from './materials.js';
 
 const C = {
@@ -497,6 +497,72 @@ export function buildSettlement(L, grid, seed) {
       for (let k = 0; k < 10; k++) Bd.add('cyl', M(b.x, y + 0.6 + k * 0.22, b.z, k * 0.7, 0, Math.PI / 2, 0.3, 2.6 - k * 0.2, 0.3), c(C.timber, 0.2));
       b.fireY = y + 2.4;
     });
+  }
+  // ------------------------------------------------------------ everyday life around the farmsteads
+  {
+    const D = bk(1);
+    const houses = L.B.filter((b) => b.kind === 'house');
+    const clearOf = (x, z, r) => !L.B.some((o) => Math.hypot(o.x - x, o.z - z) < o.len * 0.55 + r) && !L.roads.some((rd) => polyDist(x, z, rd.pts) < rd.w * 0.6 + r);
+    const wattle = (x0, z0, x1, z1) => { const n = Math.max(2, Math.round(Math.hypot(x1 - x0, z1 - z0) / 0.6)); let prev = null; for (let k = 0; k <= n; k++) { const x = x0 + (x1 - x0) * k / n, z = z0 + (z1 - z0) * k / n, y = H(x, z); D.pole([x, y - 0.1, z], [x, y + 0.95, z], 0.035, c(C.oldwood, 0.15)); if (prev) for (const hy of [0.25, 0.5, 0.75]) D.pole([prev[0], prev[1] + hy, prev[2]], [x, y + hy + (k % 2 ? 0.05 : -0.05), z], 0.035, c(0x7a6448, 0.12)); prev = [x, y, z]; } };
+    for (const b of houses) {
+      const F = frame(b);
+      // kitchen garden beside the house: wattle fence and rows of kale, leeks and beans
+      if (R() < 0.45) {
+        const gx = F(b.len / 2 + 4.5, 0, 0), w = 4 + R() * 2, d = 3 + R() * 1.5;
+        if (clearOf(gx[0], gx[2], 3)) {
+          const cr = Math.cos(b.rot), sr = Math.sin(b.rot); const P = (lx, lz) => [gx[0] + lx * cr + lz * sr, gx[2] - lx * sr + lz * cr];
+          const k0 = P(-w / 2, -d / 2), k1 = P(w / 2, -d / 2), k2 = P(w / 2, d / 2), k3 = P(-w / 2, d / 2);
+          wattle(k0[0], k0[1], k1[0], k1[1]); wattle(k1[0], k1[1], k2[0], k2[1]); wattle(k2[0], k2[1], k3[0], k3[1]);
+          for (let r = 0; r < 3; r++) for (let q = 0; q < Math.floor(w / 0.55); q++) { const [x, z] = P(-w / 2 + 0.45 + q * 0.55, -d / 2 + 0.7 + r * (d - 1.2) / 2); const y = H(x, z); if (r === 1) D.add('cone5', M(x, y + 0.22, z, R() * 3, 0, 0, 0.12, 0.45, 0.12), c(0x5a7a3a, 0.15)); else D.add('sphere', M(x, y + 0.13, z, R() * 3, 0, 0, 0.36, 0.26, 0.36), c(r ? 0x4a6a32 : 0x3e5a4a, 0.18)); }
+          D.add('box', M(gx[0], H(gx[0], gx[2]) + 0.02, gx[2], b.rot, 0, 0, w - 0.3, 0.04, d - 0.3), c(0x3a2a1c, 0.05));
+        }
+      }
+      // washing on a line between two posts
+      if (R() < 0.33) {
+        const a = F(-b.len / 2 - 1, 0, b.wid / 2 + 4), bb = F(-b.len / 2 + 4, 0, b.wid / 2 + 5);
+        if (clearOf((a[0] + bb[0]) / 2, (a[2] + bb[2]) / 2, 1.5)) {
+          const ya = H(a[0], a[2]), yb = H(bb[0], bb[2]);
+          D.pole([a[0], ya, a[2]], [a[0], ya + 1.9, a[2]], 0.05, c(C.timber)); D.pole([bb[0], yb, bb[2]], [bb[0], yb + 1.9, bb[2]], 0.05, c(C.timber));
+          D.pole([a[0], ya + 1.85, a[2]], [bb[0], yb + 1.85, bb[2]], 0.008, c(C.rope));
+          const rot = Math.atan2(bb[0] - a[0], bb[2] - a[2]) + Math.PI / 2;
+          for (let k = 0; k < 4; k++) { const t = 0.15 + k * 0.22; const x = a[0] + (bb[0] - a[0]) * t, z = a[2] + (bb[2] - a[2]) * t, y = ya + (yb - ya) * t + 1.85; const h = 0.5 + R() * 0.5; D.add('box', M(x, y - h / 2, z, rot, 0, (R() - 0.5) * 0.12, 0.55 + R() * 0.3, h, 0.02), c([C.white, C.blue, C.red, C.ochre, 0x6a7a5a][Math.floor(R() * 5)], 0.08)); }
+        }
+      }
+      // straw bee skeps on a plank
+      if (R() < 0.16) { const q = F(b.len / 2 - 1, 0, -b.wid / 2 - 2.5); const y = H(q[0], q[2]); D.box(q[0], y + 0.35, q[2], 1.8, 0.07, 0.45, b.rot, c(C.plank)); for (let k = 0; k < 3; k++) { const x = q[0] + Math.cos(b.rot) * (k - 1) * 0.55, z = q[2] - Math.sin(b.rot) * (k - 1) * 0.55; D.add('hemi', M(x, y + 0.38, z, 0, 0, 0, 0.42, 0.6, 0.42), c(C.straw, 0.08)); for (let r = 0; r < 3; r++) D.add('cyl12', M(x, y + 0.45 + r * 0.1, z, 0, 0, 0, 0.44 - r * 0.07, 0.025, 0.44 - r * 0.07), c(0xa88a48)); } }
+      // outdoor cooking: tripod and cauldron over a fire pit
+      if (R() < 0.22) { const q = F(0, 0, b.wid / 2 + 5); if (clearOf(q[0], q[2], 1.2)) { cookfire(D, q[0], q[2]); const y = H(q[0], q[2]); for (let k = 0; k < 3; k++) { const a2 = k * 2.09; D.pole([q[0] + Math.cos(a2) * 1.0, y, q[2] + Math.sin(a2) * 1.0], [q[0], y + 1.7, q[2]], 0.04, c(C.timber)); } D.pole([q[0], y + 1.65, q[2]], [q[0], y + 0.85, q[2]], 0.008, c(C.iron)); D.add('hemi', M(q[0], y + 0.85, q[2], 0, Math.PI, 0, 0.6, 0.45, 0.6), c(0x1c1c1c)); } }
+      // storage jars and a quern by the door
+      if (R() < 0.35) { const q = F(b.len * 0.3, 0, b.wid / 2 + 1.5); const y = H(q[0], q[2]); for (let k = 0; k < 2 + Math.floor(R() * 3); k++) D.add('sphere', M(q[0] + k * 0.4, y + 0.28, q[2], 0, 0, 0, 0.36, 0.55, 0.36), c(C.clay, 0.15)); }
+      if (R() < 0.2) { const q = F(-b.len * 0.3, 0, b.wid / 2 + 1.5); const y = H(q[0], q[2]); D.add('cyl12', M(q[0], y + 0.12, q[2], 0, 0, 0, 0.55, 0.12, 0.55), c(C.stone)); D.add('cyl12', M(q[0], y + 0.26, q[2], 0, 0, 0, 0.53, 0.12, 0.53), c(0x9a948a)); D.pole([q[0] + 0.15, y + 0.3, q[2]], [q[0] + 0.15, y + 0.5, q[2]], 0.02, c(C.timber)); }
+    }
+    // wells at the lane junctions
+    for (const [x, z] of [[24, 176], [-52, 300], [96, 252], [-150, 214], [178, 300]]) {
+      if (!clearOf(x, z, 1.5)) continue; const y = H(x, z);
+      for (let k = 0; k < 12; k++) { const a = k / 12 * 6.283; D.add('rock', M(x + Math.cos(a) * 0.95, y + 0.35, z + Math.sin(a) * 0.95, a, 0, 0, 0.55, 0.75, 0.45), c(C.stone, 0.15)); }
+      D.add('disc', M(x, y + 0.5, z, 0, 0, 0, 1.4, 0.02, 1.4), c(0x10181c));
+      for (const sx of [-1, 1]) D.pole([x + sx * 1.15, y, z], [x + sx * 1.15, y + 1.9, z], 0.07, c(C.timber));
+      D.add('cyl', M(x, y + 1.6, z, 0, 0, Math.PI / 2, 0.18, 2.4, 0.18), c(C.oldwood)); D.pole([x, y + 1.55, z], [x, y + 1.0, z], 0.01, c(C.rope)); D.add('cyl', M(x, y + 0.88, z, 0, 0, 0, 0.3, 0.3, 0.3), c(C.plank));
+      D.quad([x - 1.4, y + 2.05, z - 0.9], [x + 1.4, y + 2.05, z - 0.9], [x + 1.4, y + 2.5, z], [x - 1.4, y + 2.5, z], c(C.shingle)); D.quad([x - 1.4, y + 2.05, z + 0.9], [x - 1.4, y + 2.5, z], [x + 1.4, y + 2.5, z], [x + 1.4, y + 2.05, z + 0.9], c(C.shingle2));
+    }
+    // a little market on the shore road: stalls with striped awnings and goods
+    for (let k = 0; k < 6; k++) {
+      const x = 150 + k * 9.5, z = 117 + (k % 2) * 1.2; if (!clearOf(x, z, 2.2)) continue; const y = H(x, z);
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) D.pole([x + sx * 1.6, y - 0.2, z + sz * 1.0], [x + sx * 1.6, y + (sz > 0 ? 2.4 : 2.0), z + sz * 1.0], 0.05, c(C.timber));
+      D.box(x, y + 0.85, z - 0.4, 3.0, 0.08, 1.0, 0, c(C.plank)); D.box(x, y + 0.42, z - 0.85, 3.0, 0.85, 0.06, 0, c(C.oldwood));
+      for (let st = 0; st < 6; st++) D.quad([x - 1.75 + st * 0.58, y + 2.0, z - 1.15], [x - 1.75 + (st + 1) * 0.58, y + 2.0, z - 1.15], [x - 1.75 + (st + 1) * 0.58, y + 2.45, z + 1.1], [x - 1.75 + st * 0.58, y + 2.45, z + 1.1], c(st % 2 ? C.white : [C.red, C.blue, 0x3e7a3a, C.ochre][k % 4]));
+      const goods = k % 3;
+      for (let g = 0; g < 6; g++) { const gx = x - 1.2 + g * 0.48, gy = y + 0.92, gz = z - 0.45; if (goods === 0) D.add('sphere', M(gx, gy + 0.1, gz, 0, 0, 0, 0.26, 0.32, 0.26), c(C.clay, 0.2)); else if (goods === 1) D.add('box', M(gx, gy + 0.04, gz, g * 0.3, 0, 0, 0.42, 0.06, 0.5), c([0x5a4030, 0x8a7050, 0x3a3028, 0xc8b8a0][g % 4], 0.1)); else D.add('box', M(gx, gy + 0.05, gz, 0.2, 0, 0, 0.1, 0.06, 0.4), c(C.fish, 0.15)); }
+      barrel(D, x + 2.2, z - 0.2); crate(D, x - 2.1, z + 0.4);
+    }
+    // small boats hauled out and turned over on trestles
+    const boatAt = (x, z, rot) => {
+      const y = Math.max(H(x, z), 0.3); const cr = Math.cos(rot), sr = Math.sin(rot); const P = (lx, ly, lz) => [x + lx * cr + lz * sr, y + ly, z - lx * sr + lz * cr];
+      for (const t of [-1.6, 1.6]) { const a = P(t, 0, -0.7), b2 = P(t, 0, 0.7); D.pole(a, [a[0], y + 0.75, a[2]], 0.05, c(C.timber)); D.pole(b2, [b2[0], y + 0.75, b2[2]], 0.05, c(C.timber)); D.pole([a[0], y + 0.75, a[2]], [b2[0], y + 0.75, b2[2]], 0.05, c(C.timber)); }
+      const L2 = 2.8, B2 = 0.75; let prevL = null, prevR = null, prevK = null;
+      for (let k = 0; k <= 8; k++) { const u = k / 8, lx = (u - 0.5) * 2 * L2, w = B2 * Math.sin(Math.PI * u) ** 0.7, keel = P(lx, 1.5 + 0.25 * Math.abs(2 * u - 1) ** 2, 0), l = P(lx, 0.8 + 0.3 * Math.abs(2 * u - 1) ** 2, w), r = P(lx, 0.8 + 0.3 * Math.abs(2 * u - 1) ** 2, -w); if (prevK) { D.quad(prevK, keel, l, prevL, c(0x3a2a1c, 0.1)); D.quad(prevK, prevR, r, keel, c(0x45321f, 0.1)); } prevK = keel; prevL = l; prevR = r; }
+    };
+    for (const [x, z, r] of [[-214, 112, 0.2], [-226, 116, 0.35], [244, 112, -0.2], [258, 116, 0.1], [276, 114, -0.3]]) boatAt(x, z, r);
   }
   // ------------------------------------------------------------ meshes
   const mat = stdMat({ snow: true }, { side: THREE.DoubleSide });

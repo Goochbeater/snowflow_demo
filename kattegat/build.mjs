@@ -2,7 +2,9 @@
 import { build } from 'esbuild';
 import { writeFileSync, mkdirSync } from 'fs';
 
-const r = await build({ entryPoints: ['src/main.js'], bundle: true, format: 'iife', minify: process.argv.includes('--min'), write: false, target: 'es2020', legalComments: 'none' });
+const entry = process.argv.find((a) => a.startsWith('--entry='))?.slice(8) || 'src/main.js';
+const outName = process.argv.find((a) => a.startsWith('--out='))?.slice(6) || 'kattegat.html';
+const r = await build({ entryPoints: [entry], loader: { '.bin': 'binary' }, bundle: true, format: 'iife', minify: process.argv.includes('--min'), write: false, target: 'es2020', legalComments: 'none' });
 const js = r.outputFiles[0].text.replace(/<\/script/g, '<\\/script');
 const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -13,5 +15,5 @@ const html = `<!doctype html>
 <body><div id="app"></div><div id="loading"><h1>KATTEGAT</h1><div id="loadmsg">…</div></div>
 <script>${js}</script></body></html>`;
 mkdirSync('dist', { recursive: true });
-writeFileSync('dist/kattegat.html', html);
-console.log('wrote dist/kattegat.html', (html.length / 1024).toFixed(0) + ' KB');
+writeFileSync('dist/' + outName, html);
+console.log('wrote dist/' + outName, (html.length / 1024).toFixed(0) + ' KB');
