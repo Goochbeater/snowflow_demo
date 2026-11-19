@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { loadPeople, OUTFITS, pk, boneMatrix } from './people.js';
+import { loadPeople, OUTFITS, pk, boneMatrix, packLook } from './people.js';
 
 document.getElementById('loading')?.remove();
 const q = new URLSearchParams(location.search);
@@ -16,20 +16,20 @@ scene.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(),
 const sun = new THREE.DirectionalLight(0xfff0dd, 2.4); sun.position.set(4, 8, 6); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12 }); scene.add(sun);
 const ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ color: 0x5a5040 })); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
-const P = loadPeople();
+const P = loadPeople(); console.error('speeds', P.baked.bakes.map((b) => b.pack.name + b.kind + ':' + ['walk', 'run', 'carry', 'limp'].map((k) => b.clips[k].speed?.toFixed(2)).join('/')).join(' '));
 const PAL = { skin: [0xe0b394, 0xd8a888, 0xc89070, 0xe8c0a0], hair: [0xd8c08a, 0xb8945a, 0x8a5a2a, 0x5a3a1e, 0xa04a1e, 0x2a1e14], c1: [0x7c1e18, 0x2e4a6e, 0x4e6a3a, 0x8a6a2a, 0x6a2a2a, 0x7a7060], c2: [0x4a3e30, 0x5a4a3a, 0x3a3a40, 0x6a5a40], c3: [0x2c4a6e, 0x6a1a12, 0x3e5a32, 0x6a5440], lea: [0x4a3020, 0x5a3a22, 0x3a2618], acc: [0xb58a36, 0x8e2a1e, 0x2c6e6a, 0xd8d0bc] };
 const lin = (h) => { const c = new THREE.Color(h); return [c.r, c.g, c.b]; };
 const pick = (arr, i) => lin(arr[i % arr.length]);
 function inst(outfitKey, entries) {
   const O = P.outfits[outfitKey]; const g = O.lods[lod].clone(); const n = entries.length;
   const A = (k) => new THREE.InstancedBufferAttribute(new Float32Array(n * k), k);
-  const at = { aFrm: A(4), aPalA: A(4), aPalB: A(4) };
+  const at = { aFrm: A(4), aFrm2: A(4), aPalA: A(4), aPalB: A(4) };
   for (const k in at) g.setAttribute(k, at[k]);
   const m = new THREE.InstancedMesh(g, P.mat, n); m.customDepthMaterial = P.dmat; m.castShadow = true; m.frustumCulled = false;
   const bake = P.baked.bakes.find((b) => b.pack.name === O.def.pack && b.kind === kind);
   entries.forEach((e, i) => {
     const c = bake.clips[e.clip]; const row = c.row0 + Math.min(c.frames - 1, Math.floor(e.u * c.frames));
-    at.aFrm.setXYZW(i, row, row, 0, 0);
+    at.aFrm.setXYZW(i, row, row, 0, packLook(e.look || 0, e.pitch || 0, O.def.pack === 'women'));
     at.aPalA.setXYZW(i, pk(...pick(PAL.skin, i + e.k)), pk(...pick(PAL.hair, i * 3 + e.k)), pk(...pick(PAL.c1, i + e.k * 2)), pk(...pick(PAL.c2, i + e.k)));
     at.aPalB.setXYZW(i, pk(...pick(PAL.c3, i + e.k)), pk(...pick(PAL.lea, i)), pk(...pick(PAL.acc, i + e.k)), 0);
     const s = kind === 'child' ? 0.62 : 1;
@@ -77,4 +77,10 @@ window.done = true;
   
   const ins = scene.children.filter((o) => o.isInstancedMesh);
   console.error('instanced', ins.length, ins[0]?.count, JSON.stringify(Array.from(ins[0].geometry.attributes.aFrm.array.slice(0, 4))), JSON.stringify(Array.from(ins[0].instanceMatrix.array.slice(12, 15))), 'verts', g.attributes.position.count, 'idx', g.index.count, 'bs', JSON.stringify(g.boundingSphere));
+}
+if (q.get('dbg')) {
+  const pack = P.packs[q.get('pack') || 'women']; const b = P.baked.bakes.find((x) => x.pack === pack && x.kind === 'adult');
+  const c = b.clips[q.get('dbg')]; const m = new THREE.Matrix4(); const out = [];
+  for (const bn of ['ShoulderR', 'UpperArmR', 'LowerArmR', 'WristR', 'UpperArmL', 'LowerArmL', 'WristL', 'Head']) { const i = pack.idx[bn]; boneMatrix(P.baked, c.row0, i, m); const v = pack.rest[i].clone().applyMatrix4(m); out.push(bn + ':' + v.toArray().map((x) => x.toFixed(2)).join(',') + ' lp' + Array.from(pack.clips.Idle.restPos.slice(i * 3, i * 3 + 3)).map((x) => x.toFixed(1)).join(',')); }
+  console.error('DBG ' + out.join(' | '));
 }

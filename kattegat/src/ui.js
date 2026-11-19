@@ -161,7 +161,7 @@ export function buildUI(o) {
     if (e.key === 'r' || e.key === 'R') o.reset();
     if (e.key === 'p' || e.key === 'P') photo(!P.photo);
     if (e.key === 'Escape') { photo(false); showAgent(null); if (ui.classList.contains('fp')) o.toggleFP(); }
-    if (e.key === ' ') { $('play').onclick(); e.preventDefault(); }
+    if (e.key === ' ' && !ui.classList.contains('fp')) { $('play').onclick(); e.preventDefault(); }
   });
   setTimeout(() => ($('hint').style.opacity = 0), 9000);
   // inspector

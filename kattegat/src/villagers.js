@@ -2,7 +2,7 @@
 // Outfits are chosen from role/sex/age/fate; clips are chosen from what the agent is actually doing.
 import * as THREE from 'three';
 import { AN, CA } from './sim.js';
-import { loadPeople, boneMatrix, pk } from './people.js';
+import { loadPeople, boneMatrixLerp, pk, packLook } from './people.js';
 import { ItemRenderer } from './crowd.js';
 import { Fauna } from './fauna.js';
 import { hash2, RNG, lerp, clamp } from './util.js';
@@ -51,6 +51,24 @@ function paletteFor(a, rng, outfit) {
   if (outfit === 'seer') { c1[0] = 0.04; c1[1] = 0.04; c1[2] = 0.06; c3[0] = 0.02; c3[1] = 0.025; c3[2] = 0.04; }
   return [pk(...skin), pk(...hair), pk(...c1), pk(...c2), pk(...c3), pk(...lea), pk(...acc), 0];
 }
+// standing-about repertoire by character; one is picked every few seconds and cross-faded in
+function idleSet(a, outfit) {
+  if (a.age < 15) return ['idle', 'idle2', 'weight', 'idle', 'fidget'];
+  if (outfit === 'jarl') return ['handsBack', 'akimbo', 'idle2', 'weight'];
+  if (a.age > 58) return ['handsBack', 'idle2', 'weight', 'handsBack', 'warm'];
+  if (a.role === 'housecarl' || a.role === 'shieldmaiden') return ['armsCross', 'akimbo', 'weight', 'idle2', 'armsCross'];
+  if (a.role === 'thrall') return ['idle2', 'weight', 'warm', 'idle'];
+  if (a.female) return ['idle2', 'weight', 'warm', 'armsCross', 'chat', 'idle'];
+  return ['idle', 'armsCross', 'akimbo', 'weight', 'idle2', 'warm', 'chat'];
+}
+const MOVE_CLIPS = new Set(['walk', 'run', 'carry', 'carryHigh', 'carryShoulder', 'stumble', 'limp']);
+const NO_LOOK = new Set(['lie', 'row', 'slump', 'death', 'haul', 'wrestle', 'fight', 'dance', 'kneel', 'scythe']);
+// sample a clip at time t into [row, next row, fraction]
+function frm(C, t, out, k) {
+  let u, f1;
+  if (C.loop) { u = ((((t / C.dur) % 1) + 1) % 1) * C.frames; const f0 = Math.floor(u); f1 = (f0 + 1) % C.frames; out[k] = C.row0 + f0; out[k + 1] = C.row0 + f1; out[k + 2] = u - f0; }
+  else { u = Math.min(C.frames - 1, Math.max(0, t / C.dur * C.frames)); const f0 = Math.floor(u); out[k] = C.row0 + f0; out[k + 1] = C.row0 + Math.min(C.frames - 1, f0 + 1); out[k + 2] = u - f0; }
+}
 const TWO_HAND = new Set([CA.chest, CA.sack, CA.cask, CA.cloth, CA.weapons, CA.plate, CA.barrel, CA.cauldron, CA.net]);
 const HIGH = new Set([CA.bench, CA.table]);
 const SHOULDER = new Set([CA.log, CA.body]);
@@ -73,7 +91,7 @@ export class Villagers {
       const scale = (a.age < 15 ? 0.5 + a.age * 0.03 : 1) * (a.female ? 0.97 : 1.0) * (0.96 + rng.next() * 0.08);
       const pal = paletteFor(a, rng, outfit);
       counts[outfit] = (counts[outfit] || 0) + 1;
-      this.look.push({ outfit, kind, pack, bake, scale, pal, yaw: 0, clip: 'idle', t: rng.next() * 3, prev: null, prevT: 0, fade: 0, alt: rng.next() < 0.5, dist: 0, vis: false, wx: 0, wy: 0, wz: 0, phase0: rng.next() * 6.28 });
+      this.look.push({ outfit, kind, pack, bake, scale, pal, yaw: 0, clip: 'idle', t: rng.next() * 3, prev: null, prevT: 0, fade: 0, alt: rng.next() < 0.5, dist: 0, vis: false, wx: 0, wy: 0, wz: 0, phase0: rng.next() * 6.28, idle: 'idle', idleT: rng.next() * 8, lookY: 0, lookP: 0, curious: rng.next(), fem: pack === 'women', idles: idleSet(a, outfit) });
     }
     // instanced meshes per outfit per LOD
     this.buckets = {};
@@ -82,13 +100,14 @@ export class Villagers {
       this.buckets[key] = O.lods.map((g0, lod) => {
         const g = g0.clone();
         const fr = new THREE.InstancedBufferAttribute(new Float32Array(cap * 4), 4); fr.setUsage(THREE.DynamicDrawUsage);
+        const fr2 = new THREE.InstancedBufferAttribute(new Float32Array(cap * 4), 4); fr2.setUsage(THREE.DynamicDrawUsage);
         const pa = new THREE.InstancedBufferAttribute(new Float32Array(cap * 4), 4); pa.setUsage(THREE.DynamicDrawUsage);
         const pb = new THREE.InstancedBufferAttribute(new Float32Array(cap * 4), 4); pb.setUsage(THREE.DynamicDrawUsage);
-        g.setAttribute('aFrm', fr); g.setAttribute('aPalA', pa); g.setAttribute('aPalB', pb);
+        g.setAttribute('aFrm', fr); g.setAttribute('aFrm2', fr2); g.setAttribute('aPalA', pa); g.setAttribute('aPalB', pb);
         const m = new THREE.InstancedMesh(g, PP.mat, cap); m.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
         m.customDepthMaterial = PP.dmat; m.castShadow = lod < 2; m.receiveShadow = lod === 0; m.frustumCulled = false; m.count = 0;
         scene.add(m);
-        return { m, fr, pa, pb, n: 0 };
+        return { m, fr, fr2, pa, pb, n: 0 };
       });
     }
     // hand frames (metres)
@@ -102,7 +121,7 @@ export class Villagers {
     this.items = new ItemRenderer(scene, S);
     this.animals = new Fauna(scene, grid, S);
     this.heldTorches = [];
-    this._m = new THREE.Matrix4(); this._k = new THREE.Matrix4(); this._h = new THREE.Matrix4(); this._i = new THREE.Matrix4(); this._v = new THREE.Vector3(); this._v2 = new THREE.Vector3();
+    this._m = new THREE.Matrix4(); this._k = new THREE.Matrix4(); this._h = new THREE.Matrix4(); this._i = new THREE.Matrix4(); this._v = new THREE.Vector3(); this._v2 = new THREE.Vector3(); this._f = new Float32Array(6); this.speakers = []; this.viewer = null;
   }
   clipFor(a, L) {
     const carry = a.carry || (a.item >= 0 ? a.itemCk : 0);
@@ -137,7 +156,7 @@ export class Villagers {
       case AN.weave: return 'weave';
       case AN.point: return 'point';
       case AN.mourn: return 'mourn';
-      default: return L.alt ? 'idle2' : 'idle';
+      default: return a.act === 'argue' || a.act === 'talk' ? 'chat' : L.idle;
     }
   }
   heldKind(a, clip) {
@@ -154,6 +173,8 @@ export class Villagers {
     const items = this.items; items.begin();
     this.heldTorches.length = 0; this.rendered = 0;
     const tmpV = this._v;
+    this.speakers.length = 0;
+    for (const a of A) if (a.alive && !a.inside && !a.aboard && (a.anim === AN.speak || a.anim === AN.music) && !a.moving) this.speakers.push(a);
     for (let i = 0; i < this.N; i++) {
       const a = A[i], L = this.look[i];
       a.itemCk = a.item >= 0 && S.items[a.item] ? S.items[a.item].ck : 0;
@@ -178,31 +199,55 @@ export class Villagers {
       const d2 = (x - cx) ** 2 + (y - cy) ** 2 + (z - cz) ** 2;
       if (d2 > 900 * 900) continue;
       const lod = d2 < LOD_D[0] ** 2 ? 0 : d2 < LOD_D[1] ** 2 ? 1 : 2;
+      // idle repertoire: shift between stances every few seconds
+      L.idleT -= dt;
+      if (L.idleT <= 0) { const h = hash2(i * 7 + 1, Math.floor(t * 0.1) + L.phase0 * 10); L.idle = L.idles[Math.floor(h * L.idles.length)]; L.idleT = 7 + h * 11; }
       // animation state
       const clip = a.aboard && a.anim === AN.idle ? 'sit' : this.clipFor(a, L);
-      if (clip !== L.clip) { L.prev = L.clip; L.prevT = L.t; L.fade = 1; L.clip = clip; L.t = 0; }
+      if (clip !== L.clip) { L.prev = L.clip; L.prevT = L.t; L.fade = 1; L.clip = clip; L.t = MOVE_CLIPS.has(clip) && MOVE_CLIPS.has(L.prev) ? L.t : 0; }
       const C = L.bake.clips[clip];
+      // stride matching: play the gait at the speed the feet actually cover ground
       let rate = 1;
-      if (clip === 'walk' || clip === 'carry' || clip === 'stumble' || clip === 'limp' || clip === 'carryHigh' || clip === 'carryShoulder') rate = dt > 0 ? clamp(moved / dt / (1.3 * L.scale), 0.3, 2.2) : 1;
-      else if (clip === 'run') rate = dt > 0 ? clamp(moved / dt / (3.4 * L.scale), 0.4, 1.8) : 1;
-      if (clip === 'row' && a.aboard) { L.t = (fleet.ships[a.ship].oarPhase / (Math.PI * 2)) * C.dur; } else L.t += dt * rate * (P.speed === 0 ? 0 : 1);
-      if (L.fade > 0) { L.fade = Math.max(0, L.fade - dt * 4.5); L.prevT += dt; }
-      const fA = C.row0 + (C.loop ? Math.floor((((L.t / C.dur) % 1) + 1) % 1 * C.frames) : Math.min(C.frames - 1, Math.floor(L.t / C.dur * C.frames)));
-      let fB = fA, wB = 0;
-      if (L.fade > 0 && L.prev) { const Cp = L.bake.clips[L.prev]; fB = Cp.row0 + (Cp.loop ? Math.floor((((L.prevT / Cp.dur) % 1) + 1) % 1 * Cp.frames) : Cp.frames - 1); wB = L.fade * L.fade * (3 - 2 * L.fade); }
+      if (MOVE_CLIPS.has(clip) && C.speed) { const v = dt > 0 ? moved / dt : 0; rate = clamp(v / (C.speed * L.scale), 0.35, 2.0); }
+      L.rate = L.rate === undefined ? rate : L.rate + (rate - L.rate) * Math.min(1, dt * 8);
+      const run = P.speed === 0 ? 0 : 1;
+      if (clip === 'row' && a.aboard) { L.t = (fleet.ships[a.ship].oarPhase / (Math.PI * 2)) * C.dur; } else L.t += dt * L.rate * run;
+      if (L.fade > 0) { L.fade = Math.max(0, L.fade - dt * 3.6); L.prevT += dt * run; }
+      const F = this._f; frm(C, L.t, F, 0);
+      let wB = 0;
+      if (L.fade > 0 && L.prev) { frm(L.bake.clips[L.prev], L.prevT, F, 3); wB = L.fade * L.fade * (3 - 2 * L.fade); } else { F[3] = F[0]; F[4] = F[1]; F[5] = F[2]; }
+      // gaze: the speaker holding the crowd, a partner, the visitor walking past, or an idle glance around
+      let ly = 0, lp = 0;
+      if (lod < 2 && !NO_LOOK.has(clip)) {
+        let tx = 0, tz = 0, ty = 0, has = false;
+        const V = this.viewer;
+        if (V && L.curious < 0.8) { const dx = V.x - x, dz = V.z - z, dd = dx * dx + dz * dz; if (dd < 64 && dd > 0.4) { tx = V.x; ty = V.y; tz = V.z; has = true; } }
+        if (!has && a.p >= 0 && A[a.p] && (a.act === 'argue' || a.act === 'embrace' || a.act === 'talk' || a.act === 'follow')) { const b = A[a.p]; tx = b.x; tz = b.z; ty = y + 1.55; has = true; }
+        if (!has && a.anim !== AN.speak) for (const sp of this.speakers) { const dx = sp.x - x, dz = sp.z - z; if (dx * dx + dz * dz < 600 && sp !== a) { tx = sp.x; tz = sp.z; ty = y + 1.6; has = true; break; } }
+        if (has) {
+          let r = Math.atan2(tx - x, tz - z) - yaw; while (r > Math.PI) r -= 2 * Math.PI; while (r < -Math.PI) r += 2 * Math.PI;
+          if (Math.abs(r) < 2.0) { ly = clamp(r, -1.15, 1.15); lp = clamp(Math.atan2(ty - (y + 1.55 * L.scale), Math.hypot(tx - x, tz - z)), -0.5, 0.45); }
+        } else if (!MOVE_CLIPS.has(clip)) {
+          const g = Math.sin(t * 0.37 + L.phase0) + Math.sin(t * 0.23 + L.phase0 * 2.3);
+          ly = Math.abs(g) > 1.1 ? Math.sign(g) * 0.7 : 0; lp = Math.sin(t * 0.17 + L.phase0) * 0.08;
+        }
+      }
+      L.lookY += (ly - L.lookY) * Math.min(1, dt * 3.5); L.lookP += (lp - L.lookP) * Math.min(1, dt * 3.5);
       // write instance
       const B = this.buckets[L.outfit][lod]; const j = B.n++;
       const s = L.scale, c = Math.cos(yaw), sn = Math.sin(yaw), e = B.m.instanceMatrix.array, o = j * 16;
       e[o] = c * s; e[o + 1] = 0; e[o + 2] = -sn * s; e[o + 3] = 0; e[o + 4] = 0; e[o + 5] = s; e[o + 6] = 0; e[o + 7] = 0;
       e[o + 8] = sn * s; e[o + 9] = 0; e[o + 10] = c * s; e[o + 11] = 0; e[o + 12] = x; e[o + 13] = y; e[o + 14] = z; e[o + 15] = 1;
-      B.fr.array[j * 4] = fA; B.fr.array[j * 4 + 1] = fB; B.fr.array[j * 4 + 2] = wB;
+      const fa = B.fr.array, fb = B.fr2.array, q = j * 4;
+      fa[q] = F[0]; fa[q + 1] = F[1]; fa[q + 2] = F[2]; fa[q + 3] = packLook(L.lookY, L.lookP, L.fem);
+      fb[q] = F[3]; fb[q + 1] = F[4]; fb[q + 2] = F[5]; fb[q + 3] = wB;
       B.pa.array.set(L.pal.slice(0, 4), j * 4); B.pb.array.set(L.pal.slice(4, 8), j * 4);
       // held items, attached to the hands of the posed skeleton
       const hk = this.heldKind(a, clip);
       if (hk) {
         const inst = this._i.fromArray(e, o);
         const Hs = this.hands[L.pack];
-        const handW = (side) => this._h.multiplyMatrices(boneMatrix(this.PP.baked, fA, Hs['b' + side], this._k), Hs[side]).premultiply(inst);
+        const handW = (side) => this._h.multiplyMatrices(boneMatrixLerp(this.PP.baked, F[0], F[1], F[2], Hs['b' + side], this._k), Hs[side]).premultiply(inst);
         if (ONE_HAND.has(hk)) {
           const hw = handW('R');
           if (hk === CA.torch || hk === CA.bucket || hk === CA.fish) {
@@ -223,7 +268,7 @@ export class Villagers {
       }
     }
     for (const k in this.buckets) for (const B of this.buckets[k]) {
-      B.m.count = B.n; B.m.instanceMatrix.needsUpdate = true; B.fr.needsUpdate = true; B.pa.needsUpdate = true; B.pb.needsUpdate = true;
+      B.m.count = B.n; B.m.instanceMatrix.needsUpdate = true; B.fr.needsUpdate = true; B.fr2.needsUpdate = true; B.pa.needsUpdate = true; B.pb.needsUpdate = true;
     }
     items.world(S, fleet, this.grid);
     items.end();

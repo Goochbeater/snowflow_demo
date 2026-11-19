@@ -10,6 +10,7 @@ import { makeLayout } from './layout.js';
 import { buildGraph } from './graph.js';
 import { createWorld, Sim, DT, ARC_END, AN, CA, ROLE_LABEL, KBITS, clock } from './sim.js';
 import { U, MAXL } from './materials.js';
+import { generateTextures } from './texgen.js';
 import { buildTerrain, buildWater, buildFalls, buildSky, lightAt, WU } from './env.js';
 import { buildSettlement } from './buildings.js';
 import { Fleet } from './ships.js';
@@ -19,6 +20,7 @@ import { Forest } from './trees.js';
 import { clamp, lerp, smoothstep, hash2 } from './util.js';
 import { buildUI } from './ui.js';
 import { Grass } from './grass.js';
+import { GrassField } from './grassfield.js';
 import { Flora } from './flora.js';
 import { FirstPerson } from './fp.js';
 
@@ -66,13 +68,17 @@ async function boot() {
   const envScene = new THREE.Scene(); envScene.add(SK.envSky);
   let envRT = null, envKey = -1, envT = 0;
   const updateEnv = () => { const old = envRT; envRT = pmrem.fromScene(envScene, 0, 0.1, 1000); scene.environment = envRT.texture; if (old) old.dispose(); };
-  const [terrIn, terrOut] = buildTerrain(L, grid); scene.add(terrIn, terrOut);
+  const TEX = generateTextures(renderer);
+  const [terrIn, terrOut] = buildTerrain(L, grid, TEX); scene.add(terrIn, terrOut);
   const water = buildWater(grid); scene.add(water);
   const falls = buildFalls(grid); scene.add(falls.group);
   const settle = buildSettlement(L, grid, P.seed); for (const m of settle.meshes) scene.add(m);
   setLoad('Planting the forests…'); await frameYield();
   const forest = new Forest(scene, L, grid, P.seed);
-  const grass = new Grass(scene, L, grid);
+  const grass = new Grass(scene, L, grid); grass.noTufts = true;
+  const gfield = new GrassField(scene, terrIn.geometry, TEX);
+  if (qs.get('grass') === 'lo') gfield.lowQ = true;
+  if (qs.get('grass') === '0') gfield.off = true;
   const flora = new Flora(scene, L, grid, P.seed);
   setLoad('Caulking the longships…'); await frameYield();
   const fleet = new Fleet(scene, S, grid);
@@ -254,7 +260,7 @@ async function boot() {
   intentLines.frustumCulled = false; intentLines.renderOrder = 19; scene.add(intentLines);
   const rumorPts = new THREE.Points(new THREE.BufferGeometry(), new THREE.PointsMaterial({ size: 5, sizeAttenuation: false, vertexColors: true, depthTest: false, transparent: true }));
   rumorPts.frustumCulled = false; rumorPts.renderOrder = 22; scene.add(rumorPts);
-  hideInRefl.push(water, pathLine, ring, destRing, intentLines, rumorPts, fx.snow, ...fx.fogBanks);
+  hideInRefl.push(water, pathLine, ring, destRing, intentLines, rumorPts, fx.snow, ...fx.fogBanks, ...gfield.rings.map((r) => r.mesh));
   const pick = (cx, cy, rad = 22) => {
     let best = -1, bd = rad * rad; const v = new THREE.Vector3();
     for (let i = 0; i < crowd.N; i++) {
@@ -358,9 +364,11 @@ async function boot() {
     fleet.update(S, alpha, t, P, P.era, dt);
     crowd.items.pyreAndFires(S, L, grid);
     if (P.era < 2) for (const a of S.agents) if (!isNaN(a.ey)) a.ey = NaN;
+    crowd.viewer = fp.active ? camera.position : null;
     crowd.update(S, alpha, t, dt, camera, P, fleet);
     forest.update(camera);
     grass.update(fp.active ? fp.pos : controls.target, P.season);
+    gfield.update(camera.position, fp.active ? fp.pos : null, P.season, camera.position.y - grid.get(camera.position.x, camera.position.z), camera);
     { const rp = []; const bv = new THREE.Vector3();
       for (const a of S.agents) { if (a.act !== 'haul' || a.moving || !a.alive) continue; const Lk = crowd.look[a.id]; if (!Lk.vis) continue; const fs = fleet.ships[a.p]; bv.set((a.id % 2 ? 0.6 : -0.6), 2.6, 11.4).applyMatrix4(fs.g.matrixWorld); if (Math.hypot(bv.x - Lk.wx, bv.z - Lk.wz) > 24) continue; rp.push(Lk.wx, Lk.wy + 1.15, Lk.wz, bv.x, bv.y, bv.z); }
       ropes.geometry.setAttribute('position', new THREE.Float32BufferAttribute(rp, 3)); }
@@ -479,7 +487,7 @@ async function boot() {
       for (let i = 0; i < crowd.N; i++) { const a = S.agents[i], Lk = crowd.look[i]; if (!Lk.vis) continue; pos.push(Lk.wx, Lk.wy + 2.3 * Lk.scale, Lk.wz); const k = a.know; const col = a.grief > 0.3 ? [0.4, 0.6, 1] : k & KBITS.K_PYRE ? [0.9, 0.9, 0.9] : k & KBITS.K_FEAST ? [1, 0.45, 0.1] : k & KBITS.K_FLEET ? [1, 0.85, 0.2] : [0.35, 0.35, 0.35]; cols.push(...col); }
       rumorPts.geometry.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); rumorPts.geometry.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3)); rumorPts.visible = true;
     } else rumorPts.visible = false;
-    if (!lowQ && fps < 28 && t > 10) { lowQ = true; renderer.setPixelRatio(1); composer.setPixelRatio(1); composer.setSize(innerWidth, innerHeight); }
+    if (!lowQ && fps < 28 && t > 10) { lowQ = true; gfield.lowQ = true; renderer.setPixelRatio(1); composer.setPixelRatio(1); composer.setSize(innerWidth, innerHeight); }
     if (P.refl !== false) { if (!lowQ || (frames & 1) === 0) renderReflection(); } else WU.uReflOn.value = 0;
     composer.render();
     // ---------------- UI refresh

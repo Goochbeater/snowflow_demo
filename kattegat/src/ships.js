@@ -2,6 +2,8 @@
 import * as THREE from 'three';
 import { Builder, M, col } from './builder.js';
 import { stdMat, U, GLSL_NOISE } from './materials.js';
+import { surfaceMaterial } from './terrainmat.js';
+import { LID } from './texgen.js';
 import { WU, waveH } from './env.js';
 import { RNG, clamp, lerp } from './util.js';
 
@@ -18,7 +20,7 @@ export function hullPoint(u, v) {
 }
 
 function buildHullGeom(scale = 1, small = false) {
-  const B = new Builder(); const rnd = new RNG(7); const c = (h, j = 0.06) => col(h, j, () => rnd.next());
+  const B = new Builder(); const rnd = new RNG(7); const c = (h, j = 0.06) => [...col(h, j, () => rnd.next()), LID.plank];
   const K = small ? 4 : 8, NU = small ? 14 : 28;
   for (const s of [-1, 1]) {
     for (let k = 0; k < K; k++) {
@@ -110,7 +112,7 @@ export class Fleet {
   constructor(scene, S, grid) {
     this.scene = scene; this.grid = grid;
     this.hullGeo = buildHullGeom();
-    this.hullMat = stdMat({ snow: false }, { side: THREE.DoubleSide, roughness: 0.8 });
+    this.hullMat = surfaceMaterial({ snow: false }, { side: THREE.DoubleSide, roughness: 0.8 });
     this.smallGeo = buildHullGeom(0.3, true);
     this.ships = [];
     const nMax = S.ships.length + 10;

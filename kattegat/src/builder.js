@@ -37,7 +37,7 @@ export function M(x, y, z, ry = 0, rx = 0, rz = 0, sx = 1, sy = 1, sz = 1) {
 }
 
 export class Builder {
-  constructor() { this.p = []; this.n = []; this.c = []; }
+  constructor() { this.p = []; this.n = []; this.c = []; this.l = []; }
   add(name, m, color) {
     const t = tpl(name); const e = m.elements;
     _nm.getNormalMatrix(m); const ne = _nm.elements;
@@ -49,7 +49,7 @@ export class Builder {
       let nx = ne[0] * a + ne[3] * b + ne[6] * c, ny = ne[1] * a + ne[4] * b + ne[7] * c, nz = ne[2] * a + ne[5] * b + ne[8] * c;
       const l = Math.hypot(nx, ny, nz) || 1;
       this.n.push(nx / l, ny / l, nz / l);
-      this.c.push(color[0], color[1], color[2]);
+      this.c.push(color[0], color[1], color[2]); this.l.push(color[3] ?? -1);
     }
   }
   // box with world-space parameters (centre, size, yaw)
@@ -66,7 +66,7 @@ export class Builder {
     if (flip) [b, c] = [c, b];
     const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
     let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; const l = Math.hypot(nx, ny, nz) || 1; nx /= l; ny /= l; nz /= l;
-    for (const p of [a, b, c]) { this.p.push(p[0], p[1], p[2]); this.n.push(nx, ny, nz); this.c.push(color[0], color[1], color[2]); }
+    for (const p of [a, b, c]) { this.p.push(p[0], p[1], p[2]); this.n.push(nx, ny, nz); this.c.push(color[0], color[1], color[2]); this.l.push(color[3] ?? -1); }
   }
   quad(a, b, c, d, color, flip = false) { this.tri(a, b, c, color, flip); this.tri(a, c, d, color, flip); }
   geometry() {
@@ -74,6 +74,7 @@ export class Builder {
     g.setAttribute('position', new THREE.Float32BufferAttribute(this.p, 3));
     g.setAttribute('normal', new THREE.Float32BufferAttribute(this.n, 3));
     g.setAttribute('color', new THREE.Float32BufferAttribute(this.c, 3));
+    g.setAttribute('aMat', new THREE.Float32BufferAttribute(this.l, 1));
     g.computeBoundingSphere();
     return g;
   }

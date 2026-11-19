@@ -4,40 +4,36 @@ import { heightAt, STREAM, FALLS, waterSDF, forestDensity, FJORD } from './terra
 import { Sky } from 'three/examples/jsm/objects/Sky.js';
 import { clamp, smoothstep, lerp, fbm, RNG, catmull } from './util.js';
 import { stdMat, U, GLSL_NOISE, MAXL } from './materials.js';
+import { terrainMaterial, TU } from './terrainmat.js';
 
 export const INNER = { x0: -800, z0: -700, x1: 800, z1: 900 };
 
-function terrainColor(x, z, h, slope, out) {
-  // linear rgb: beach sand, meadow, spruce forest floor, heath, granite, scree
+function terrainSplat(x, z, h, slope, out) {
+  // material weights per vertex: [sand, forest floor, gravel/scree, heath]; grass is the base, rock comes from the pixel normal
   const n = fbm(x * 0.03, z * 0.03, 3) * 0.5 + 0.5, n2 = fbm(x * 0.004 + 9, z * 0.004, 3) * 0.5 + 0.5;
-  let r, g, b;
-  if (h < -0.4) { r = 0.07; g = 0.065; b = 0.05; }
+  let sand = 0, forest = 0, gravel = 0, heath = 0;
+  if (h < -0.4) sand = 1;
   else if (z < 122 - Math.abs(x) * 0.05 && z > 20 && Math.abs(x) < 330 && h < 9 && slope < 0.5) {
-    // the landing beach: dry sand up to the shore road, trampled darker where the feast is
-    const t = smoothstep(-0.4, 1.8, h); const nn = fbm(x * 0.05, z * 0.05, 2) * 0.5 + 0.5;
-    r = lerp(0.16, 0.42 + nn * 0.06, t); g = lerp(0.12, 0.3 + nn * 0.04, t); b = lerp(0.07, 0.15 + nn * 0.03, t);
-    const u = smoothstep(108 - Math.abs(x) * 0.05, 122 - Math.abs(x) * 0.05, z); r = lerp(r, 0.08, u); g = lerp(g, 0.12, u); b = lerp(b, 0.04, u);
+    // the landing beach runs up to the shore road
+    sand = 1 - smoothstep(110 - Math.abs(x) * 0.05, 122 - Math.abs(x) * 0.05, z + (n - 0.5) * 6);
+    gravel = smoothstep(-0.2, 0.6, h) * (1 - smoothstep(0.6, 1.4, h)) * 0.55 * smoothstep(0.45, 0.7, n);
+  } else if (h < 3.4 && slope < 0.45) {
+    // other shores: shingle at the waterline, sand above, turf from 3 m
+    sand = 1 - smoothstep(2.2, 3.4, h + (n - 0.5) * 1.2);
+    gravel = (1 - smoothstep(0.4, 1.6, h)) * smoothstep(0.35, 0.6, n2) * 0.9;
+  } else {
+    heath = smoothstep(220, 420, h + (n2 - 0.5) * 120);
+    forest = forestDensity(x, z, h, slope);
+    gravel = smoothstep(0.7, 1.05, slope + (n - 0.5) * 0.5) * (0.5 + 0.5 * n2);
   }
-  else if (h < 3.4 && slope < 0.45) { const t = smoothstep(-0.4, 1.8, h); r = lerp(0.14, 0.34, t); g = lerp(0.12, 0.28, t); b = lerp(0.08, 0.18, t); const u = smoothstep(2.4, 3.4, h); r = lerp(r, 0.07, u); g = lerp(g, 0.13, u); b = lerp(b, 0.035, u); }
-  else {
-    const meadow = [lerp(0.06, 0.1, n), lerp(0.085, 0.12, n), lerp(0.03, 0.045, n2)];
-    const heath = [0.085 + n * 0.03, 0.08 + n * 0.02, 0.045];
-    const rock = [0.07 + n * 0.05, 0.07 + n * 0.05, 0.075 + n * 0.05];
-    const th = smoothstep(220, 420, h + (n2 - 0.5) * 120);
-    r = lerp(meadow[0], heath[0], th); g = lerp(meadow[1], heath[1], th); b = lerp(meadow[2], heath[2], th);
-    const f = forestDensity(x, z, h, slope);
-    r = lerp(r, 0.02, f * 0.9); g = lerp(g, 0.036, f * 0.9); b = lerp(b, 0.02, f * 0.9);
-    const tr = smoothstep(1.2, 1.9, slope + (n - 0.5) * 0.6);
-    r = lerp(r, rock[0], tr); g = lerp(g, rock[1], tr); b = lerp(b, rock[2], tr);
-  }
-  out[0] = r; out[1] = g; out[2] = b;
+  out[0] = sand; out[1] = forest; out[2] = gravel; out[3] = heath;
 }
 
 function makeTerrainGeom(x0, z0, x1, z1, nx, nz, lowerInside) {
   const g = new THREE.PlaneGeometry(x1 - x0, z1 - z0, nx, nz);
   g.rotateX(-Math.PI / 2);
   g.translate((x0 + x1) / 2, 0, (z0 + z1) / 2);
-  const p = g.attributes.position; const cols = new Float32Array(p.count * 3); const c = [0, 0, 0];
+  const p = g.attributes.position; const cols = new Float32Array(p.count * 3), spl = new Float32Array(p.count * 4); const c = [0, 0, 0, 0];
   const H = new Float32Array(p.count);
   for (let i = 0; i < p.count; i++) H[i] = heightAt(p.getX(i), p.getZ(i));
   const e = (x1 - x0) / nx, W = nx + 1;
@@ -46,88 +42,88 @@ function makeTerrainGeom(x0, z0, x1, z1, nx, nz, lowerInside) {
     const ix = i % W, iz = Math.floor(i / W);
     const at = (dx, dz) => H[Math.min(nz, Math.max(0, iz + dz)) * W + Math.min(nx, Math.max(0, ix + dx))];
     const slope = Math.hypot(at(1, 0) - h, at(0, 1) - h) / e;
-    terrainColor(x, z, h, slope, c);
+    terrainSplat(x, z, h, slope, c);
     // cavity occlusion: gullies and valley floors darken, ridges and buttresses catch light
     let ao = 0;
     for (const r of [Math.max(1, Math.round(18 / e)), Math.max(2, Math.round(55 / e))]) {
       const avg = (at(r, 0) + at(-r, 0) + at(0, r) + at(0, -r) + at(r, r) + at(-r, -r) + at(r, -r) + at(-r, r)) / 8;
       ao += (avg - h) / (r * e);
     }
-    const k = Math.min(1.18, Math.max(0.5, 1 - ao * 0.55));
+    const k = Math.min(1.12, Math.max(0.55, 1 - ao * 0.5)) * (0.92 + 0.16 * (fbm(x * 0.006 + 3, z * 0.006, 2) * 0.5 + 0.5));
     if (lowerInside && x > INNER.x0 + 30 && x < INNER.x1 - 30 && z > INNER.z0 + 30 && z < INNER.z1 - 30) h -= 12;
     p.setY(i, h);
-    cols[i * 3] = c[0] * k; cols[i * 3 + 1] = c[1] * k; cols[i * 3 + 2] = c[2] * k;
+    cols[i * 3] = k; cols[i * 3 + 1] = k; cols[i * 3 + 2] = k;
+    spl.set(c, i * 4);
   }
   g.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+  g.setAttribute('aSplat', new THREE.BufferAttribute(spl, 4));
   g.computeVertexNormals();
   return g;
 }
 
-export function paintOverlay(L, grid) {
+// Control map over the inner region, one material per channel: R trodden earth (roads, yards), G mud (pens, soot, ash),
+// B field strips (value encodes the crop), A gravel (stream bed). Each channel is painted in grey on its own pass.
+export function paintCtrl(L) {
   const N = 2048, cv = document.createElement('canvas'); cv.width = cv.height = N;
-  const g = cv.getContext('2d');
+  const g = cv.getContext('2d', { willReadFrequently: true });
   const W = INNER.x1 - INNER.x0, Hh = INNER.z1 - INNER.z0;
   const px = (x) => (x - INNER.x0) / W * N, pz = (z) => (z - INNER.z0) / Hh * N, s = N / W;
-  g.clearRect(0, 0, N, N);
-  const rng = new RNG(99);
-  const blob = (x, z, r, colr, a) => { const gr = g.createRadialGradient(px(x), pz(z), 0, px(x), pz(z), r * s); gr.addColorStop(0, colr.replace('A', a)); gr.addColorStop(1, colr.replace('A', 0)); g.fillStyle = gr; g.beginPath(); g.arc(px(x), pz(z), r * s, 0, 7); g.fill(); };
-  // fields: strip farming
-  for (const f of L.fields) {
-    g.save(); g.translate(px((f.x0 + f.x1) / 2), pz((f.z0 + f.z1) / 2)); g.rotate(f.rot);
-    const w = (f.x1 - f.x0) * s, h = (f.z1 - f.z0) * s;
-    const strips = 7;
-    for (let i = 0; i < strips; i++) {
-      const kind = rng.int(0, 2);
-      g.fillStyle = ['rgba(168,140,68,0.9)', 'rgba(96,116,46,0.85)', 'rgba(82,60,38,0.9)'][kind];
-      g.fillRect(-w / 2, -h / 2 + i * h / strips, w, h / strips - 2);
-      g.strokeStyle = kind === 2 ? 'rgba(60,42,26,0.6)' : 'rgba(120,100,50,0.35)'; g.lineWidth = 1;
-      for (let k = 0; k < w; k += 3) { g.beginPath(); g.moveTo(-w / 2 + k, -h / 2 + i * h / strips); g.lineTo(-w / 2 + k, -h / 2 + (i + 1) * h / strips - 2); g.stroke(); }
+  const out = new Uint8Array(N * N * 4);
+  const grey = (v, a) => `rgba(${v},${v},${v},${a})`;
+  const blob = (x, z, r, a, v = 255) => { const gr = g.createRadialGradient(px(x), pz(z), 0, px(x), pz(z), r * s); gr.addColorStop(0, grey(v, a)); gr.addColorStop(0.55, grey(v, a * 0.75)); gr.addColorStop(1, grey(v, 0)); g.fillStyle = gr; g.beginPath(); g.arc(px(x), pz(z), r * s, 0, 7); g.fill(); };
+  const line = (pts, w, a, ox = 0, oz = 0) => { g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = grey(255, a); g.lineWidth = w * s; g.beginPath(); pts.forEach(([x, z], i) => (i ? g.lineTo(px(x + ox), pz(z + oz)) : g.moveTo(px(x + ox), pz(z + oz)))); g.stroke(); };
+  const pass = (ch, paint) => {
+    g.globalCompositeOperation = 'source-over'; g.fillStyle = '#000'; g.fillRect(0, 0, N, N);
+    paint(); const d = g.getImageData(0, 0, N, N).data;
+    for (let i = 0, j = ch; i < d.length; i += 4, j += 4) out[j] = d[i];
+  };
+  const S = L.S, rng = new RNG(99);
+  pass(0, () => { // trodden earth
+    for (const b of L.B) blob(b.door[0], b.door[1], b.kind === 'hall' ? 26 : Math.max(7, b.len * 0.5), 0.8);
+    for (const r of L.roads) for (const [w, a] of [[r.w * 1.9, 0.3], [r.w * 1.2, 0.75], [r.w * 0.7, 0.95]]) line(r.pts, w, r.kind === 'beach' ? a * 0.55 : a);
+    blob(S.feast[0], S.feast[1] + 5, 70, 0.35);
+    blob(S.shipyard[0], S.shipyard[1] - 6, 22, 0.9);
+    blob(S.woodlot[0] + 6, S.woodlot[1] + 3, 16, 0.85);
+    blob(S.ring[0], S.ring[1], 6.4, 1);
+    blob(S.thing[0], S.thing[1], 15, 0.45);
+    blob(S.practice[0] + 6, S.practice[1], 26, 0.6);
+    blob(S.godswood[0], S.godswood[1] + 4, 20, 0.3);
+  });
+  pass(1, () => { // mud, soot, ash, ruts
+    for (const p of L.pens) blob(p.x, p.z, p.r * 1.05, p.kind === 'pig' ? 1 : 0.6);
+    for (const r of L.roads) if (r.kind !== 'beach') for (const o of [-0.75, 0.75]) line(r.pts, 0.45, 0.55, o, o * 0.3);
+    blob(S.forge[0] + 8, S.forge[1] + 6, 11, 0.9);
+    blob(S.pyre[0], S.pyre[1], 7, 0.85);
+    for (const b of L.B) if (rng.next() < 0.5) blob(b.door[0] + rng.range(-1, 1), b.door[1] + rng.range(-1, 1), 2.6, 0.7);
+  });
+  pass(2, () => { // field strips
+    for (const f of L.fields) {
+      g.save(); g.translate(px((f.x0 + f.x1) / 2), pz((f.z0 + f.z1) / 2)); g.rotate(f.rot);
+      const w = (f.x1 - f.x0) * s, h = (f.z1 - f.z0) * s, strips = 7;
+      for (let i = 0; i < strips; i++) {
+        const v = [235, 174, 82][rng.int(0, 2)]; g.fillStyle = grey(v, 1);
+        g.fillRect(-w / 2, -h / 2 + i * h / strips, w, h / strips - 1.5);
+      }
+      g.restore();
     }
-    g.restore();
-  }
-  // yards around buildings
-  for (const b of L.B) blob(b.door[0], b.door[1], b.kind === 'hall' ? 30 : Math.max(8, b.len * 0.55), 'rgba(92,72,48,A)', 0.75);
-  // pens: trampled mud
-  for (const p of L.pens) blob(p.x, p.z, p.r * 1.05, p.kind === 'pig' ? 'rgba(52,38,24,A)' : 'rgba(86,74,46,A)', p.kind === 'pig' ? 0.95 : 0.55);
-  // roads
-  for (const r of L.roads) {
-    g.lineCap = 'round'; g.lineJoin = 'round';
-    for (const [w, a] of [[r.w * 2.0, 0.35], [r.w * 1.25, 0.8], [r.w * 0.7, 0.9]]) {
-      g.strokeStyle = r.kind === 'beach' ? `rgba(110,92,66,${a * 0.6})` : `rgba(96,76,52,${a})`; g.lineWidth = w * s;
-      g.beginPath(); r.pts.forEach(([x, z], i) => (i ? g.lineTo(px(x), pz(z)) : g.moveTo(px(x), pz(z)))); g.stroke();
-    }
-    // wheel ruts
-    g.strokeStyle = 'rgba(60,46,32,0.5)'; g.lineWidth = 0.35 * s;
-    for (const o of [-0.7, 0.7]) { g.beginPath(); r.pts.forEach(([x, z], i) => { const xx = px(x + o), zz = pz(z + o * 0.3); i ? g.lineTo(xx, zz) : g.moveTo(xx, zz); }); g.stroke(); }
-  }
-  // feast beach, shipyard, forge soot, ring, pyre, woodlot, godswood
-  const S = L.S;
-  blob(S.feast[0], S.feast[1] + 5, 75, 'rgba(132,104,70,A)', 0.4);
-  blob(S.shipyard[0], S.shipyard[1] - 6, 22, 'rgba(160,128,84,A)', 0.85);
-  blob(S.woodlot[0] + 6, S.woodlot[1] + 3, 16, 'rgba(150,120,78,A)', 0.8);
-  blob(S.forge[0] + 8, S.forge[1] + 6, 12, 'rgba(30,26,22,A)', 0.85);
-  blob(S.ring[0], S.ring[1], 6.4, 'rgba(150,128,96,A)', 0.95);
-  blob(S.pyre[0], S.pyre[1], 7, 'rgba(40,34,28,A)', 0.8);
-  blob(S.godswood[0], S.godswood[1] + 4, 24, 'rgba(58,50,30,A)', 0.6);
-  blob(S.thing[0], S.thing[1], 15, 'rgba(96,110,58,A)', 0.5);
-  blob(S.practice[0] + 6, S.practice[1], 26, 'rgba(110,98,62,A)', 0.55);
-  // stream bed pebbles
-  g.strokeStyle = 'rgba(70,70,64,0.85)'; g.lineWidth = 6 * s; g.beginPath(); STREAM.forEach(([x, z], i) => (i ? g.lineTo(px(x), pz(z)) : g.moveTo(px(x), pz(z)))); g.stroke();
-  L.overlayData = g.getImageData(0, 0, N, N).data; L.overlayN = N;
-  const tex = new THREE.CanvasTexture(cv); tex.flipY = false; tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
-  tex.generateMipmaps = true; tex.minFilter = THREE.LinearMipmapLinearFilter;
+  });
+  pass(3, () => { // gravel
+    line(STREAM, 6, 0.95); line(STREAM, 9, 0.35);
+  });
+  L.ctrlData = out; L.ctrlN = N;
+  const tex = new THREE.DataTexture(out, N, N, THREE.RGBAFormat); tex.needsUpdate = true;
+  tex.generateMipmaps = true; tex.minFilter = THREE.LinearMipmapLinearFilter; tex.magFilter = THREE.LinearFilter; tex.anisotropy = 8;
   return tex;
 }
 
-export function buildTerrain(L, grid) {
+export function buildTerrain(L, grid, tex) {
   const inner = makeTerrainGeom(INNER.x0, INNER.z0, INNER.x1, INNER.z1, 400, 400, false);
   const outer = makeTerrainGeom(-3400, -5400, 3400, 2800, 300, 360, true);
-  U.uOverlay.value = paintOverlay(L, grid);
+  TU.uCtrl.value = paintCtrl(L);
   U.uOvBounds.value.set(INNER.x0, INNER.z0, INNER.x1 - INNER.x0, INNER.z1 - INNER.z0);
-  const mat = stdMat({ snow: true, overlay: true, wet: true, peaks: true, rock: true }, { roughness: 0.93, envMapIntensity: 0.5 });
-  const matO = stdMat({ snow: true, peaks: true, rock: true }, { roughness: 0.95, envMapIntensity: 0.7 });
+  const mat = terrainMaterial(tex);
   const m1 = new THREE.Mesh(inner, mat); m1.receiveShadow = true; m1.castShadow = true;
-  const m2 = new THREE.Mesh(outer, matO); m2.receiveShadow = true;
+  const m2 = new THREE.Mesh(outer, mat); m2.receiveShadow = true;
   return [m1, m2];
 }
 

@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { Builder, M, col } from './builder.js';
 import { RNG, catmull, resample, fbm, lerp, polyDist } from './util.js';
 import { stdMat } from './materials.js';
+import { surfaceMaterial } from './terrainmat.js';
+import { LID } from './texgen.js';
 
 const C = {
   wattle: 0xa68e6a, daub: 0xc4ae88, tar: 0x2e241c, timber: 0x765639, plank: 0x8a6745, oldwood: 0x8a7458, turf: 0x5a6e32, turfDry: 0x7a7642,
@@ -10,13 +12,18 @@ const C = {
   iron: 0x3c3b3a, rust: 0x6e4630, red: 0x8e2a1e, blue: 0x2c4a6e, ochre: 0xb58a36, white: 0xd8d0bc, green: 0x3e5a32, black: 0x1c1a18, rope: 0xa58b5c, fish: 0xc9c2a8, bone: 0xe1d8c1,
 };
 
+// which material texture each palette entry wears
+const LAYER_OF = {
+  [C.wattle]: LID.wattle, [C.daub]: LID.wattle, [C.clay]: LID.wattle, [C.tar]: LID.tar, [C.black]: LID.tar, [C.timber]: LID.plank, [C.plank]: LID.plank,
+  [C.oldwood]: LID.plank, [C.turf]: LID.turf, [C.turfDry]: LID.turf, [C.shingle]: LID.shingle, [C.shingle2]: LID.shingle, [C.stone]: LID.stone, [C.stoneD]: LID.stone, [C.straw]: LID.thatch,
+};
 export function buildSettlement(L, grid, seed) {
   const rnd = new RNG(seed * 13 + 5);
   const R = () => rnd.next();
   const H = (x, z) => grid.get(x, z);
   const buckets = new Map();
   const bk = (min, max = 4) => { const k = min + '_' + max; if (!buckets.has(k)) buckets.set(k, { min, max, b: new Builder() }); return buckets.get(k).b; };
-  const c = (h, j = 0.08) => col(h, j, R);
+  const c = (h, j = 0.08) => { const v = col(h, j, R); v.push(LAYER_OF[h] ?? -1); return v; };
 
   // local frame helper for a building
   const frame = (b) => {
@@ -99,7 +106,7 @@ export function buildSettlement(L, grid, seed) {
       for (let r = 0; r < rows; r++) for (let k = 0; k < cols; k++) {
         const a = grid2[r][k], bb = grid2[r][k + 1], cc = grid2[r + 1][k + 1], d = grid2[r + 1][k];
         let colr;
-        if (turf) { const q = F(...a); const tn = fbm(q[0] * 0.18, q[2] * 0.18, 2) * 0.5 + 0.5; const c1 = col(C.turf), c2 = col(C.turfDry); const jj = 0.94 + R() * 0.08; colr = [lerp(c1[0], c2[0], tn) * jj, lerp(c1[1], c2[1], tn) * jj, lerp(c1[2], c2[2], tn) * jj]; }
+        if (turf) { const q = F(...a); const tn = fbm(q[0] * 0.18, q[2] * 0.18, 2) * 0.5 + 0.5; const c1 = col(C.turf), c2 = col(C.turfDry); const jj = 0.94 + R() * 0.08; colr = [lerp(c1[0], c2[0], tn) * jj, lerp(c1[1], c2[1], tn) * jj, lerp(c1[2], c2[2], tn) * jj, LID.turf]; }
         else colr = c((r + k) % 5 === 0 ? C.shingle2 : C.shingle, 0.16);
         if (!turf) { // stepped shingle course
           const st = 0.09;
@@ -565,7 +572,7 @@ export function buildSettlement(L, grid, seed) {
     for (const [x, z, r] of [[-214, 112, 0.2], [-226, 116, 0.35], [244, 112, -0.2], [258, 116, 0.1], [276, 114, -0.3]]) boatAt(x, z, r);
   }
   // ------------------------------------------------------------ meshes
-  const mat = stdMat({ snow: true }, { side: THREE.DoubleSide });
+  const mat = surfaceMaterial({ snow: true }, { side: THREE.DoubleSide });
   const meshes = [];
   for (const { min, max, b } of buckets.values()) {
     if (!b.count) continue;
