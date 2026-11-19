@@ -166,14 +166,14 @@ export class FX {
     this.mistFor = null;
   }
   addMist(pts) {
-    const n = 900; const p = new Float32Array(n * 3), s = new Float32Array(n * 4); const r = new RNG(8);
+    const n = 320; const p = new Float32Array(n * 3), s = new Float32Array(n * 4); const r = new RNG(8);
     for (let i = 0; i < n; i++) { const k = r.next() < 0.6 ? 0 : Math.floor(r.next() * pts.length); const q = pts[k]; p.set([q[0] + r.range(-6, 6), q[1], q[2] + r.range(-6, 6)], i * 3); s.set([r.next(), r.range(4, 9), k === 0 ? 3.2 : 1.6, 0], i * 4); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3)); g.setAttribute('aSeed', new THREE.BufferAttribute(s, 4));
     const m = new THREE.Points(g, new THREE.ShaderMaterial({
       uniforms: Object.assign({}, U, WU, this.common), transparent: true, depthWrite: false,
       vertexShader: `uniform float uTime; uniform vec2 uWind; uniform float uPx; attribute vec4 aSeed; varying float vA;
         void main(){ float age = fract(uTime / aSeed.y + aSeed.x); vec3 p = position + vec3(uWind.x, 0.5, uWind.y) * age * 12.0 + vec3(0., -age * 4.0 * step(aSeed.z, 2.0), 0.);
-          vec4 mv = modelViewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = min(aSeed.z * (1.5 + age * 3.0) * uPx / max(1.0, -mv.z), 160.0); vA = (1.0 - age) * smoothstep(0.0, 0.15, age) * 0.09 * smoothstep(10.0, 60.0, -mv.z); }`,
+          vec4 mv = modelViewMatrix * vec4(p, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = min(aSeed.z * (1.5 + age * 3.0) * uPx / max(1.0, -mv.z), 160.0); vA = (1.0 - age) * smoothstep(0.0, 0.15, age) * 0.06 * smoothstep(10.0, 60.0, -mv.z); }`,
       fragmentShader: `uniform vec3 uSunCol; uniform float uDark; varying float vA; void main(){ float d = length(gl_PointCoord - 0.5); if (d > 0.5) discard; gl_FragColor = vec4(vec3(0.85, 0.88, 0.9) * (0.3 + 0.7 * uSunCol) * (1.0 - uDark * 0.8), vA * smoothstep(0.5, 0.0, d));
         #include <colorspace_fragment>
       }`,
