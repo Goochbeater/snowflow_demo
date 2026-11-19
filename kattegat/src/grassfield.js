@@ -3,7 +3,8 @@
 // colour (from the meadow texture beneath it), so the blades grow out of the ground they stand on.
 import * as THREE from 'three';
 import { U, patch } from './materials.js';
-import { TU } from './terrainmat.js';
+import { TU, MEADOW_GLSL } from './terrainmat.js';
+import { GLSL_NOISE } from './materials.js';
 import { LID } from './texgen.js';
 import { INNER } from './env.js';
 
@@ -36,6 +37,8 @@ attribute vec4 aB; attribute vec2 aB2;
 uniform highp sampler2D uHt; uniform sampler2D uSpl; uniform sampler2D uCtrl; uniform sampler2DArray tAlb; uniform vec3 uGT;
 uniform vec4 uIn; uniform vec3 uCam; uniform vec2 uFwd; uniform vec4 uRing; uniform vec3 uPush; uniform float uTime; uniform vec2 uWind; uniform float uSnow; uniform float uTide;
 varying float vT; varying vec3 vCol; varying vec3 vGW;
+${GLSL_NOISE}
+${MEADOW_GLSL}
 vec4 gHash(vec2 p) { vec4 q = fract(vec4(p.xyxy) * vec4(0.1031, 0.1030, 0.0973, 0.1099)); q += dot(q, q.wzxy + 33.33); return fract((q.xxyz + q.yzzw) * q.zywx); }
 // terrain height exactly as the mesh triangulates it: quads (a,b,d) + (b,c,d)
 float gH(vec2 p, out vec2 grad) {
@@ -93,7 +96,7 @@ const BEGIN = /* glsl */`
     vec3 bn = normalize(vec3(fwd.x, 0.0, fwd.y) - vec3(lean.x, -0.6, lean.y) * t * 0.5);
     objectNormal = normalize(mix(bn, vec3(0.0, 1.0, 0.0), 0.55));
     // colour: the meadow texture beneath, deeper at the root, sunlit and drier toward the tip
-    vec3 gc = textureLod(tAlb, vec3(root / 2.1, ${LID.grass}.0), 5.0).rgb * uGT;
+    vec3 gc = kMeadow(root, textureLod(tAlb, vec3(root / 2.1, ${LID.grass}.0), 5.0).rgb * uGT) * mix(vec3(1.0), vec3(1.25, 1.02, 0.66), texture(uSpl, su * (400.0 / 401.0) + 0.5 / 401.0).w * 0.85);
     vec3 tipC = mix(gc * vec3(1.25, 1.35, 1.05), gc * vec3(1.9, 1.6, 0.8), smoothstep(0.6, 0.95, hs.y) * 0.8);
     vCol = mix(gc * 0.42, tipC, smoothstep(0.0, 0.9, t)) * (0.85 + 0.3 * hs.w);
     vGW = vec3(xz.x, transformed.y, xz.y);
@@ -150,8 +153,8 @@ export class GrassField {
     if (camera) { camera.getWorldDirection(this._d || (this._d = new THREE.Vector3())); const l = Math.hypot(this._d.x, this._d.z); if (l > 0.2) this.uni.uFwd.value.set(this._d.x / l, this._d.z / l); else this.uni.uFwd.value.set(0, 0); }
     if (push) this.uni.uPush.value.copy(push); else this.uni.uPush.value.set(0, -999, 0);
     const vis = season < 0.85 && !this.off;
-    this.rings[0].mesh.visible = vis && camH < 45;
-    this.rings[1].mesh.visible = vis && camH < 140;
+    this.rings[0].mesh.visible = vis && camH < 14;
+    this.rings[1].mesh.visible = vis && camH < 32;
     const lq = this.lowQ;
     this.rings[0].mesh.geometry.instanceCount = lq ? 120 * 120 : 176 * 176; this.rings[0].ring.value.y = lq ? 120 : 176;
   }

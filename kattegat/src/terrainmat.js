@@ -5,10 +5,22 @@ import * as THREE from 'three';
 import { stdMat } from './materials.js';
 import { LID, LAYERS } from './texgen.js';
 
+// meadow at landscape scale: lush hollows, sun-dried rises, sorrel-red and buttercup drifts (shared with the grass blades)
+export const MEADOW_GLSL = /* glsl */`
+vec3 kMeadow(vec2 P, vec3 c) {
+  float mac = kFbm(P * 0.018);
+  float mDry = smoothstep(0.45, 0.8, kFbm(P * 0.021 + 3.0)), mLush = smoothstep(0.5, 0.78, kFbm(P * 0.013 + 11.0));
+  c *= mix(vec3(0.82, 0.9, 0.78), vec3(1.12, 1.06, 0.92), mac);
+  c = mix(c, c * vec3(1.32, 1.12, 0.62), mDry * 0.75);
+  c = mix(c, c * vec3(0.8, 1.08, 0.82), mLush * 0.6);
+  c *= mix(vec3(1.0), vec3(1.15, 0.9, 0.85), smoothstep(0.62, 0.8, kFbm(P * 0.09 + 21.0)) * 0.6);
+  return c;
+}
+`;
 export const TU = { tAlb: { value: null }, tNor: { value: null }, uCtrl: { value: null }, uLT: { value: [] } };
 // target mean reflectance (linear) per layer; textures are rescaled to these so every material sits right under the same light
 export const TARGET = {
-  grass: [0.07, 0.1, 0.032], dirt: [0.1, 0.07, 0.04], mud: [0.042, 0.028, 0.016], sand: [0.3, 0.225, 0.125], rock: [0.08, 0.078, 0.076],
+  grass: [0.07, 0.1, 0.032], dirt: [0.1, 0.07, 0.04], mud: [0.042, 0.028, 0.016], sand: [0.25, 0.18, 0.095], rock: [0.08, 0.078, 0.076],
   forest: [0.034, 0.032, 0.018], snow: [0.78, 0.82, 0.88], gravel: [0.085, 0.08, 0.07], plank: [0.16, 0.11, 0.065], wattle: [0.24, 0.19, 0.13],
   turf: [0.055, 0.075, 0.028], shingle: [0.1, 0.08, 0.06], stone: [0.12, 0.115, 0.105], tar: [0.03, 0.022, 0.016], crop: [0.34, 0.24, 0.07], thatch: [0.28, 0.2, 0.09],
 };
@@ -32,6 +44,7 @@ float kLay(float L, vec2 P, vec2 s, float m) {
   vec4 a = textureGrad(tAlb, vec3(uv, L), gx, gy), n = textureGrad(tNor, vec3(uv, L), gx, gy); a.rgb *= uLT[int(L + 0.5)];
   float t = kHB(kNn.a, n.a, m); kA = mix(kA, a, t); kNn = mix(kNn, n, t); return t;
 }
+${MEADOW_GLSL}
 float kRag(float m, float b) { return clamp(m + b * 0.55 * m * (1.0 - m) * 4.0, 0.0, 1.0); }
 // rotated second sample to break up tiling; normals rotated back into world xz
 void kLay2(float L, vec2 P, float s1, float s2, float m, float mixv) {
@@ -59,10 +72,10 @@ const SPLAT = /* glsl */`
   // base: meadow, two scales cross-faded by low-frequency noise
   kA = vec4(0.0); kNn = vec4(0.5, 0.5, 1.0, 0.0);
   kLay2(${LID.grass}.0, P, 2.1, 5.3, 1.0, mac2);
-  kA.rgb *= mix(vec3(1.0), vec3(1.25, 1.02, 0.66), wHeath * 0.85) * (0.8 + 0.4 * mac);
-  kA.rgb *= mix(vec3(1.0), vec3(1.06, 1.0, 0.82), smoothstep(0.55, 0.8, kFbm(P * 0.11 + 3.0)) * 0.7); // drier patches
+  kA.rgb *= mix(vec3(1.0), vec3(1.25, 1.02, 0.66), wHeath * 0.85);
+  kA.rgb = kMeadow(P, kA.rgb);
   kLay2(${LID.forest}.0, P, 2.6, 6.1, wForest, 1.0 - mac2);
-  kLay(${LID.sand}.0, P, vec2(3.4), wSand);
+  kLay2(${LID.sand}.0, P, 3.4, 7.9, wSand, mac2);
   if (crop > 0.02) { // field strips: gold barley (~0.92), green oats (~0.68), ploughed tilth (~0.32)
     float isCrop = smoothstep(0.47, 0.53, crop);
     kLay(${LID.crop}.0, P, vec2(1.9), isCrop);
@@ -81,7 +94,19 @@ const SPLAT = /* glsl */`
     #define TG(S, SW) textureGrad(S, vec3(kWP.SW * sc, ${LID.rock}.0), kWX.SW * sc, kWY.SW * sc)
     vec4 aX = TG(tAlb, zy), aY = TG(tAlb, xz), aZ = TG(tAlb, xy);
     vec4 nX = TG(tNor, zy), nY = TG(tNor, xz), nZ = TG(tNor, xy);
-    vec4 aR = aX * bw.x + aY * bw.y + aZ * bw.z; aR.rgb *= uLT[${LID.rock}];
+    vec4 aR = aX * bw.x + aY * bw.y + aZ * bw.z;
+    // far away the same granite at six times the scale takes over, so the cliff never reads as a repeating tile
+    float far = smoothstep(25.0, 160.0, length(cameraPosition - kWP));
+    if (far > 0.01) { float s2 = sc / 6.0; vec4 bX = textureGrad(tAlb, vec3(kWP.zy * s2, ${LID.rock}.0), kWX.zy * s2, kWY.zy * s2), bY = textureGrad(tAlb, vec3(kWP.xz * s2, ${LID.rock}.0), kWX.xz * s2, kWY.xz * s2), bZ = textureGrad(tAlb, vec3(kWP.xy * s2, ${LID.rock}.0), kWX.xy * s2, kWY.xy * s2);
+      aR = mix(aR, bX * bw.x + bY * bw.y + bZ * bw.z, far * 0.75); }
+    aR.rgb *= uLT[${LID.rock}] * (0.7 + 0.6 * kFbm(kWP.xz * 0.004 + kWP.y * 0.003));
+    // cliff-scale character: ledges and bands, long wet stains under seeps, pale dry faces, moss on the shelves
+    float band = kFbm(vec2(kWP.y * 0.045 + kNoise(P * 0.01) * 3.0, (kWP.x - kWP.z) * 0.004));
+    float seep = smoothstep(0.55, 0.8, kFbm(vec2((kWP.x + kWP.z) * 0.012, kWP.y * 0.0015 + 3.0)));
+    float dry = smoothstep(0.5, 0.75, kFbm(vec2((kWP.x - kWP.z) * 0.007 + 5.0, kWP.y * 0.006)));
+    aR.rgb *= (0.78 + 0.44 * band) * (1.0 - 0.45 * seep) * (1.0 + 0.35 * dry);
+    float shelf = smoothstep(0.42, 0.62, Ng.y + (kFbm(kWP.xz * 0.05 + kWP.y * 0.02) - 0.5) * 0.5) * (1.0 - smoothstep(250.0, 420.0, kWP.y));
+    aR.rgb = mix(aR.rgb, vec3(0.045, 0.06, 0.025) * (0.7 + 0.6 * kNoise(kWP.xz * 0.3)), shelf * 0.85);
     float strata = kNoise(vec2(kWP.y * 0.11 + kNoise(P * 0.03) * 5.0, (kWP.x + kWP.z) * 0.015));
     aR.rgb *= (0.82 + 0.3 * strata) * mix(vec3(1.0), vec3(1.08, 1.02, 0.9), kNoise(P * 0.04));
     aR.rgb = mix(aR.rgb, aR.rgb * vec3(0.8, 1.05, 0.7), smoothstep(0.55, 0.85, Ng.y) * 0.5); // lichen on ledges
@@ -99,8 +124,9 @@ const SPLAT = /* glsl */`
     kRockT *= 1.0 - kLay(${LID.snow}.0, P, vec2(3.0), wSnow);
   }
   // wet shore: darker, glossier
-  float wetB = smoothstep(uTide + 2.0, uTide + 0.15, kWP.y) * smoothstep(uTide - 3.0, uTide - 0.2, kWP.y);
-  kA.rgb *= 1.0 - 0.45 * wetB; kA.a = mix(kA.a, 0.22, wetB * 0.85);
+  float wetB = smoothstep(uTide + 1.1, uTide + 0.1, kWP.y + (brk * 0.5)) * smoothstep(uTide - 3.0, uTide - 0.2, kWP.y);
+  float dampB = smoothstep(uTide + 2.4, uTide + 0.6, kWP.y) * (1.0 - wetB);
+  kA.rgb *= (1.0 - 0.45 * wetB) * (1.0 - 0.18 * dampB); kA.a = mix(kA.a, 0.42, wetB * 0.85);
   diffuseColor.rgb *= kA.rgb;
   }
 `;
@@ -121,7 +147,8 @@ export function terrainMaterial(tex) {
         {
           vec3 tn = kNn.xyz * 2.0 - 1.0;
           vec3 pert = mix(vec3(tn.x, 0.0, tn.y), kRockP, kRockT);
-          vec3 nW = normalize(normalize(kWN) + pert * 1.1);
+          float nd = length(cameraPosition - kWP);
+          vec3 nW = normalize(normalize(kWN) + pert * mix(1.1, 0.35, smoothstep(12.0, 90.0, nd) * (1.0 - kRockT * 0.6)));
           normal = normalize((viewMatrix * vec4(nW, 0.0)).xyz);
         }`);
   };

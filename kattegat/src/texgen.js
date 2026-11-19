@@ -79,7 +79,7 @@ void layer(int L, vec2 uv, out vec3 col, out float h, out float r) {
     float crack = smoothstep(0.08, 0.0, c.y - c.x) * jm; crack *= crack; vec3 c2 = wor(uv + 0.5, 11.0, 1.0); float crack2 = smoothstep(0.035, 0.0, c2.y - c2.x) * smoothstep(0.5, 0.7, fbm(uv, 7.0, 3)) * 0.5;
     float spk = vn(uv * 256.0, 256.0);
     col = mix(vec3(0.33, 0.33, 0.32), vec3(0.56, 0.55, 0.52), 0.5 * rg + 0.3 * strata + 0.2 * c.z) * (0.86 + 0.26 * spk);
-    float streak = fbmA(uv + 4.0, vec2(24.0, 2.0), 4); col *= 0.8 + 0.32 * streak;
+    float streak = fbmA(uv + 4.0, vec2(9.0, 2.0), 4); col *= 0.88 + 0.2 * streak * smoothstep(0.35, 0.7, fbm(uv + 9.0, 2.0, 3));
     float stain = fbm(uv + 6.0, 4.0, 4); col = mix(col, col * vec3(1.08, 0.95, 0.82), smoothstep(0.5, 0.75, stain) * 0.7);
     float li = smoothstep(0.6, 0.66, fbm(uv + 4.1, 8.0, 5)) * smoothstep(0.3, 0.7, rg); col = mix(col, mix(vec3(0.5, 0.54, 0.3), vec3(0.66, 0.48, 0.2), step(0.55, fbm(uv, 6.0, 2))), li * 0.8);
     col *= 1.0 - 0.6 * max(crack, crack2);

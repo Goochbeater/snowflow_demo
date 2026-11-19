@@ -308,7 +308,7 @@ async function boot() {
   };
 
   // ------------------------------------------------------------- loop
-  let lowQ = false;
+  let lowQ = false; let fpExp = 1;
   let last = performance.now(), frames = 0, fpsT = 0, fps = 60, uiT = 0;
   const clockT = { t: 0 };
   loading.style.opacity = 0; setTimeout(() => loading.remove(), 900);
@@ -349,7 +349,9 @@ async function boot() {
     const fogD = lk.fd * (1 + P.season * 0.6) * (P.sun < 0.15 ? 1 : 1);
     scene.fog.color.setRGB(...lk.fog); scene.fog.density = fogD;
     WU.uFogCol.value.setRGB(...lk.fog); WU.uFogD.value = fogD;
-    renderer.toneMappingExposure = lk.exp;
+    // eyes adjust down in the village: walking among the houses reads brighter than the overview
+    fpExp = lerp(fpExp, fp.active ? 1.3 : 1, Math.min(1, rawDt * 1.5));
+    renderer.toneMappingExposure = lk.exp * fpExp;
     U.uDark.value = lk.dark;
     kindle = lerp(kindle, lk.dark, Math.min(1, dt * 0.35));
     bloom.strength = 0.22 + lk.dark * 0.5; bloom.threshold = lerp(0.92, 0.72, lk.dark);

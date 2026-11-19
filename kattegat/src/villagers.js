@@ -192,7 +192,8 @@ export class Villagers {
         y = !isNaN(a.ey) ? a.ey : this.grid.get(x, z);
         const ty = Math.atan2(a.fx, a.fz);
         let d = ty - L.yaw; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
-        L.yaw += d * Math.min(1, dt * 7); yaw = L.yaw;
+        const dy = d * Math.min(1, dt * 7); L.yaw += dy; yaw = L.yaw;
+        L.turnV = dt > 0 ? dy / dt : 0; L.turnD = d;
       }
       const moved = Math.hypot(x - (L.rx ?? x), z - (L.rz ?? z)); L.rx = x; L.rz = z;
       L.wx = x; L.wy = y; L.wz = z; L.vis = true; this.rendered++;
@@ -203,12 +204,15 @@ export class Villagers {
       L.idleT -= dt;
       if (L.idleT <= 0) { const h = hash2(i * 7 + 1, Math.floor(t * 0.1) + L.phase0 * 10); L.idle = L.idles[Math.floor(h * L.idles.length)]; L.idleT = 7 + h * 11; }
       // animation state
-      const clip = a.aboard && a.anim === AN.idle ? 'sit' : this.clipFor(a, L);
+      let clip = a.aboard && a.anim === AN.idle ? 'sit' : this.clipFor(a, L);
+      // turning on the spot: take a couple of steps instead of pivoting like a statue
+      const turning = !a.aboard && Math.abs(L.turnD || 0) > 0.45 && moved < 0.002 && (clip === 'idle' || clip === 'idle2' || L.idles.includes(clip));
+      if (turning) clip = 'walk';
       if (clip !== L.clip) { L.prev = L.clip; L.prevT = L.t; L.fade = 1; L.clip = clip; L.t = MOVE_CLIPS.has(clip) && MOVE_CLIPS.has(L.prev) ? L.t : 0; }
       const C = L.bake.clips[clip];
       // stride matching: play the gait at the speed the feet actually cover ground
       let rate = 1;
-      if (MOVE_CLIPS.has(clip) && C.speed) { const v = dt > 0 ? moved / dt : 0; rate = clamp(v / (C.speed * L.scale), 0.35, 2.0); }
+      if (MOVE_CLIPS.has(clip) && C.speed) { const v = dt > 0 ? moved / dt : 0; rate = turning ? 0.7 : clamp(v / (C.speed * L.scale), 0.35, 2.0); }
       L.rate = L.rate === undefined ? rate : L.rate + (rate - L.rate) * Math.min(1, dt * 8);
       const run = P.speed === 0 ? 0 : 1;
       if (clip === 'row' && a.aboard) { L.t = (fleet.ships[a.ship].oarPhase / (Math.PI * 2)) * C.dur; } else L.t += dt * L.rate * run;
@@ -236,7 +240,13 @@ export class Villagers {
       // write instance
       const B = this.buckets[L.outfit][lod]; const j = B.n++;
       const s = L.scale, c = Math.cos(yaw), sn = Math.sin(yaw), e = B.m.instanceMatrix.array, o = j * 16;
-      e[o] = c * s; e[o + 1] = 0; e[o + 2] = -sn * s; e[o + 3] = 0; e[o + 4] = 0; e[o + 5] = s; e[o + 6] = 0; e[o + 7] = 0;
+      // bank into turns at speed (roll about the facing axis)
+      const bankT = MOVE_CLIPS.has(clip) && !turning ? clamp(-(L.turnV || 0) * (moved / Math.max(dt, 1e-3)) * 0.035, -0.16, 0.16) : 0;
+      L.bank = (L.bank || 0) + (bankT - (L.bank || 0)) * Math.min(1, dt * 6);
+      const cb = Math.cos(L.bank), sb = Math.sin(L.bank);
+      // columns: R_y(yaw) * R_z'(bank) where the roll axis is the local forward (z)
+      e[o] = c * cb * s; e[o + 1] = sb * s; e[o + 2] = -sn * cb * s; e[o + 3] = 0;
+      e[o + 4] = -c * sb * s; e[o + 5] = cb * s; e[o + 6] = sn * sb * s; e[o + 7] = 0;
       e[o + 8] = sn * s; e[o + 9] = 0; e[o + 10] = c * s; e[o + 11] = 0; e[o + 12] = x; e[o + 13] = y; e[o + 14] = z; e[o + 15] = 1;
       const fa = B.fr.array, fb = B.fr2.array, q = j * 4;
       fa[q] = F[0]; fa[q + 1] = F[1]; fa[q + 2] = F[2]; fa[q + 3] = packLook(L.lookY, L.lookP, L.fem);
